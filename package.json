@@ -1,0 +1,62 @@
+{
+  "name": "graph-editor",
+  "version": "0.1.0",
+  "description": "graph-editor for ApiNATOMY 2",
+  "main": "dist/index.html",
+  "scripts": {
+    "build": "webpack"
+  },
+  "authors": [
+    "Michiel Helvensteijn <mhelvens@gmail.com>",
+    "Syed Islam <syed.islam@uel.ac.uk>"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://www.github.com/mhelvens/graph-editor"
+  },
+  "devDependencies": {
+    "babel": "6",
+    "babel-cli": "~6",
+    "babel-core": "6",
+    "babel-loader": "~6",
+    "babel-plugin-espower": "~2",
+    "babel-plugin-syntax-flow": "~6",
+    "babel-plugin-transform-async-to-generator": "~6",
+    "babel-plugin-transform-builtin-extend": "~1",
+    "babel-plugin-transform-class-properties": "~6",
+    "babel-plugin-transform-decorators-legacy": "~1",
+    "babel-plugin-transform-es2015-instanceof": "~6",
+    "babel-plugin-transform-flow-strip-types": "~6",
+    "babel-plugin-transform-function-bind": "~6",
+    "babel-plugin-transform-object-rest-spread": "6",
+    "babel-plugin-typecheck": "~3",
+    "babel-polyfill": "6",
+    "babel-preset-es2015": "6",
+    "imports-loader": "^0.6.5",
+    "json-loader": "^0.5.4",
+    "power-assert": "~1",
+    "webpack": "~1"
+  },
+  "dependencies": {
+    "bound-native-methods": "~0.1",
+    "chroma-js": "~1",
+    "fraction.js": "~3",
+    "golden-colors": "~2",
+    "jquery": "~2",
+    "jquery-mousewheel": "^3.1.13",
+    "lodash": "~4",
+    "lodash-bound": "~1",
+    "open-physiology-model": "mhelvens/open-physiology-model#new-type-template-structure",
+    "rearg": "0.0.2",
+    "rxjs": "~5.0.0-beta",
+    "snap.svg.zpd": "0.0.11",
+    "snapsvg-cjs": "0.0.4",
+    "svg-innerhtml": "~1"
+  },
+  "keywords": [
+    "apinatomy",
+    "lyph editor",
+    "Open Physiology"
+  ]
+}
