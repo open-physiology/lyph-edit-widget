@@ -5,6 +5,7 @@ import {fromEvent} from 'rxjs/observable/fromEvent';
 import {mergeMap} from 'rxjs/operator/mergeMap';
 import {filter} from 'rxjs/operator/filter';
 import {takeUntil} from 'rxjs/operator/takeUntil';
+import {merge} from 'rxjs/operator/merge';
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -32,7 +33,7 @@ export default class SelectTool extends Tool {
 			context[$$selectTools] = true;
 			context.newProperty('selectedArtifact', {
 				readonly: true,
-				initial: null
+				initial:  null
 			});
 		}
 		
