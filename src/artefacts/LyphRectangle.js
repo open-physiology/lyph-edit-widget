@@ -338,10 +338,6 @@ export default class LyphRectangle extends SvgEntity {
 				opacity:       dragging ?  0.8   :  1
 			});
 		});
-		if (this.parent) {
-			this.parent.p('dragging')
-			    .subscribe( this.p('dragging') );
-		}
 		
 		/* return representation(s) of element */
 		return {

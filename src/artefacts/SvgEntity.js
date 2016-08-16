@@ -49,6 +49,13 @@ export default class SvgEntity extends SvgObject {
 		/* maintain the parent of the children of this entity */
 		this.children.e('add')                               .subscribe(e => { e.parent = this });
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
+		
+		/* when a parent is dragging, its children are dragging */
+		const $$dragSub = Symbol('$$dragSub');
+		this.p('parent')::startWith(null)::pairwise().subscribe(([prev, curr]) => {
+			if (prev) { prev[$$dragSub].unsubscribe(); delete prev[$$dragSub]; }
+			if (curr) { curr[$$dragSub] = curr.p('dragging').subscribe( this.p('dragging') ) }
+		});
 	}
 	
 	findAncestor(other) {

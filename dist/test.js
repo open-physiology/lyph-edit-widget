@@ -17915,6 +17915,22 @@ return /******/ (function(modules) { // webpackBootstrap
 			}).subscribe(function (e) {
 				e.parent = null;
 			});
+	
+			/* when a parent is dragging, its children are dragging */
+			var $$dragSub = Symbol('$$dragSub');
+			(_context = (_context = _this.p('parent'), _startWith.startWith).call(_context, null), _pairwise.pairwise).call(_context).subscribe(function (_ref3) {
+				var _ref4 = _slicedToArray(_ref3, 2);
+	
+				var prev = _ref4[0];
+				var curr = _ref4[1];
+	
+				if (prev) {
+					prev[$$dragSub].unsubscribe();delete prev[$$dragSub];
+				}
+				if (curr) {
+					curr[$$dragSub] = curr.p('dragging').subscribe(_this.p('dragging'));
+				}
+			});
 			return _this;
 		}
 	
@@ -27750,9 +27766,6 @@ return /******/ (function(modules) { // webpackBootstrap
 						opacity: dragging ? 0.8 : 1
 					});
 				});
-				if (this.parent) {
-					this.parent.p('dragging').subscribe(this.p('dragging'));
-				}
 	
 				/* return representation(s) of element */
 				return {
@@ -28255,7 +28268,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var $$create = Symbol('$$create');
 	var $$creation = Symbol('$$creation');
 	
-	var SvgObject = (_dec = (0, _ValueTracker2.property)({ isValid: _isBoolean3.default, initial: true }), _dec2 = (0, _ValueTracker2.property)({ isValid: _isBoolean3.default, initial: false }), _dec3 = (0, _ValueTracker2.property)({ isValid: _isBoolean3.default, initial: false }), _dec4 = (0, _misc.args)('oa?o?'), (_class = function (_ValueTracker) {
+	var flag = function flag(initial) {
+		return (0, _ValueTracker2.property)({ isValid: _isBoolean3.default, initial: initial });
+	};
+	
+	var SvgObject = (_dec = flag(true), _dec2 = flag(false), _dec3 = flag(false), _dec4 = (0, _misc.args)('oa?o?'), (_class = function (_ValueTracker) {
 		_inherits(SvgObject, _ValueTracker);
 	
 		function SvgObject(options) {
@@ -28270,6 +28287,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			_initDefineProp(_this, 'dragging', _descriptor3, _this);
 	
 			_this.setFromObject(options, ['free', 'highlighted', 'dragging']);
+	
 			return _this;
 		}
 	
@@ -28282,7 +28300,7 @@ return /******/ (function(modules) { // webpackBootstrap
 					(0, _powerAssert2.default)(_rec._expr(_rec._capt(!_rec._capt(this[_rec._capt($$creatingElement, 'arguments/0/argument/property')], 'arguments/0/argument'), 'arguments/0'), {
 						content: 'assert(!this[$$creatingElement], humanMsg`\n\t\t\t\tThis element is already being created. Do not\n\t\t\t\tuse \'this.element\' during the creation process.\n\t\t\t`)',
 						filepath: 'src/artefacts/SvgObject.js',
-						line: 38,
+						line: 42,
 						ast: '{"type":"CallExpression","callee":{"type":"Identifier","name":"assert","range":[0,6]},"arguments":[{"type":"UnaryExpression","operator":"!","argument":{"type":"MemberExpression","object":{"type":"ThisExpression","range":[8,12]},"property":{"type":"Identifier","name":"$$creatingElement","range":[13,30]},"computed":true,"range":[8,31]},"prefix":true,"range":[7,31]},{"type":"TaggedTemplateExpression","tag":{"type":"Identifier","name":"humanMsg","range":[33,41]},"quasi":{"type":"TemplateLiteral","quasis":[{"type":"TemplateElement","value":{"raw":"\\n\\t\\t\\t\\tThis element is already being created. Do not\\n\\t\\t\\t\\tuse \'this.element\' during the creation process.\\n\\t\\t\\t","cooked":"\\n\\t\\t\\t\\tThis element is already being created. Do not\\n\\t\\t\\t\\tuse \'this.element\' during the creation process.\\n\\t\\t\\t"},"tail":true,"range":[42,3]}],"expressions":[],"range":[41,4]},"range":[33,4]}],"range":[0,5]}',
 						tokens: '[{"type":{"label":"name"},"value":"assert","range":[0,6]},{"type":{"label":"("},"range":[6,7]},{"type":{"label":"prefix"},"value":"!","range":[7,8]},{"type":{"label":"this"},"value":"this","range":[8,12]},{"type":{"label":"["},"range":[12,13]},{"type":{"label":"name"},"value":"$$creatingElement","range":[13,30]},{"type":{"label":"]"},"range":[30,31]},{"type":{"label":","},"range":[31,32]},{"type":{"label":"name"},"value":"humanMsg","range":[33,41]},{"type":{"label":"`"},"range":[41,42]},{"type":{"label":"template"},"value":"\\n\\t\\t\\t\\tThis element is already being created. Do not\\n\\t\\t\\t\\tuse \'this.element\' during the creation process.\\n\\t\\t\\t","range":[42,3]},{"type":{"label":"`"},"range":[3,4]},{"type":{"label":")"},"range":[4,5]}]',
 						visitorKeys: _powerAssertVisitorKeys
@@ -28306,6 +28324,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 				var keyVals = (_context = _pick2.default.call(obj, [].concat(_toConsumableArray(picked), _toConsumableArray(_keys2.default.call(defaultValues)))), _defaults2.default).call(_context, defaultValues);
 				_boundNativeMethods.assign.call(this, keyVals);
+			}
+		}, {
+			key: 'moveToFront',
+			value: function moveToFront() {
+				this.element.parentElement.appendChild(this.element);
 			}
 		}, {
 			key: 'svg',
@@ -53095,15 +53118,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var tools = [new _SelectTool2.default(context), new _DragDropTool2.default(context), new _ResizeTool2.default(context), new _ZoomTool2.default(context), new _PanTool2.default(context)];
 	
-	/* print zoom-levels */
-	var zoomStatusLabel = (0, _jquery2.default)('<div>').appendTo('body').css({
-		position: 'absolute',
-		top: 0,
-		left: 0
-	});
+	/* print zoom-level */
 	context.p(['zoomExponent', 'zoomFactor'], function (zExp, zFact) {
 		return 'Zoom: ' + zExp + ' (' + Math.round(zFact * 100) + '%)';
-	}).subscribe(zoomStatusLabel.text.bind(zoomStatusLabel));
+	}).subscribe((_context = (0, _jquery2.default)('#info')).text.bind(_context));
 
 /***/ },
 /* 514 */
@@ -53178,6 +53196,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				var _context2;
 	
 				down.controller.dragging = true;
+				down.controller.moveToFront();
 				_take.take.call(mouseup, 1).subscribe(function () {
 					down.controller.dragging = false;
 				});

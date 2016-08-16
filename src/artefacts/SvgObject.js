@@ -22,15 +22,19 @@ const $$create          = Symbol('$$create');
 const $$creation        = Symbol('$$creation');
 
 
+const flag = (initial) => property({ isValid: _isBoolean, initial });
+
 export default class SvgObject extends ValueTracker {
 	
-	@property({ isValid: _isBoolean, initial: true })  free;
-	@property({ isValid: _isBoolean, initial: false }) highlighted;
-	@property({ isValid: _isBoolean, initial: false }) dragging;
+	@flag(true ) free;
+	@flag(false) highlighted;
+	@flag(false) dragging;
 	
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, ['free', 'highlighted', 'dragging']);
+		
+		
 	}
 	
 	[$$create]() {
@@ -57,6 +61,10 @@ export default class SvgObject extends ValueTracker {
 			::pick([...picked, ...defaultValues::keys()])
 			::defaults(defaultValues);
 		this::assign(keyVals);
+	}
+	
+	moveToFront() {
+		this.element.parentElement.appendChild(this.element);
 	}
 	
 }

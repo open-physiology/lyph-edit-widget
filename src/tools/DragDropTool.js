@@ -33,6 +33,7 @@ export default class DragDropTool extends Tool {
 				(down, selected) => down::assign({ controller: selected }))
             .do((down) => {
             	down.controller.dragging = true;
+	            down.controller.moveToFront();
 	            mouseup::take(1).subscribe(() => {
 		            down.controller.dragging = false;
 	            });

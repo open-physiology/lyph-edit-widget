@@ -20,11 +20,17 @@ import Snap from './libs/snap.svg';
 let bloodVessel = model.classes.Lyph.new({
 	name: 'Blood Vessel',
 	layers: [
-	    model.classes.Lyph.new({ name: 'Vessel Wall' }, { createRadialBorders: true }),
+	    model.classes.Lyph.new(
+	    	{ name: 'Vessel Wall' },
+		    { createRadialBorders: true }
+	    ),
 		model.classes.Lyph.new({
 			name: 'Blood Layer',
 			parts: [
-				model.classes.Lyph.new({ name: 'Sublyph' }, { createAxis: true, createRadialBorders: true })
+				model.classes.Lyph.new(
+					{ name: 'Sublyph' },
+					{ createAxis: true, createRadialBorders: true }
+				)
 			]
 		}, { createRadialBorders: true })
 	]
@@ -70,13 +76,8 @@ let tools = [
 	new PanTool     (context)
 ];
 
-/* print zoom-levels */
-let zoomStatusLabel = $('<div>').appendTo('body').css({
-	position: 'absolute',
-	top:  0,
-	left: 0
-});
+/* print zoom-level */
 context.p(
 	['zoomExponent', 'zoomFactor'],
 	(zExp, zFact) => `Zoom: ${zExp} (${Math.round(zFact*100)}%)`
-).subscribe(::zoomStatusLabel.text);
+).subscribe(::($('#info').text));
