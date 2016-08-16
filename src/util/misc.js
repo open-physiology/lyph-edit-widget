@@ -17,6 +17,8 @@ import rearg from 'rearg';
 
 import {defineProperty} from 'bound-native-methods';
 
+import {filter} from 'rxjs/operator/filter';
+
 import _zip from 'lodash/zip';
 
 import assert from 'power-assert';
@@ -132,6 +134,10 @@ export const stopPropagation = (event) => {
 	event.preventDefault();
 	event.stopPropagation();
 };
+
+export function which(keyCode) {
+	return this::filter(event => event.which === keyCode);
+}
 
 export const xy_add = (a, b) => ({
 	x: a.x + b.x,

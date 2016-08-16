@@ -3,7 +3,7 @@ module.exports = {
 	devtool: 'source-map',
 	entry: {
 		'test': [ 'babel-polyfill', './src/test.js' ],
-		'LyphRectangle': [ './src/LyphRectangle.js' ]
+		'LyphRectangle': [ './src/artefacts/LyphRectangle.js' ]
 	},
 	output: {
 		path: './dist',

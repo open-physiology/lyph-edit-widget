@@ -1,176 +1,118 @@
-import $          from './libs/jquery.js';
-import {gElement} from './libs/snap.svg';
+import $          from '../libs/jquery.js';
+import Snap, {gElement} from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';
 import isNumber from 'lodash-bound/isNumber';
-import _isNumber from 'lodash/isNumber';
 import size from 'lodash-bound/size';
 import at from 'lodash-bound/at';
+
+import _isNumber from 'lodash/isNumber';
+import _isBoolean from 'lodash/isBoolean';
+import _defer from 'lodash/defer'
 
 import uniqueId from 'lodash/uniqueId';
 
 import {map} from 'rxjs/operator/map';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 
-import chroma from './libs/chroma.js';
+import chroma from '../libs/chroma.js';
 
 import SvgEntity from './SvgEntity.js';
 
-import {property} from './util/ValueTracker.js';
-import ObservableSet, {copySetContent} from "./util/ObservableSet";
+import {property} from '../util/ValueTracker.js';
+import ObservableSet, {copySetContent} from "../util/ObservableSet";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 
 
 export default class LyphRectangle extends SvgEntity {
 	
-	@property({ isValid: _isNumber                                       }) x;
-	@property({ isValid: _isNumber                                       }) y;
-	@property({ isValid(w) { return w::isNumber() && w > this.minWidth  } }) width;
-	@property({ isValid(h) { return h::isNumber() && h > this.minHeight } }) height;
+	@property({ isValid: _isNumber }) x1;
+	@property({ isValid: _isNumber }) y1;
+	@property({ isValid: _isNumber }) x2;
+	@property({ isValid: _isNumber }) y2;
 	
-	get axisThickness() { return this.model.axis ? 14 : 0 }
-	
-	get minWidth() { return 2 * (this.axisThickness + 1) }
-	
-	get minHeight() { return this.axisThickness + (this.model ? this.model.layers::size() * 2 : 5) }
-	
-	layers = new ObservableSet();
+	@property({ isValid: _isBoolean, initial: false }) movable;
 	
 	constructor(options) {
 		super(options);
-		
 		this.setFromObject(options, [
-			'x', 'y', 'width', 'height'
-		], {
-			showAxis: !!this.model.axis
-		});
-		
-		/* create the layer template boxes */ // TODO: sort by border-shared nodes
-		copySetContent(this.layers, [...this.model.layers].map(layer => new LyphRectangle({
-			parent  : this,
-			model   : layer,
-			showAxis: false
-		})));
-		
-		/* create a random color (one per layer, stored in the model) */
-		if (!this.model[$$backgroundColor]) {
-			this.model[$$backgroundColor] = chroma.randomHsvGolden(0.8, 0.8);
-		}
-		
+			'x1', 'y1', 'x2', 'y2', 'movable'
+		]);
 	}
 	
 	createElement() {
 		
-		const dimKeys = ['x', 'y', 'width', 'height'];
-				
-		const at = this.axisThickness;
+		const dimKeys = ['x1', 'y1', 'x2', 'y2'];
 		
 		const group = gElement();
 		
-		const lyphRectangle = (()=> {
-			let result = group.rect().attr({
+		const lineSegment = (()=> {
+			let result = group.line().attr({
+				strokeWidth   : '2px',
 				stroke        : 'black',
-				fill          : this.model[$$backgroundColor],
-				shapeRendering: 'crispEdges',
-				pointerEvents : 'all'
+				shapeRendering: 'crispEdges'
 			});
+			
 			for (let key of dimKeys) {
 				this.p(key).subscribe(v => result.attr({ [key]: v }));
 			}
-			return result;
-		})();
-		
-		const axis = (() => {
 			
-			if (!this.showAxis) { return null }
-			
-			const result = group.g().attr({
-				pointerEvents: 'none'
-			});
-			
-			const background = result.rect().attr({
-				stroke        : 'black',
-				fill          : 'black',
-				shapeRendering: 'crispEdges',
-				height        :  at
-			});
-			this.p('x')            .subscribe(x             => background.attr({ x                  }));
-			this.p(['y', 'height']).subscribe(([y, height]) => background.attr({ y: y + height - at }));
-			this.p('width')        .subscribe(width         => background.attr({ width              }));
-			
-			const clipPath = result.rect().attr({
-				height: at
-			});
-			const minusText = result.text().attr({
-				textAnchor: 'middle'
-			});
-			minusText.node.innerHTML='&minus;';
-			const labelText = result.text().attr({
-				textAnchor: 'middle',
-				clip:       clipPath
-			});
-			const plusText = result.text().attr({
-				text:       '+',
-				textAnchor: 'middle'
-			});
-			const allText = group.selectAll('text').attr({
-				fill            : 'white',
-				fontSize        : `${at}px`,
-				textRendering   : 'geometricPrecision',
-				pointerEvents   : 'none',
-				dominantBaseline: 'central',
-			});
-			
-			this.p(['x', 'width']).subscribe(([x, width]) => {
-				minusText.attr({ x: x + at/2         });
-				labelText.attr({ x: x + width/2      });
-				plusText .attr({ x: x + width - at/2 });
-				clipPath .attr({
-					x:     x + at,
-					width: width - 2*at
+			this.model.p('nature').subscribe((v) => {
+				result.attr({
+					strokeDasharray: v === 'open' ? '5, 5' : 'none'
 				});
 			});
 			
-			this.p(['y', 'height']).subscribe(([y, height]) => {
-				allText .attr({ y: y + height - at/2 });
-				clipPath.attr({ y: y + height - at   });
-			});
-			
-			this.model.p('name').subscribe((n) => { labelText.attr({ text: n }) });
-			
 			return result;
-			
 		})();
 		
-		const childrenGroup = group.g();
+		if (this.movable) {
+			_defer(() => {
+				let artefact = this.findAncestor(a => a.free);
+				
+				let result = gElement().rect();
+				$(result.node)
+					.css({ visibility: 'hidden' })
+					.attr('controller', true)
+					.data('controller', this);
+				
+				this.p('dragging').subscribe((dragging) => {
+					$(result.node).css({ pointerEvents: dragging ? 'none' : 'all' });
+				});
+				
+				this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
+					if (x1 === x2) {
+						$(result.node).css({ cursor: 'col-resize' });
+						result.attr({
+							x: x1-2,
+							y: y1,
+							width: 5,
+							height: Math.abs(y1 - y2)
+						});
+					} else {
+						$(result.node).css({ cursor: 'row-resize' });
+						result.attr({
+							x: x1,
+							y: y1-2,
+							width: Math.abs(x1 - x2),
+							height: 5
+						});
+					}
+				});
+				
+				$(artefact.element).children('g.foreground').append(result.node);
+				
+				return result;
+			});
+		}
 		
-		const layerCount = this.layers.p('value')::map(s => s::size());
-		
-		let i = 0;
-		
-		const layerHeight = combineLatest(this.p('height'), layerCount, (height, count) => (height-at)/count);
-		
-		this.layers.e('add').subscribe((layerRectangle) => {
-			
-			const position = i++; // TODO: store layer position and use that
-			
-			childrenGroup.append(layerRectangle.svg);
-			this.p('x')    .subscribe(layerRectangle.p('x')    );
-			this.p('width').subscribe(layerRectangle.p('width'));
-			combineLatest(this.p('y'), layerHeight, (y, lHeight) => y + position * lHeight)
-				.subscribe(layerRectangle.p('y'));
-			layerHeight.subscribe(layerRectangle.p('height'));
-			
-		});
-		this.layers.e('delete').subscribe((layerRectangle) => {
-			layerRectangle.element.remove();
-		});
-		
+		/* return representation(s) of element */
 		return {
 			svg: group
 		};
+		
 	}
 	
 	

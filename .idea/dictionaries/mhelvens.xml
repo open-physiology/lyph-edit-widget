@@ -2,8 +2,10 @@
   <dictionary name="mhelvens">
     <words>
       <w>attrs</w>
+      <w>dasharray</w>
       <w>deregister</w>
       <w>rearg</w>
+      <w>rects</w>
     </words>
   </dictionary>
 </component>

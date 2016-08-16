@@ -2,9 +2,9 @@ import pick from 'lodash-bound/pick';
 
 import assert from 'power-assert';
 
-import {property} from './util/ValueTracker.js';
+import {property} from '../util/ValueTracker.js';
 
-import {mergeMap}  from 'rxjs/operator/mergeMap';
+import {switchMap}  from 'rxjs/operator/switchMap';
 import {partition} from 'rxjs/operator/partition';
 import {merge}     from 'rxjs/observable/merge';
 import {map} from 'rxjs/operator/map';
@@ -13,8 +13,10 @@ import {filter} from 'rxjs/operator/filter';
 import {startWith} from 'rxjs/operator/startWith';
 import {pairwise} from 'rxjs/operator/pairwise';
 
+import isFunction from 'lodash-bound/isFunction';
+
 import SvgObject from './SvgObject.js';
-import ObservableSet from "./util/ObservableSet";
+import ObservableSet from "../util/ObservableSet";
 
 export default class SvgEntity extends SvgObject {
 
@@ -32,7 +34,7 @@ export default class SvgEntity extends SvgObject {
 		
 		/* maintain the root of this entity */
 		this.p('parent')
-			::mergeMap(e => e ? e.p('root') : of(this))
+			::switchMap(e => e ? e.p('root') : of(this))
 			.subscribe( this.p('root') );
 		
 		/* maintain the children of the parent of this entity */
@@ -47,6 +49,13 @@ export default class SvgEntity extends SvgObject {
 		/* maintain the parent of the children of this entity */
 		this.children.e('add')                               .subscribe(e => { e.parent = this });
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
+	}
+	
+	findAncestor(other) {
+		let pred = other::isFunction() ? other : (o => o === other);
+		let current = this;
+		while (current && !pred(current)) { current = current.parent }
+		return current || null;
 	}
 
 }

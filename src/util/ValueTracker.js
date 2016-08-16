@@ -5,10 +5,13 @@ import set      from 'lodash-bound/set';
 import entries  from 'lodash-bound/entries';
 import keys  from 'lodash-bound/keys';
 import isPlainObject from 'lodash-bound/isPlainObject';
+import isFunction from 'lodash-bound/isFunction';
 
 import _isEqual from 'lodash/isEqual';
 
 import assert from 'power-assert';
+
+import {args} from './misc';
 
 import {Subject}              from 'rxjs/Subject';
 import {BehaviorSubject}      from 'rxjs/BehaviorSubject';
@@ -160,25 +163,21 @@ export default class ValueTracker {
 	 *
 	 * @public
 	 * @method
-	 * @param  {String|Array} nameOrDeps          - the name of the property to retrieve, or a list of active dependencies for a derived property
-	 * @param  {Array?}       optionalPassiveDeps - an optional list of passive dependencies for a derived property
-	 * @param  {Function?}    optionalTransformer - an optional function to map the dependencies to a new value for the derived property
+	 * @param  {String?}   name                - the name of the property to retrieve (choose name or deps)
+	 * @param  {Array?}    deps                - a list of active dependencies for a derived property
+	 * @param  {Array?}    optionalPassiveDeps - an optional list of passive dependencies for a derived property
+	 * @param  {Function?} optionalTransformer - an optional function to map the dependencies to a new value for the derived property
 	 * @return {BehaviorSubject | Observable} - the property associated with the given name or an observable of combined properties
 	 */
-	p(nameOrDeps, optionalPassiveDeps = [], optionalTransformer = (...args)=>args) {
+	@args('s?a?a?f?') p(name, deps, optionalPassiveDeps = [], optionalTransformer = (...a)=>a) {
 		this[$$initialize]();
-		if (nameOrDeps::isArray()) {
-			return combineLatest(...nameOrDeps         .map(::this.p))
+		if (deps) {
+			return combineLatest(...deps               .map(::this.p))
 				::withLatestFrom(...optionalPassiveDeps.map(::this.p),
 				(active, ...passive) => optionalTransformer(...active, ...passive));
-		} else if (nameOrDeps::isPlainObject()) {
-			const keyList = nameOrDeps::keys();
-			const pKeyList = optionalPassiveDeps::keys();
-			const bothList = keyList.concat(pKeyList);
-			return this.p(keyList, pKeyList, (...vals) => Object.assign(...vals.map((v, i)=>({ [bothList[i]]: v }))));
-		} else if (nameOrDeps::isString()) {
-			assert(this[$$properties][nameOrDeps], `No property '${nameOrDeps}' exists.`);
-			return this[$$properties][nameOrDeps];
+		} else if (name) {
+			assert(this[$$properties][name], `No property '${name}' exists.`);
+			return this[$$properties][name];
 		}
 	}
 	

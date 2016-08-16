@@ -2,14 +2,17 @@ import pick from 'lodash-bound/pick';
 import keys from 'lodash-bound/keys';
 import defaults from 'lodash-bound/defaults';
 
-import $ from './libs/jquery';
+import _isNumber from 'lodash/isNumber';
+import _isBoolean from 'lodash/isBoolean';
+
+import $ from '../libs/jquery';
 
 import assert from 'power-assert';
 
-import ValueTracker, {property} from './util/ValueTracker.js';
+import ValueTracker, {property} from '../util/ValueTracker.js';
 
-import {humanMsg} from './util/misc';
-import {args} from "./util/misc";
+import {humanMsg} from '../util/misc';
+import {args} from "../util/misc";
 
 import {assign} from 'bound-native-methods';
 
@@ -21,9 +24,13 @@ const $$creation        = Symbol('$$creation');
 
 export default class SvgObject extends ValueTracker {
 	
+	@property({ isValid: _isBoolean, initial: true })  free;
+	@property({ isValid: _isBoolean, initial: false }) highlighted;
+	@property({ isValid: _isBoolean, initial: false }) dragging;
+	
 	constructor(options) {
 		super(options);
-		this.setFromObject(options, ['interactive']);
+		this.setFromObject(options, ['free', 'highlighted', 'dragging']);
 	}
 	
 	[$$create]() {
@@ -34,6 +41,7 @@ export default class SvgObject extends ValueTracker {
 			`);
 			this[$$creatingElement] = true;
 			this[$$creation] = this.createElement();
+			this[$$creation].svg.g().addClass('foreground');
 			delete this[$$creatingElement];
 			$(this.element).data('controller', this);
 			$(this.element).attr('controller', true); // for css-selectors

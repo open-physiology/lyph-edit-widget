@@ -2,7 +2,7 @@ import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
 import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
 import {fromEvent} from 'rxjs/observable/fromEvent';
-import {mergeMap} from 'rxjs/operator/mergeMap';
+import {switchMap} from 'rxjs/operator/switchMap';
 import {filter} from 'rxjs/operator/filter';
 import {map} from 'rxjs/operator/map';
 import {scan} from 'rxjs/operator/scan';
@@ -51,7 +51,7 @@ export default class PanTool extends Tool {
 			::filter(withoutMod('alt', 'ctrl', 'meta'))
 			.do(stopPropagation)
 			::withLatestFrom(context.p('pan'))
-			::mergeMap(() => mousemove::takeUntil(mouseup), ([d, i], m) => ({
+			::switchMap(() => mousemove::takeUntil(mouseup), ([d, i], m) => ({
 				x: i.x + m.pageX - d.pageX,
 				y: i.y + m.pageY - d.pageY
 			}))

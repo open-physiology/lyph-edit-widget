@@ -45,6 +45,7 @@
     "golden-colors": "~2",
     "jquery": "~2",
     "jquery-mousewheel": "^3.1.13",
+    "keycode.js": "^1.0.0",
     "lodash": "~4",
     "lodash-bound": "~1",
     "open-physiology-model": "mhelvens/open-physiology-model#new-type-template-structure",

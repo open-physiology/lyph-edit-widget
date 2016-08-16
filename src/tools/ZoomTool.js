@@ -2,7 +2,6 @@ import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
 import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
 import {fromEvent} from 'rxjs/observable/fromEvent';
-import {mergeMap} from 'rxjs/operator/mergeMap';
 import {filter} from 'rxjs/operator/filter';
 import {map} from 'rxjs/operator/map';
 import {scan} from 'rxjs/operator/scan';
