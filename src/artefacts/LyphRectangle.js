@@ -7,20 +7,30 @@ import isNumber from 'lodash-bound/isNumber';
 import size from 'lodash-bound/size';
 import at from 'lodash-bound/at';
 import assign from 'lodash-bound/assign';
+import sortBy from 'lodash-bound/sortBy';
 
 import _isNumber from 'lodash/isNumber';
 import _isBoolean from 'lodash/isBoolean';
 import _add from 'lodash/add';
 import _defer from 'lodash/defer';
+import _zip from 'lodash/zip';
 
 import uniqueId from 'lodash/uniqueId';
 
+import {combineLatest} from 'rxjs/observable/combineLatest';
+import {of} from 'rxjs/observable/of';
+
+import {merge} from 'rxjs/observable/merge';
 import {map} from 'rxjs/operator/map';
 import {filter} from 'rxjs/operator/filter';
 import {pairwise} from 'rxjs/operator/pairwise';
-import {combineLatest} from 'rxjs/observable/combineLatest';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
 import {take} from 'rxjs/operator/take';
+import {takeUntil} from 'rxjs/operator/takeUntil';
+import {mergeMap} from 'rxjs/operator/mergeMap';
+import {switchMap} from 'rxjs/operator/switchMap';
+import {toPromise} from 'rxjs/operator/toPromise';
+import {concat} from 'rxjs/operator/concat';
 
 import chroma from '../libs/chroma.js';
 
@@ -28,12 +38,24 @@ import SvgEntity from './SvgEntity.js';
 
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
-import BorderLine from "./BorderLine";
+import BorderLine from './BorderLine';
+
+import model from '../model';
+import {subscribe_} from "../util/rxjs";
+import {shiftedMovementFor, log} from "../util/rxjs";
+import {flag} from "../util/ValueTracker";
+import NodeGlyph from "./NodeGlyph";
+
 
 const $$backgroundColor = Symbol('$$backgroundColor');
+const $$toBeRecycled = Symbol('$$toBeRecycled');
+const $$recycle = Symbol('$$recycle');
+const $$relativeLayerPosition = Symbol('$$relativeLayerPosition');
 
 
 export default class LyphRectangle extends SvgEntity {
+	
+	@flag(true) free;
 	
 	@property({ isValid: _isNumber                                        }) x;
 	@property({ isValid: _isNumber                                        }) y;
@@ -47,7 +69,10 @@ export default class LyphRectangle extends SvgEntity {
 	get minHeight() { return this.axisThickness + (this.model ? this.model.layers::size() * 2 : 5) }
 	
 	layers              = new ObservableSet();
-	parts               = new ObservableSet();
+	pureParts           = new ObservableSet();
+	segments            = new ObservableSet();
+	nodes               = new ObservableSet();
+	
 	radialBorders       = new ObservableSet();
 	longitudinalBorders = new ObservableSet();
 	
@@ -61,91 +86,81 @@ export default class LyphRectangle extends SvgEntity {
 		
 		this.setFromObject(options, [
 			'x', 'y', 'width', 'height'
-		], {
-			showAxis: !!this.model.axis
-		});
+		], { showAxis: !!this.model.axis });
 		
-		/* create the layer template boxes */ // TODO: sort
-		this.model.layers.e('add')::map(layer => new LyphRectangle({
-			parent  : this,
-			model   : layer,
-			showAxis: false,
-			free    : false
-		})).subscribe( this.layers.e('add') );
-		
-		/* create the part template boxes */ // TODO: sort
-		combineLatest(
-			this.model.parts.e('add')::filter(c => !this.model.layers.has(c) && !this.model.patches.has(c)),
-			this.p(['x','y','width','height'])::take(1),
-			(part, [x, y, width, height]) => new LyphRectangle({
-				parent  : this,
-				model   : part,
-				free    : true,
-				x       : x+5,
-				y       : y+5,
-				width   : width  / 2,
-				height  : height / 2
-			})
-		).subscribe( this.parts.e('add') );
-		// this.model.parts.e('add')
-		// 	::filter(c => !this.model.layers.has(c) && !this.model.patches.has(c))
-		// 	.do((v) => { console.log('(1)', v) })
-		// 	::withLatestFrom(this.p(['x','y','width','height']), (part, [x, y, width, height]) => {
-		//
-		// 		console.log(part, [x, y, width, height]);
-		//
-		// 		return new LyphRectangle({
-		// 			parent  : this,
-		// 			model   : part,
-		// 			free    : true,
-		// 			x       : x+5,
-		// 			y       : y+5,
-		// 			width   : width  / 2,
-		// 			height  : height / 2
-		// 		});
-		// 	})
-		// 	.do((v) => { console.log('(2)', v) })
-		// 	.subscribe( this.parts.e('add') );
+		this[$$toBeRecycled] = new WeakMap();
 		
 		/* create the border artefacts */
-		for (let key of ['radialBorders', 'longitudinalBorders']) {
-			this.model[key].e('add')::map(border => new BorderLine({
-				parent  : this,
-				model   : border,
-				free    : false,
-				movable : this.free
-			})).subscribe( this[key].e('add') );
-		} // TODO: need a way to distinguish plus/minus + inner/outer borders
+		for (let setKey of ['radialBorders', 'longitudinalBorders']) {
+			this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
+				parent : this,
+				model  : border,
+				movable: this.free
+			}))::subscribe_( this[setKey].e('add') , n=>n() );
+		}
+		
+		for (let setKey of [
+			'layers',
+			'segments',
+			'pureParts',
+			'radialBorders',
+			'longitudinalBorders',
+			'nodes'
+		]) {
+			this[setKey].e('add')::subscribe_( this.children.e('add') , n=>n() );
+			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
+		}
+		
+		
 		
 		/* create a random color (one per layer, stored in the model) */
 		if (!this.model[$$backgroundColor]) {
 			this.model[$$backgroundColor] = chroma.randomHsvGolden(0.8, 0.8);
 		}
 		
+		
+		
 	}
 	
 	createElement() {
-		
 		const at = this.axisThickness;
-		
 		const group = gElement();
-		
-		const lyphRectangle = (()=> {
+				
+		const lyphRectangle = (() => {
+			
+			let shadow = group.rect().attr({
+				filter: Snap('#svg').filter(Snap.filter.shadow(8, 8, 4, '#111111', 0.4)),
+			});
+			this.p(['free', 'dragging']).subscribe(([f, d]) => {
+				shadow.attr({ visibility: (f && d ? 'visible' : 'hidden') })
+			});
+			
 			let result = group.rect().attr({
 				stroke        : 'none',
 				fill          : this.model[$$backgroundColor],
 				shapeRendering: 'crispEdges'
 			});
 			
-			this.p('x'     ).subscribe(x      => result.attr({ x:x+1  }));
-			this.p('y'     ).subscribe(y      => result.attr({ y:y+1  }));
-			this.p('width' ).subscribe(width  => result.attr({ width  }));
-			this.p('height').subscribe(height => result.attr({ height }));
+			this.p('x').subscribe(x      => {
+				result.attr({ x:x+1  });
+				shadow.attr({ x:x+1  });
+			});
+			this.p('y').subscribe(y      => {
+				result.attr({ y:y+1  });
+				shadow.attr({ y:y+1  });
+			});
+			this.p('width').subscribe(width  => {
+				result.attr({ width  });
+				shadow.attr({ width  });
+			});
+			this.p('height').subscribe(height => {
+				result.attr({ height });
+				shadow.attr({ height });
+			});
 			
-			return result;
 		})();
 		
-		const highlightedBorder = (()=>{
+		const highlightedBorder = (() => {
 			let result = gElement().g().attr({
 				pointerEvents : 'none'
 			});
@@ -181,7 +196,7 @@ export default class LyphRectangle extends SvgEntity {
 			
 			if (!this.showAxis) { return null }
 			
-			const result = group.g().attr({
+			const result = group.g().addClass('axis').attr({
 				pointerEvents: 'none'
 			});
 			
@@ -195,7 +210,7 @@ export default class LyphRectangle extends SvgEntity {
 			this.p(['y', 'height']).subscribe(([y, height]) => background.attr({ y: y + height - at }));
 			this.p('width')        .subscribe(width         => background.attr({ width              }));
 			
-			const clipPath = result.rect().attr({
+			const clipPath = result.rect().addClass('axis-clip-path').attr({
 				height: at
 			});
 			const minusText = result.text().attr({
@@ -239,64 +254,37 @@ export default class LyphRectangle extends SvgEntity {
 			
 		})();
 		
-		{
-			const layerGroup = group.g();
-			
-			const layerCount = this.layers.p('value')::map(s => s::size());
-			
-			let i = 0;
-			
-			const layerHeight = combineLatest(this.p('height'), layerCount, (height, count) => (height-at)/count);
-			
-			this.layers.e('add').subscribe((layerRectangle) => {
-				const position = i++; // TODO: store layer position and use that
-				layerGroup.append(layerRectangle.svg);
-				this.p('x')    .subscribe(layerRectangle.p('x')    );
-				this.p('width').subscribe(layerRectangle.p('width'));
-				combineLatest(this.p('y'), layerHeight, (y, lHeight) => y + position * lHeight)
-					.subscribe( layerRectangle.p('y') );
-				layerHeight.subscribe(layerRectangle.p('height'));
-			});
-			this.layers.e('delete').subscribe((layerRectangle) => {
-				layerRectangle.element.remove();
-			});
-		}
+		/* convenience function to use in partonomy setup */
+		const takeUntilImNoLongerParent = (me => function takeUntilImNoLongerParent(a) {
+			return this::takeUntil( a.p('parent')::filter(p => p !== me));
+		})(this);
 		
-		const partGroup = (()=>{
-			const result = group.g();
-			this.parts.e('add').subscribe((partRectangle) => {
-				result.append(partRectangle.svg);
-				for (let dim of ['x', 'y']) {
-					this.p(dim)
-						::pairwise()::map(([prev,curr])=>(curr-prev)/2) // Why do we need to divide by 2?
-						::withLatestFrom(partRectangle.p(dim), _add)
-						.subscribe( partRectangle.p(dim) );
-				}
-			});
-			this.parts.e('delete').subscribe((partRectangle) => {
-				partRectangle.element.remove();
-			});
-			return result;
-		})();
+		
+		group.g().addClass('layers');
+		
+		group.g().addClass('parts');
+		group.g().addClass('nodes');
+		
+		// TODO: segments
 
-		{
-			const borderGroup = group.g();
+		const borderGroup = (() => {
+			const result = group.g().addClass('borders');
 			
 			this.leftBorder  = null;
 			this.rightBorder = null;
 			
 			this.radialBorders.e('add').subscribe((borderLine) => {
-				borderGroup.append(borderLine.svg);
-				this.p('y').subscribe( borderLine.p('y1') );
-				this.p(['y','height'], _add).subscribe( borderLine.p('y2') );
+				result.append(borderLine.element.svg);
+				this.p('y')::subscribe_( borderLine.p('y1') , n=>n() );
+				this.p(['y','height'], _add)::subscribe_( borderLine.p('y2') , n=>n() );
 				if (!this.leftBorder) {
 					this.leftBorder = borderLine;
-					this.p('x').subscribe( borderLine.p('x1') );
-					this.p('x').subscribe( borderLine.p('x2') );
+					this.p('x')::subscribe_( borderLine.p('x1') , n=>n() );
+					this.p('x')::subscribe_( borderLine.p('x2') , n=>n() );
 				} else if (!this.rightBorder) {
 					this.rightBorder = borderLine;
-					this.p(['x', 'width'], _add).subscribe( borderLine.p('x1') );
-					this.p(['x', 'width'], _add).subscribe( borderLine.p('x2') );
+					this.p(['x', 'width'], _add)::subscribe_( borderLine.p('x1') , n=>n() );
+					this.p(['x', 'width'], _add)::subscribe_( borderLine.p('x2') , n=>n() );
 				}
 			});
 			this.radialBorders.e('delete').subscribe((borderLine) => {
@@ -310,17 +298,17 @@ export default class LyphRectangle extends SvgEntity {
 			this.bottomBorder = null; // also axis
 			
 			this.longitudinalBorders.e('add').subscribe((borderLine) => {
-				borderGroup.append(borderLine.svg);
-				this.p('x').subscribe( borderLine.p('x1') );
-				this.p(['x','width'], _add).subscribe( borderLine.p('x2') );
+				result.append(borderLine.element.svg);
+				this.p('x')::subscribe_( borderLine.p('x1') , n=>n() );
+				this.p(['x','width'], _add)::subscribe_( borderLine.p('x2') , n=>n() );
 				if (!this.topBorder) {
 					this.topBorder = borderLine;
-					this.p('y').subscribe( borderLine.p('y1') );
-					this.p('y').subscribe( borderLine.p('y2') );
+					this.p('y')::subscribe_( borderLine.p('y1') , n=>n() );
+					this.p('y')::subscribe_( borderLine.p('y2') , n=>n() );
 				} else if (!this.bottomBorder) {
 					this.bottomBorder = borderLine;
-					this.p(['y', 'height'], _add).subscribe( borderLine.p('y1') );
-					this.p(['y', 'height'], _add).subscribe( borderLine.p('y2') );
+					this.p(['y', 'height'], _add)::subscribe_( borderLine.p('y1') , n=>n() );
+					this.p(['y', 'height'], _add)::subscribe_( borderLine.p('y2') , n=>n() );
 				}
 			});
 			this.longitudinalBorders.e('delete').subscribe((borderLine) => {
@@ -329,23 +317,161 @@ export default class LyphRectangle extends SvgEntity {
 				borderLine.element.remove();
 			}); // TODO: proper deleting
 			
-		}
-		
-		/* manage 'dragging' property */
-		this.p('dragging').subscribe((dragging) => {
-			group.attr({
-				pointerEvents: dragging ? 'none' : 'visiblePainted',
-				opacity:       dragging ?  0.8   :  1
-			});
-		});
+		})();
 		
 		/* return representation(s) of element */
 		return {
-			svg: group
+			element: group.node
 		};
 	}
 	
 	
+	[$$recycle](model) {
+		if (!this[$$toBeRecycled].has(model)) { return false }
+		let result = this[$$toBeRecycled].get(model);
+		this[$$toBeRecycled].delete(model);
+		return result;
+	}
+	
+	async afterCreateElement() {
+		super.afterCreateElement();
+		
+		/* wait until we have some coordinates */
+		await this.p(['x','y','width','height'])::take(1)::toPromise();
+		
+		/* new layer in the model --> new layer artifact */
+		this[$$relativeLayerPosition] = new WeakMap();
+		this.model['-->HasLayer'].e('add')
+			::map(rel => ({ layer: rel[2], relativePosition: rel.p('relativePosition') }))
+			::map(({layer, relativePosition}) => {
+				let layerBox = this[$$recycle](layer) || new LyphRectangle({
+					parent  : this,
+					model   : layer,
+					showAxis: false,
+					free    : false
+				});
+				this[$$relativeLayerPosition].set(layerBox, relativePosition);
+				return layerBox;
+			})
+			::subscribe_( this.layers.e('add') , n=>n() );
+		
+		/* new layer artifact --> house svg element */
+		this.layers.e('add').subscribe((layer) => {
+			this.inside.jq.children('.layers').append(layer.element);
+			const removed = layer.p('parent')::filter(parent=>parent!==this);
+			removed.subscribe(() => {
+				if (layer.element.jq.parent()[0] === this.element) {
+					layer.element.jq.remove();
+				}
+			});
+		});
+		
+		/* new layer artifact --> move it together with its parent */
+		this.layers.p('value')
+			::map(layers => [...layers])
+			::map((layers) => ({
+				dimensions:        this.pObj(['x', 'y', 'width', 'height']),
+				layers:            layers,
+				relativePositions: layers.map(::this[$$relativeLayerPosition].get)
+			}))
+			::switchMap(
+				({dimensions, relativePositions}) => combineLatest(dimensions, relativePositions),
+				({layers}, [{width, height, x, y}, relativePositions]) => ({
+					layers: layers::sortBy((l, i) => relativePositions[i]),
+					wh_layer: {
+						width:   width,
+						height: (height - this.axisThickness) / layers.length
+					},
+					xy_parent: {x, y}
+				}))
+			.subscribe(({layers, wh_layer: {width, height}, xy_parent: {x, y}}) => {
+				// console.log(Object.entries(layers));
+				for (let i = 0; i < layers.length; ++i) {
+					const layer = layers[i];
+					layer::assign({
+						width,
+						height,
+						x,
+						y: y + i * height
+					});
+				}
+			});
+		
+		
+		/* new part in the model --> new part artifact */
+		this.model['-->HasPart'].e('add')
+			::filter(c => c.class === 'HasPart')
+			::map(c=>c[2])
+			::withLatestFrom(this.p('x'),this.p('y'),this.p('width'),this.p('height'))
+			::map(([part, x, y, width, height]) => this[$$recycle](part) || new LyphRectangle({
+				model : part,
+				x     : x + 5,
+				y     : y + 5,
+				width : width / 2,
+				height: height / 2
+			}))
+			.do((artefact) => { artefact.free = true })
+			::subscribe_( this.pureParts.e('add') , n=>n() );
+		
+		/* new part artifact --> house svg element + move it together with its parent */
+		this.pureParts.e('add').subscribe((part) => {
+			this.inside.jq.children('.parts').append(part.element);
+			const removed = part.p('parent')::filter(parent=>parent!==this);
+			
+			this.pObj(['x', 'y'])
+				::takeUntil(removed)
+				::shiftedMovementFor(part.pObj(['x', 'y']))
+				.subscribe( part::assign );
+			
+			removed.subscribe(() => {
+				if (part.element.jq.parent()[0] === this.element) {
+					part.element.jq.remove();
+				}
+			});
+		});
+		
+		
+		/* new node in the model --> new node artifact */
+		this.model['-->ContainsNode'].e('add')
+			::map(c=>c[2])
+			::withLatestFrom(this.p('x'),this.p('y'))
+			::map(([node, x, y]) => this[$$recycle](node) || new NodeGlyph({
+				model : node,
+				x     : x + 5,
+				y     : y + 5
+			}))
+			.do((artefact) => { artefact.free = true })
+			::subscribe_( this.nodes.e('add') , n=>n() );
+		
+		/* new node artifact --> house svg element + move it together with its parent */
+		this.nodes.e('add').subscribe((node) => {
+			this.inside.jq.children('.nodes').append(node.element);
+			const removed = node.p('parent')::filter(parent=>parent!==this);
+			
+			this.pObj(['x', 'y'])
+				::takeUntil(removed)
+				::shiftedMovementFor(node.pObj(['x', 'y']))
+				.subscribe( node::assign );
+			
+			removed.subscribe(() => {
+				if (node.element.jq.parent()[0] === this.element) {
+					node.element.jq.remove();
+				}
+			});
+		});
+		
+	}
+	
+	get draggable() { return true }
+	
+	drop(droppedEntity) {
+		if (model.classes.Lyph.hasInstance(droppedEntity.model)) { // if a lyph artefact was dropped
+			this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
+			droppedEntity.model.parent = null;
+			// this.model.children.delete(droppedEntity.model);
+			this.model.parts.add(droppedEntity.model);
+		}
+	}
 	
 }
 

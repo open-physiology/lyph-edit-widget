@@ -13,6 +13,7 @@ import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import BorderLine from "../artefacts/BorderLine";
+import {log} from '../util/rxjs';
 
 
 const $$xy_controller = Symbol('$$xy_controller');
@@ -26,9 +27,10 @@ export default class ResizeTool extends Tool {
 	constructor(context) {
 		super(context, { events: ['mousedown'] });
 		
-		const mousemove = fromEvent(context.root, 'mousemove');
-		const mouseup   = fromEvent($(window), 'mouseup');
+		const {root} = context;
 		
+		const mousemove = fromEvent(root.element.jq, 'mousemove');
+		const mouseup   = fromEvent($(window),       'mouseup'  );
 		
 		this.e('mousedown')
 			::withLatestFrom(context.p('selected'),

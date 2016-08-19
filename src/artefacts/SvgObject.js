@@ -1,6 +1,7 @@
 import pick from 'lodash-bound/pick';
 import keys from 'lodash-bound/keys';
 import defaults from 'lodash-bound/defaults';
+import isFunction from 'lodash-bound/isFunction';
 
 import _isNumber from 'lodash/isNumber';
 import _isBoolean from 'lodash/isBoolean';
@@ -15,6 +16,7 @@ import {humanMsg} from '../util/misc';
 import {args} from "../util/misc";
 
 import {assign} from 'bound-native-methods';
+import {flag} from "../util/ValueTracker";
 
 const $$svg             = Symbol('$$svg');
 const $$creatingElement = Symbol('$$creatingElement');
@@ -22,19 +24,18 @@ const $$create          = Symbol('$$create');
 const $$creation        = Symbol('$$creation');
 
 
-const flag = (initial) => property({ isValid: _isBoolean, initial });
-
 export default class SvgObject extends ValueTracker {
 	
-	@flag(true ) free;
 	@flag(false) highlighted;
 	@flag(false) dragging;
+	
+	toString() {
+		return `[${this.constructor.name}: ${this.model && this.model.name}]`;
+	}
 	
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, ['free', 'highlighted', 'dragging']);
-		
-		
 	}
 	
 	[$$create]() {
@@ -44,17 +45,45 @@ export default class SvgObject extends ValueTracker {
 				use 'this.element' during the creation process.
 			`);
 			this[$$creatingElement] = true;
+			
 			this[$$creation] = this.createElement();
-			this[$$creation].svg.g().addClass('foreground');
-			delete this[$$creatingElement];
-			$(this.element).data('controller', this);
-			$(this.element).attr('controller', true); // for css-selectors
+			
+			let el = this[$$creation].element;
+			el::defaults({ jq: $(el), svg: Snap(el) });
+			if (!this[$$creation].inside) {
+				this[$$creation].inside = this[$$creation].element;
+			} else {
+				let el = this[$$creation].inside;
+				el::defaults({ jq: $(el), svg: Snap(el) });
+			}
+			
+			this[$$creation].inside.svg.g().addClass('foreground');
+			$(this[$$creation].inside).data('controller', this);
+			$(this[$$creation].inside).attr('controller', this.constructor.name + ':' + (this.model ? this.model.name : '')); // for css-selectors
+			
+			this[$$creatingElement] = false;
+
+			if (this.afterCreateElement::isFunction()) {
+				this.afterCreateElement();
+			}
 		}
 		return this[$$creation];
 	}
 	
-	get svg    () { return this[$$create]().svg      }
-	get element() { return this[$$create]().svg.node }
+	afterCreateElement() {
+		/* manage 'dragging' property */
+		this.p('dragging').subscribe((dragging) => {
+			this.element.jq.css(dragging
+				? { pointerEvents: 'none', opacity: 0.8 }
+				: { pointerEvents: 'auto', opacity: 1   });
+			// this.element.jq.css(dragging
+			// 	? { pointerEvents: 'none',    opacity: 0.8 }
+			// 	: { pointerEvents: 'inherit', opacity: 1   });
+		});
+	}
+	
+	get element() { return this[$$create]().element }
+	get inside () { return this[$$create]().inside  }
 	
 	@args('oa?o?') setFromObject(obj, picked = [], defaultValues = {}) {
 		let keyVals = obj
@@ -66,6 +95,8 @@ export default class SvgObject extends ValueTracker {
 	moveToFront() {
 		this.element.parentElement.appendChild(this.element);
 	}
+	
+	get draggable() { return false }
 	
 }
 

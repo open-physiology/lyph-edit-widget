@@ -29,50 +29,34 @@ import {flag} from "../util/ValueTracker";
 const $$backgroundColor = Symbol('$$backgroundColor');
 
 
-export default class BorderLine extends SvgEntity {
+export default class ProcessLine extends SvgEntity {
 	
-	@property({ isValid: _isNumber }) x1;
-	@property({ isValid: _isNumber }) y1;
-	@property({ isValid: _isNumber }) x2;
-	@property({ isValid: _isNumber }) y2;
-	
-	@flag(true) movable;
+	@property() source;
+	@property() target;
 	
 	toString() { return `[${this.constructor.name}]` }
 	
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, [
-			'x1', 'y1', 'x2', 'y2', 'free', 'movable'
-		]);
+			'source', 'target'
+		], { free: false });
 	}
 	
 	createElement() {
 		
-		const dimKeys = ['x1', 'y1', 'x2', 'y2'];
-		
 		const group = gElement();
 		
-		const lineSegment = (()=> {
-			let result = group.line().attr({
-				strokeWidth   : '2px',
-				stroke        : 'black',
-				shapeRendering: 'crispEdges',
-				pointerEvents : 'none'
-			});
-			
-			for (let key of dimKeys) {
-				this.p(key).subscribe(v => result.attr({ [key]: v }));
-			}
-			
-			this.model.p('nature').subscribe((v) => {
-				result.attr({
-					strokeDasharray: v === 'open' ? '5, 5' : 'none'
-				});
-			});
-			
-			return result;
-		})();
+		let line = group.line().attr({
+			strokeWidth   : '3px',
+			stroke        : 'red',
+			pointerEvents : 'none'
+		});
+		
+		this.source.p('x').subscribe((x) => { line.attr({ x1: x  }) });
+		this.source.p('y').subscribe((y) => { line.attr({ y1: y  }) });
+		this.target.p('x').subscribe((x) => { line.attr({ x2: x  }) });
+		this.target.p('y').subscribe((y) => { line.attr({ y2: y  }) });
 		
 		/* return representation(s) of element */
 		return {
@@ -83,43 +67,30 @@ export default class BorderLine extends SvgEntity {
 	
 	async afterCreateElement() {
 		super.afterCreateElement();
-			
-		if (this.movable) {
-			
-			let parentLyph = this.findAncestor(a => a.free);
-			
-			/* wait until we can get parentLyph.element */
-			// TODO: create 'element ready' promise for this
-			await new Promise((resolve) => { setTimeout(resolve) });
-			
-			let result = gElement().rect();
-			$(result.node)
-				.css({ opacity: 0 })
-				.attr('controller', ''+this)
-				.data('controller', this);
-			
-			this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
-				if (x1 === x2) {
-					$(result.node).css({ cursor: 'col-resize' });
-					result.attr({
-						x: x1-2,
-						y: y1,
-						width: 5,
-						height: Math.abs(y1 - y2)
-					});
-				} else {
-					$(result.node).css({ cursor: 'row-resize' });
-					result.attr({
-						x: x1,
-						y: y1-2,
-						width: Math.abs(x1 - x2),
-						height: 5
-					});
-				}
-			});
-			
-			parentLyph.inside.jq.children('.foreground').append(result.node);
-		}
+		
+		/* wait until we can get parentLyph.element */
+		// TODO: create 'element ready' promise for this
+		await new Promise((resolve) => { setTimeout(resolve) });
+		
+		this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
+			if (x1 === x2) {
+				result.attr({
+					x: x1-2,
+					y: y1,
+					width: 5,
+					height: Math.abs(y1 - y2)
+				});
+			} else {
+				result.attr({
+					x: x1,
+					y: y1-2,
+					width: Math.abs(x1 - x2),
+					height: 5
+				});
+			}
+		});
+		
+		this.root.inside.jq.children('.foreground').append(this.element);
 	}
 	
 	get draggable() { return false }

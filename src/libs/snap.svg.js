@@ -2,14 +2,14 @@ import $    from '../libs/jquery.js';
 import Snap from 'snapsvg-cjs';
 import 'snap.svg.zpd';
 
-let sharedPaper = new Snap();
+let paper = Snap('#svg');
 
-$(sharedPaper.node).css({
-	display: 'none'
-});
+// $(paper.node).css({
+// 	display: 'none'
+// });
 
 export function gElement() {
-	return sharedPaper.g();
+	return paper.g();
 }
 
 export default Snap;

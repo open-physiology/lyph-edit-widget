@@ -8,6 +8,7 @@ import isPlainObject from 'lodash-bound/isPlainObject';
 import isFunction from 'lodash-bound/isFunction';
 
 import _isEqual from 'lodash/isEqual';
+import _isBoolean from 'lodash/isBoolean';
 
 import assert from 'power-assert';
 
@@ -231,3 +232,5 @@ export const event = (options = {}) => (target, key) => {
 	target::set(['constructor', $$events, name], options);
 	return { get() { return this.e(name) } };
 };
+
+export const flag = (initial) => property({ isValid: _isBoolean, initial });

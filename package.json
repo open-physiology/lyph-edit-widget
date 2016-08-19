@@ -34,6 +34,7 @@
     "babel-polyfill": "6",
     "babel-preset-es2015": "6",
     "imports-loader": "^0.6.5",
+    "indent-string": "^3.0.0",
     "json-loader": "^0.5.4",
     "power-assert": "~1",
     "webpack": "~1"

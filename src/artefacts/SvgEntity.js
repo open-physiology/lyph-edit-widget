@@ -12,16 +12,17 @@ import {of} from 'rxjs/observable/of';
 import {filter} from 'rxjs/operator/filter';
 import {startWith} from 'rxjs/operator/startWith';
 import {pairwise} from 'rxjs/operator/pairwise';
+import {takeUntil} from 'rxjs/operator/takeUntil';
 
 import isFunction from 'lodash-bound/isFunction';
 
 import SvgObject from './SvgObject.js';
 import ObservableSet from "../util/ObservableSet";
+import {subscribe_} from "../util/rxjs";
 
 export default class SvgEntity extends SvgObject {
 
-	model;
-	
+	@property() model;
 	@property() root;
 	@property() parent;
 	children = new ObservableSet();
@@ -35,12 +36,10 @@ export default class SvgEntity extends SvgObject {
 		/* maintain the root of this entity */
 		this.p('parent')
 			::switchMap(e => e ? e.p('root') : of(this))
-			.subscribe( this.p('root') );
+			::subscribe_( this.p('root') , n=>n() );
 		
 		/* maintain the children of the parent of this entity */
-		this.p('parent')
-			::startWith(null)
-			::pairwise()
+		this.p('parent')::startWith(null)::pairwise()
 			.subscribe(([prev, curr]) => {
 				if (prev) { prev.children.delete(this) }
 				if (curr) { curr.children.add   (this) }
@@ -51,20 +50,34 @@ export default class SvgEntity extends SvgObject {
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
 		
 		/* when a parent is dragging, its children are dragging */
-		const $$dragSub = Symbol('$$dragSub');
-		this.p('parent')::startWith(null)::pairwise().subscribe(([prev, curr]) => {
-			if (prev) { prev[$$dragSub].unsubscribe(); delete prev[$$dragSub]; }
-			if (curr) { curr[$$dragSub] = curr.p('dragging').subscribe( this.p('dragging') ) }
-		});
+		this.p('parent')
+			::switchMap(parent => parent ? parent.p('dragging') : of(true))
+			::subscribe_( this.p('dragging') , n=>n() );
+		
 	}
 	
 	findAncestor(other) {
 		let pred = other::isFunction() ? other : (o => o === other);
-		let current = this;
-		while (current && !pred(current)) { current = current.parent }
-		return current || null;
+		if (pred(this)) { return this }
+		return this.parent && this.parent.findAncestor(pred);
+		
+		// let current = this;
+		// while (current && !pred(current)) { current = current.parent }
+		// return current || null;
 	}
-
+	
+	*traverse(order = 'pre') {
+		if (order === 'pre') {
+			yield this;
+		}
+		for (let child of this.children) {
+			yield* child.traverse();
+		}
+		if (order !== 'pre') {
+			yield this;
+		}
+	}
+	
 }
 
 

@@ -16,14 +16,13 @@ export default class Tool  {
 	
 	constructor(context, {events}) {
 		this[$$context] = context;
-		this[$$root] = root;
 		
 		const {root} = context;
 		
 		const jqArgs = [events.join(' '), '[controller]'];
 		this[$$domEvents] = fromEventPattern(
-			(handler) => { root.on (...jqArgs, handler) },
-			(handler) => { root.off(...jqArgs, handler) },
+			(handler) => { root.element.jq.on (...jqArgs, handler) },
+			(handler) => { root.element.jq.off(...jqArgs, handler) },
 			(event) => {
 				event.controller = $(event.currentTarget).data('controller');
 				return event;
@@ -31,7 +30,7 @@ export default class Tool  {
 		);
 		
 		/* create svg point for scratch use */
-		this[$$scratchSVGPoint] = this[$$context].root[0].createSVGPoint();
+		this[$$scratchSVGPoint] = root.element.createSVGPoint();
 	}
 	
 	e(event) {
@@ -40,7 +39,7 @@ export default class Tool  {
 	}
 	
 	xy_page_to_viewport({pageX = 0, pageY = 0, x = pageX, y = pageY}) {
-		const offset = this[$$context].root.offset();
+		const offset = $(this[$$context].root).offset();
 		return {
 			x: x - offset.left,
 			y: y - offset.top
@@ -51,7 +50,7 @@ export default class Tool  {
 		this[$$scratchSVGPoint].x = x;
 		this[$$scratchSVGPoint].y = y;
         return this[$$scratchSVGPoint]
-	        .matrixTransform(this[$$context].canvas[0].getCTM().inverse())
+	        .matrixTransform(this[$$context].root.inside.getCTM().inverse())
 	        ::pick('x', 'y');
 	}
 	

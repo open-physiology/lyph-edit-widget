@@ -2,10 +2,13 @@
   <dictionary name="mhelvens">
     <words>
       <w>attrs</w>
+      <w>ctrlr</w>
       <w>dasharray</w>
       <w>deregister</w>
+      <w>partonomy</w>
       <w>rearg</w>
       <w>rects</w>
+      <w>tump</w>
     </words>
   </dictionary>
 </component>

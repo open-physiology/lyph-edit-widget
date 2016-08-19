@@ -16,6 +16,7 @@ import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {xy_add} from "../util/misc";
+import {subscribe_} from "../util/rxjs";
 
 
 const $$panTools = Symbol('$$panTools');
@@ -26,25 +27,23 @@ export default class PanTool extends Tool {
 	constructor(context) {
 		super(context, { events: [] });
 		
-		let {root, paper} = context;
+		let {root} = context;
 		
 		if (!context[$$panTools]) {
 			
 			context[$$panTools] = true;
-		
-			window.E = ""; // <-- ugly hack to fix snap.svg.zpd bug
 			
 			context.newProperty('pan', { initial: { x: 0, y: 0 } });
 			
 			/* manifest pan on the canvas */
-			context.p('pan').subscribe(({x, y}) => { paper.panTo(x, y) });
+			context.p('pan').subscribe(({x, y}) => { root.element.svg.panTo(x, y) });
 			
 		}
 		
 		/* relevant mouse-event streams */
-		const mousedown = fromEvent(context.root, 'mousedown');
-		const mousemove = fromEvent(context.root, 'mousemove');
-		const mouseup   = fromEvent($(window),    'mouseup'  );
+		const mousedown = fromEvent(root.element.jq, 'mousedown');
+		const mousemove = fromEvent(root.element.jq, 'mousemove');
+		const mouseup   = fromEvent($(window),       'mouseup'  );
 		
 		/* maintaining pan */
 		const canvasDrag = mousedown
@@ -55,7 +54,7 @@ export default class PanTool extends Tool {
 				x: i.x + m.pageX - d.pageX,
 				y: i.y + m.pageY - d.pageY
 			}))
-			.subscribe( context.p('pan') );
+			::subscribe_( context.p('pan') , n=>n() );
 		
 	}
 	

@@ -13,6 +13,7 @@ import _add from 'lodash/add';
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
+import {subscribe_} from "../util/rxjs";
 
 
 const $$zoomTools = Symbol('$$zoomTools');
@@ -22,10 +23,9 @@ export default class ZoomTool extends Tool {
 	constructor(context) {
 		super(context, { events: [] });
 		
-		let {root, paper} = context;
+		let {root} = context;
 		
 		if (!context[$$zoomTools]) {
-			
 			context[$$zoomTools] = true;
 			
 			context.newProperty('zoomSensitivity', { initial: 0.2 });
@@ -34,18 +34,17 @@ export default class ZoomTool extends Tool {
 			
 			/* maintain zoom-factor through exponent and sensitivity */
 			context.p(
-				['zoomExponent', 'zoomSensitivity'], [],
-				(zExp, zSens) => Math.pow(1 + zSens, zExp)
-			).subscribe( context.p('zoomFactor') );
+				['zoomExponent', 'zoomSensitivity'],
+				(zExp, zSens) => Math.pow(1 + zSens, zExp))
+				::subscribe_( context.p('zoomFactor') , n=>n() );
 		
 			/* zoom as specified by current zoom factor */
 			context.p('zoomFactor').subscribe((zFact) => {
-				paper.zoomTo(zFact, 100);
+				root.element.svg.zoomTo(zFact, 100);
 			});
-			
 		}
 		
-		const mousewheel = fromEvent(root, 'mousewheel');
+		const mousewheel = fromEvent(root.element.jq, 'mousewheel');
 		
 		/* maintain zoom-exponent by mouse-wheel */
 		mousewheel
@@ -53,7 +52,7 @@ export default class ZoomTool extends Tool {
 			.do(stopPropagation)
 			::map(e => e.deltaY)
 			::scan(_add, 0)
-			.subscribe( context.p('zoomExponent') );
+			::subscribe_( context.p('zoomExponent') , n=>n() );
 		
 	}
 	
