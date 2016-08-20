@@ -1,5 +1,5 @@
 import LyphRectangle from './artefacts/LyphRectangle';
-import model from './model';
+import './model'; // sets a global (for now)
 
 import ValueTracker from './util/ValueTracker';
 
@@ -26,17 +26,17 @@ import BorderToggleTool from "./tools/BorderToggleTool";
 ////////////////////////////////////////////////////////////////////////////////
 
 let vesselWall, bloodLayer, node1, node2;
-let bloodVessel = model.classes.Lyph.new({
+let bloodVessel = window.module.classes.Lyph.new({
 	name: 'Blood Vessel',
 	layers: [
-		vesselWall = model.classes.Lyph.new(
+		vesselWall = window.module.classes.Lyph.new(
 	    	{ name: 'Vessel Wall' },
 		    { createRadialBorders: true }
 	    ),
-		bloodLayer = model.classes.Lyph.new({
+		bloodLayer = window.module.classes.Lyph.new({
 			name: 'Blood Layer',
 			parts: [
-				model.classes.Lyph.new(
+				window.module.classes.Lyph.new(
 					{ name: 'Sublyph' },
 					{ createAxis: true, createRadialBorders: true }
 				)
@@ -44,14 +44,14 @@ let bloodVessel = model.classes.Lyph.new({
 		}, { createRadialBorders: true })
 	],
 	nodes: [
-		node1 = model.classes.Node.new()
+		node1 = window.module.classes.Node.new()
 	]
 }, { createAxis: true, createRadialBorders: true });
 
-let brain = model.classes.Lyph.new({
+let brain = window.module.classes.Lyph.new({
 	name: 'Brain',
 	nodes: [
-		node2 = model.classes.Node.new()
+		node2 = window.module.classes.Node.new()
 	]
 }, { createAxis: true, createRadialBorders: true });
 
@@ -59,32 +59,33 @@ let brain = model.classes.Lyph.new({
 ////////////////////////////////////////////////////////////////////////////////
 
 
-let root = new Canvas();
+let root = new Canvas({ element: $('#svg') });
 
-let context = new ValueTracker()::assign({ root });
-
-new SelectTool  (context);
-new DragDropTool(context);
-new ResizeTool  (context);
-new ZoomTool    (context);
-new PanTool     (context);
-new BorderToggleTool(context);
+new SelectTool      (root.context);
+new DragDropTool    (root.context);
+new ResizeTool      (root.context);
+new ZoomTool        (root.context);
+new PanTool         (root.context);
+new BorderToggleTool(root.context);
 
 /* print zoom-level */
-context.p(
+root.context.p(
 	['zoomExponent', 'zoomFactor'],
 	(zExp, zFact) => `Zoom: ${zExp} (${Math.round(zFact*100)}%)`
 ).subscribe(::($('#info').text));
 
-/* put a test lyph in there */ // TODO: remove; use toolbar to add stuff
+
+/* put a test lyph or two in there */ // TODO: remove; use toolbar to add stuff
 let bloodVesselRectangle = new LyphRectangle({
 	model:  bloodVessel,
 	x:      100,
 	y:      100,
 	width:  200,
 	height: 150
+	// rotation: 45 // TODO: remove when done testing
 });
 bloodVesselRectangle.parent = root;
+
 
 let brainRectangle = new LyphRectangle({
 	model:  brain,
@@ -100,7 +101,6 @@ combineLatest(
 	bloodVesselRectangle.freeFloatingStuff.e('add')::filter(c=>c instanceof NodeGlyph),
 	brainRectangle      .freeFloatingStuff.e('add')::filter(c=>c instanceof NodeGlyph)
 )::take(1).subscribe(([node1, node2]) => {
-	debugger;
 	let processEdge = new ProcessLine({
 		source: node1,
 		target: node2

@@ -55,10 +55,10 @@ export default class ProcessLine extends SvgEntity {
 			strokeLinecap: 'round'
 		});
 		
-		this.p('source')::filter(n=>n)::switchMap(n=>n.p('x')).subscribe((x) => { line.attr({ x1: x  }) });
-		this.p('source')::filter(n=>n)::switchMap(n=>n.p('y')).subscribe((y) => { line.attr({ y1: y  }) });
-		this.p('target')::filter(n=>n)::switchMap(n=>n.p('x')).subscribe((x) => { line.attr({ x2: x  }) });
-		this.p('target')::filter(n=>n)::switchMap(n=>n.p('y')).subscribe((y) => { line.attr({ y2: y  }) });
+		this.p('source')::filter(n=>n)::switchMap(n=>n.p(['x', 'y', 'gTransform'], (x,y,t)=>t.x(x,y))).subscribe((x) => { line.attr({ x1: x  }) });
+		this.p('source')::filter(n=>n)::switchMap(n=>n.p(['x', 'y', 'gTransform'], (x,y,t)=>t.y(x,y))).subscribe((y) => { line.attr({ y1: y  }) });
+		this.p('target')::filter(n=>n)::switchMap(n=>n.p(['x', 'y', 'gTransform'], (x,y,t)=>t.x(x,y))).subscribe((x) => { line.attr({ x2: x  }) });
+		this.p('target')::filter(n=>n)::switchMap(n=>n.p(['x', 'y', 'gTransform'], (x,y,t)=>t.y(x,y))).subscribe((y) => { line.attr({ y2: y  }) });
 		
 		/* return representation(s) of element */
 		return {

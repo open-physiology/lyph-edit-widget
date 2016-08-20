@@ -32,11 +32,12 @@ import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import BorderLine from './BorderLine';
 
-import model from '../model';
 import LyphRectangle from "./LyphRectangle";
 import ProcessLine from "./ProcessLine";
+import ValueTracker from "../util/ValueTracker";
 
-
+const $$context = Symbol('$$context');
+const $$existingSVG = Symbol('$$existingSVG');
 const $$backgroundColor        = Symbol('$$backgroundColor');
 const $$existingArtefactsToUse = Symbol('$$existingArtefactsToUse');
 
@@ -46,16 +47,24 @@ export default class Canvas extends SvgEntity {
 	constructor(options = {}) {
 		super(options);
 		
-		this.setFromObject(options, ['model'], { dragging: false });
+		this[$$context] = new ValueTracker()::assign({ root: this });
+		
+		this[$$existingSVG] = $(options.element);
+		
+		this.setFromObject(options, ['model'], {
+			dragging: false
+		});
 		
 		if (!this.model) { this.model = { name: '(canvas)' } }
 		
 	}
 	
+	get context() { return this[$$context] }
+	
 	createElement() {
 		window.E  = ""; // <-- ugly hack to fix snap.svg.zpd bug
-		let root  = $('#svg');
-		let paper = Snap('#svg');
+		let root  = this[$$existingSVG] || $(`<svg></svg>`);
+		let paper = Snap(root[0]);
 		paper.zpd({
 			pan:  false,
 			zoom: false,
@@ -87,7 +96,7 @@ export default class Canvas extends SvgEntity {
 		
 	}
 	
-	drop(droppedEntity) {
+	drop(droppedEntity, originalDropzone = this) {
 		droppedEntity.parent = this;
 		droppedEntity.free = true;
 		this.inside.jq.children('.lyphs').append(droppedEntity.element);

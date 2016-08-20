@@ -29,6 +29,7 @@ import {merge} from 'rxjs/observable/merge';
 import {range} from 'rxjs/observable/range';
 import {interval} from 'rxjs/observable/interval';
 
+import {sampleTime} from 'rxjs/operator/sampleTime';
 import {filter} from 'rxjs/operator/filter';
 import {pairwise} from 'rxjs/operator/pairwise';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
@@ -48,7 +49,6 @@ import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import BorderLine from './BorderLine';
 
-import model from '../model';
 import {subscribe_} from "../util/rxjs";
 import {shiftedMovementFor, log} from "../util/rxjs";
 import {flag} from "../util/ValueTracker";
@@ -69,6 +69,11 @@ export default class LyphRectangle extends SvgEntity {
 	@property({ isValid: _isNumber                                        }) y;
 	@property({ isValid(w) { return w::isNumber() && w > this.minWidth  } }) width;
 	@property({ isValid(h) { return h::isNumber() && h > this.minHeight } }) height;
+	@property({ isValid(r) { return r::isNumber() }, initial: 0           }) rotation;
+	
+	
+	@property({ initial: Snap.matrix() }) gTransform; // local --> global
+	
 	
 	get axisThickness() { return this.model.axis && this.showAxis ? 14 : 0 }
 	
@@ -93,7 +98,7 @@ export default class LyphRectangle extends SvgEntity {
 		super(options);
 		
 		this.setFromObject(options, [
-			'x', 'y', 'width', 'height'
+			'x', 'y', 'width', 'height', 'rotation'
 		], { showAxis: !!this.model.axis });
 		
 		this[$$toBeRecycled] = new WeakMap();
@@ -127,6 +132,12 @@ export default class LyphRectangle extends SvgEntity {
 	createElement() {
 		const at = this.axisThickness;
 		const group = gElement();
+		
+		
+		this.p(['rotation', 'x', 'y', 'width', 'height'],
+				(r, x, y, w, h) => `R${r},${x+w/2},${y+h/2}`)
+		    .subscribe( ::group.transform );
+		
 				
 		const lyphRectangle = (() => {
 			
@@ -166,6 +177,10 @@ export default class LyphRectangle extends SvgEntity {
 			let result = gElement().g().attr({
 				pointerEvents : 'none'
 			});
+			
+			this.p('gTransform')::filter(v=>v)::map(m=>m.toTransformString())
+			    .subscribe( ::result.transform );
+			
 			result.rect().attr({
 				stroke:      'black',
 				strokeWidth: '3px'
@@ -339,7 +354,47 @@ export default class LyphRectangle extends SvgEntity {
 	
 	async afterCreateElement() {
 		await super.afterCreateElement();
-				
+		
+		
+		combineLatest(
+			this.p('parent')::switchMap(p=>p?p.p('gTransform'):of(0)),
+			this.p('rotation'),
+			this.p('x'), this.p('y'),
+			this.p('width'), this.p('height')
+		)
+			// ::sampleTime(1000/30)
+			::map(()=>this.element.svg.transform().globalMatrix)
+			::subscribe_( this.p('gTransform'), v=>v() );
+		
+		// /* convert between coordinate systems */
+		// let scratchSVGPoint = this.root.element.createSVGPoint();
+		// this.p(['x', 'y'], (x, y) => {
+		// 	scratchSVGPoint.x = x;
+		// 	scratchSVGPoint.y = y;
+	     //    return scratchSVGPoint
+		//         .matrixTransform(this.element.getCTM().inverse())
+		//         ::pick('x', 'y');
+		// }).subscribe(({x, y}) => {
+		// 	this.gx = x;
+		// 	this.gy = y;
+		// });
+		// this.p(['gx', 'gy'], (x, y) => {
+		// 	scratchSVGPoint.x = x;
+		// 	scratchSVGPoint.y = y;
+	     //    return scratchSVGPoint
+		//         .matrixTransform(this.element.getCTM())
+		//         ::pick('x', 'y');
+		// }).subscribe(({x, y}) => {
+		// 	const E = 10e-6;
+		// 	if (Math.abs(x-this.x) > E || Math.abs(y-this.y) > E) {
+		// 		this.x = x;
+		// 		this.y = y;
+		// 	}
+		// });
+		
+		
+		
+		
 		/* new layer in the model --> new layer artifact */
 		this[$$relativeLayerPosition] = new WeakMap();
 		this.model['-->HasLayer'].e('add')
@@ -475,7 +530,7 @@ export default class LyphRectangle extends SvgEntity {
 	
 	get draggable() { return true }
 	
-	drop(droppedEntity, originalDropzone) {
+	drop(droppedEntity, originalDropzone = this) {
 		if (originalDropzone === this) {
 			// dropped directly into this lyph rectangle
 			if ([LyphRectangle, NodeGlyph].includes(droppedEntity.constructor)) {
@@ -492,7 +547,7 @@ export default class LyphRectangle extends SvgEntity {
 					::max() + 1;
 				this.model.layers.delete(droppedEntity.model);
 				this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
-				model.classes.HasLayer.new({
+				window.module.classes.HasLayer.new({
 					[1]: this.model,
 					[2]: droppedEntity.model,
 					relativePosition: newPosition
