@@ -61,10 +61,15 @@ export default class Canvas extends SvgEntity {
 	
 	get context() { return this[$$context] }
 	
+	gElement() {
+		return this._paper.g();
+	}
+	
 	createElement() {
 		window.E  = ""; // <-- ugly hack to fix snap.svg.zpd bug
 		let root  = this[$$existingSVG] || $(`<svg></svg>`);
 		let paper = Snap(root[0]);
+		this._paper = paper;
 		paper.zpd({
 			pan:  false,
 			zoom: false,

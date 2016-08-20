@@ -131,7 +131,7 @@ export default class LyphRectangle extends SvgEntity {
 	
 	createElement() {
 		const at = this.axisThickness;
-		const group = gElement();
+		const group = this.root.gElement();
 		
 		
 		this.p(['rotation', 'x', 'y', 'width', 'height'],
@@ -174,7 +174,7 @@ export default class LyphRectangle extends SvgEntity {
 		})();
 		
 		const highlightedBorder = (() => {
-			let result = gElement().g().attr({
+			let result = this.root.gElement().g().attr({
 				pointerEvents : 'none'
 			});
 			

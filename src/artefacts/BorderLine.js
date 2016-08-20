@@ -50,7 +50,7 @@ export default class BorderLine extends SvgEntity {
 	}
 	
 	createElement() {
-		const group = gElement();
+		const group = this.root.gElement();
 		
 		{
 			let result = group.line().attr({
@@ -73,47 +73,54 @@ export default class BorderLine extends SvgEntity {
 		
 		
 		
-		// const highlightedBorder = (() => {
-		// 	let result = gElement().g().attr({
-		// 		pointerEvents : 'none'
-		// 	});
-		//
-		// 	this.p('gTransform')::filter(v=>v)::map(m=>m.toTransformString())
-		// 	    .subscribe( ::result.transform );
-		//
-		// 	result.rect().attr({
-		// 		stroke:      'black',
-		// 		strokeWidth: '3px'
-		// 	});
-		// 	result.rect().attr({
-		// 		stroke:      'white',
-		// 		strokeWidth: '1px'
-		// 	});
-		// 	let rects = result.selectAll('rect').attr({
-		// 		fill:            'none',
-		// 		shapeRendering:  'crispEdges',
-		// 		pointerEvents :  'none',
-		// 		strokeDasharray: '8, 5', // 13
-		// 		strokeDashoffset: 0
-		// 	});
-		// 	interval(1000/60)
-		// 		::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
-		// 		.subscribe( ::rects.attr );
-		//
-		//
-		// 	this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-		// 		visibility: highlighted && !dragging ? 'visible' : 'hidden'
-		// 	})).subscribe( ::result.attr );
-		//
-		// 	this.p('x')     .subscribe((x)      => { rects.attr({ x:      x-4      }) });
-		// 	this.p('y')     .subscribe((y)      => { rects.attr({ y:      y-4      }) });
-		// 	this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
-		// 	this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
-		//
-		// 	$('#foreground').append(result.node);
-		//
-		// 	return result.node;
-		// })();
+		const highlightedBorder = (() => {
+			let result = this.root.gElement().g().attr({
+				pointerEvents : 'none'
+			});
+
+			this.p('gTransform')::filter(v=>v)::map(m=>m.toTransformString())
+			    .subscribe( ::result.transform );
+
+			result.rect().attr({
+				stroke:      'black',
+				strokeWidth: '3px'
+			});
+			result.rect().attr({
+				stroke:      'white',
+				strokeWidth: '1px'
+			});
+			let rects = result.selectAll('rect').attr({
+				fill:            'none',
+				shapeRendering:  'crispEdges',
+				pointerEvents :  'none',
+				strokeDasharray: '8, 5', // 13
+				strokeDashoffset: 0
+			});
+			interval(1000/60)
+				::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
+				.subscribe( ::rects.attr );
+
+
+			this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
+				visibility: highlighted && !dragging ? 'visible' : 'hidden'
+			})).subscribe( ::result.attr );
+
+			this.p(['x1', 'x2', 'y1', 'y2'], (x1, x2, y1, y2) => ({
+				x:      Math.min(x1, x2) - 4,
+				y:      Math.min(y1, y2) - 4,
+				width:  Math.abs(x1-x2) + 8,
+				height: Math.abs(y1-y2) + 8
+			})).subscribe( ::rects.attr );
+			
+			// this.p('x1')     .subscribe((x)      => { rects.attr({ x:      x-4      }) });
+			// this.p('y')     .subscribe((y)      => { rects.attr({ y:      y-4      }) });
+			// this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
+			// this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
+
+			$('#foreground').append(result.node);
+
+			return result.node;
+		})();
 		
 		
 		
@@ -127,7 +134,7 @@ export default class BorderLine extends SvgEntity {
 		
 		let parentLyph = this.findAncestor(a => a.free);
 		
-		let result = gElement().rect();
+		let result = this.root.gElement().rect();
 		
 		$(result.node)
 			.css({ opacity: 0 })

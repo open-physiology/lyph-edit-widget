@@ -53,7 +53,7 @@ export default class NodeGlyph extends SvgEntity {
 	
 	createElement() {
 		
-		const group = gElement();
+		const group = this.root.gElement();
 		
 		let glyph = group.circle().attr({
 			strokeWidth: '1px',
@@ -68,7 +68,7 @@ export default class NodeGlyph extends SvgEntity {
 		
 		
 		const highlightedBorder = (() => {
-			let result = gElement().g().attr({
+			let result = this.root.gElement().g().attr({
 				pointerEvents : 'none'
 			});
 			let thickCircle = result.circle().attr({

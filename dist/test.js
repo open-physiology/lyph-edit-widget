@@ -15310,13 +15310,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var paper = (0, _snapsvgCjs2.default)('#svg');
+	// let paper = Snap('#svg');
 	
 	// $(paper.node).css({
 	// 	display: 'none'
 	// });
 	
-	function gElement() {
+	function gElement(paper) {
 		return paper.g();
 	}
 	
@@ -16548,7 +16548,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			value: function createElement() {
 				var _this2 = this;
 	
-				var group = (0, _snap.gElement)();
+				var group = this.root.gElement();
 	
 				{
 					(function () {
@@ -16581,48 +16581,62 @@ return /******/ (function(modules) { // webpackBootstrap
 					})();
 				}
 	
-				// const highlightedBorder = (() => {
-				// 	let result = gElement().g().attr({
-				// 		pointerEvents : 'none'
-				// 	});
-				//
-				// 	this.p('gTransform')::filter(v=>v)::map(m=>m.toTransformString())
-				// 	    .subscribe( ::result.transform );
-				//
-				// 	result.rect().attr({
-				// 		stroke:      'black',
-				// 		strokeWidth: '3px'
-				// 	});
-				// 	result.rect().attr({
-				// 		stroke:      'white',
-				// 		strokeWidth: '1px'
-				// 	});
-				// 	let rects = result.selectAll('rect').attr({
-				// 		fill:            'none',
-				// 		shapeRendering:  'crispEdges',
-				// 		pointerEvents :  'none',
-				// 		strokeDasharray: '8, 5', // 13
-				// 		strokeDashoffset: 0
-				// 	});
-				// 	interval(1000/60)
-				// 		::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
-				// 		.subscribe( ::rects.attr );
-				//
-				//
-				// 	this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-				// 		visibility: highlighted && !dragging ? 'visible' : 'hidden'
-				// 	})).subscribe( ::result.attr );
-				//
-				// 	this.p('x')     .subscribe((x)      => { rects.attr({ x:      x-4      }) });
-				// 	this.p('y')     .subscribe((y)      => { rects.attr({ y:      y-4      }) });
-				// 	this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
-				// 	this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
-				//
-				// 	$('#foreground').append(result.node);
-				//
-				// 	return result.node;
-				// })();
+				var highlightedBorder = function () {
+					var _context2;
 	
+					var result = _this2.root.gElement().g().attr({
+						pointerEvents: 'none'
+					});
+	
+					(_context2 = (_context2 = _this2.p('gTransform'), _filter.filter).call(_context2, function (v) {
+						return v;
+					}), _map.map).call(_context2, function (m) {
+						return m.toTransformString();
+					}).subscribe(result.transform.bind(result));
+	
+					result.rect().attr({
+						stroke: 'black',
+						strokeWidth: '3px'
+					});
+					result.rect().attr({
+						stroke: 'white',
+						strokeWidth: '1px'
+					});
+					var rects = result.selectAll('rect').attr({
+						fill: 'none',
+						shapeRendering: 'crispEdges',
+						pointerEvents: 'none',
+						strokeDasharray: '8, 5', // 13
+						strokeDashoffset: 0
+					});
+					(_context2 = (0, _interval.interval)(1000 / 60), _map.map).call(_context2, function (n) {
+						return { strokeDashoffset: -(n / 3 % 13) };
+					}).subscribe(rects.attr.bind(rects));
+	
+					_this2.p(['highlighted', 'dragging'], function (highlighted, dragging) {
+						return {
+							visibility: highlighted && !dragging ? 'visible' : 'hidden'
+						};
+					}).subscribe(result.attr.bind(result));
+	
+					_this2.p(['x1', 'x2', 'y1', 'y2'], function (x1, x2, y1, y2) {
+						return {
+							x: Math.min(x1, x2) - 4,
+							y: Math.min(y1, y2) - 4,
+							width: Math.abs(x1 - x2) + 8,
+							height: Math.abs(y1 - y2) + 8
+						};
+					}).subscribe(rects.attr.bind(rects));
+	
+					// this.p('x1')     .subscribe((x)      => { rects.attr({ x:      x-4      }) });
+					// this.p('y')     .subscribe((y)      => { rects.attr({ y:      y-4      }) });
+					// this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
+					// this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
+	
+					(0, _jquery2.default)('#foreground').append(result.node);
+	
+					return result.node;
+				}();
 	
 				/* return representation(s) of element */
 				return { element: group.node };
@@ -16631,26 +16645,26 @@ return /******/ (function(modules) { // webpackBootstrap
 			key: 'afterCreateElement',
 			value: function () {
 				var _ref = _asyncToGenerator(regeneratorRuntime.mark(function _callee() {
-					var _context2;
+					var _context3;
 	
 					var parentLyph, result;
-					return regeneratorRuntime.wrap(function _callee$(_context3) {
+					return regeneratorRuntime.wrap(function _callee$(_context4) {
 						while (1) {
-							switch (_context3.prev = _context3.next) {
+							switch (_context4.prev = _context4.next) {
 								case 0:
-									_context3.next = 2;
+									_context4.next = 2;
 									return _get(Object.getPrototypeOf(BorderLine.prototype), 'afterCreateElement', this).call(this);
 	
 								case 2:
 									parentLyph = this.findAncestor(function (a) {
 										return a.free;
 									});
-									result = (0, _snap.gElement)().rect();
+									result = this.root.gElement().rect();
 	
 	
 									(0, _jquery2.default)(result.node).css({ opacity: 0 }).attr('controller', '' + this).data('controller', this);
 	
-									(_context2 = this.p('movable'), _map.map).call(_context2, function (m) {
+									(_context3 = this.p('movable'), _map.map).call(_context3, function (m) {
 										return { pointerEvents: m ? 'inherit' : 'none' };
 									}).subscribe(result.attr.bind(result));
 	
@@ -16685,7 +16699,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 								case 8:
 								case 'end':
-									return _context3.stop();
+									return _context4.stop();
 							}
 						}
 					}, _callee, this);
@@ -23441,7 +23455,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				var _this2 = this;
 	
 				var at = this.axisThickness;
-				var group = (0, _snap.gElement)();
+				var group = this.root.gElement();
 	
 				this.p(['rotation', 'x', 'y', 'width', 'height'], function (r, x, y, w, h) {
 					return 'R' + r + ',' + (x + w / 2) + ',' + (y + h / 2);
@@ -23488,7 +23502,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				var highlightedBorder = function () {
 					var _context4;
 	
-					var result = (0, _snap.gElement)().g().attr({
+					var result = _this2.root.gElement().g().attr({
 						pointerEvents: 'none'
 					});
 	
@@ -24347,7 +24361,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			value: function createElement() {
 				var _this2 = this;
 	
-				var group = (0, _snap.gElement)();
+				var group = this.root.gElement();
 	
 				var glyph = group.circle().attr({
 					strokeWidth: '1px',
@@ -24366,7 +24380,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				var highlightedBorder = function () {
 					var _context;
 	
-					var result = (0, _snap.gElement)().g().attr({
+					var result = _this2.root.gElement().g().attr({
 						pointerEvents: 'none'
 					});
 					var thickCircle = result.circle().attr({
@@ -29795,7 +29809,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			value: function createElement() {
 				var _context;
 	
-				var group = (0, _snap.gElement)();
+				var group = this.root.gElement();
 	
 				var line = group.line().attr({
 					strokeWidth: '3px',
@@ -54961,11 +54975,17 @@ return /******/ (function(modules) { // webpackBootstrap
 		}
 	
 		_createClass(Canvas, [{
+			key: 'gElement',
+			value: function gElement() {
+				return this._paper.g();
+			}
+		}, {
 			key: 'createElement',
 			value: function createElement() {
 				window.E = ""; // <-- ugly hack to fix snap.svg.zpd bug
 				var root = this[$$existingSVG] || (0, _jquery2.default)('<svg></svg>');
 				var paper = (0, _snap2.default)(root[0]);
+				this._paper = paper;
 				paper.zpd({
 					pan: false,
 					zoom: false,

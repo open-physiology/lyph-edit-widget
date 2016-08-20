@@ -46,7 +46,7 @@ export default class ProcessLine extends SvgEntity {
 	
 	createElement() {
 		
-		const group = gElement();
+		const group = this.root.gElement();
 		
 		let line = group.line().attr({
 			strokeWidth  : '3px',
