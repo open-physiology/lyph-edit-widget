@@ -70,15 +70,15 @@ export default class SvgObject extends ValueTracker {
 		return this[$$creation];
 	}
 	
-	afterCreateElement() {
+	async afterCreateElement() {
+		/* wait until next tick */
+		await new Promise((resolve) => { setTimeout(resolve) });
+		
 		/* manage 'dragging' property */
 		this.p('dragging').subscribe((dragging) => {
 			this.element.jq.css(dragging
 				? { pointerEvents: 'none', opacity: 0.8 }
 				: { pointerEvents: 'auto', opacity: 1   });
-			// this.element.jq.css(dragging
-			// 	? { pointerEvents: 'none',    opacity: 0.8 }
-			// 	: { pointerEvents: 'inherit', opacity: 1   });
 		});
 	}
 	

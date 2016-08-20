@@ -16,7 +16,8 @@ import uniqueId from 'lodash/uniqueId';
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import {map} from 'rxjs/operator/map';
 import {take} from 'rxjs/operator/take';
-import {toPromise} from 'rxjs/operator/toPromise';
+import {filter} from 'rxjs/operator/filter';
+import {switchMap} from 'rxjs/operator/switchMap';
 
 import chroma from '../libs/chroma.js';
 
@@ -48,15 +49,16 @@ export default class ProcessLine extends SvgEntity {
 		const group = gElement();
 		
 		let line = group.line().attr({
-			strokeWidth   : '3px',
-			stroke        : 'red',
-			pointerEvents : 'none'
+			strokeWidth  : '3px',
+			stroke       : 'red',
+			pointerEvents: 'none',
+			strokeLinecap: 'round'
 		});
 		
-		this.source.p('x').subscribe((x) => { line.attr({ x1: x  }) });
-		this.source.p('y').subscribe((y) => { line.attr({ y1: y  }) });
-		this.target.p('x').subscribe((x) => { line.attr({ x2: x  }) });
-		this.target.p('y').subscribe((y) => { line.attr({ y2: y  }) });
+		this.p('source')::filter(n=>n)::switchMap(n=>n.p('x')).subscribe((x) => { line.attr({ x1: x  }) });
+		this.p('source')::filter(n=>n)::switchMap(n=>n.p('y')).subscribe((y) => { line.attr({ y1: y  }) });
+		this.p('target')::filter(n=>n)::switchMap(n=>n.p('x')).subscribe((x) => { line.attr({ x2: x  }) });
+		this.p('target')::filter(n=>n)::switchMap(n=>n.p('y')).subscribe((y) => { line.attr({ y2: y  }) });
 		
 		/* return representation(s) of element */
 		return {
@@ -66,29 +68,7 @@ export default class ProcessLine extends SvgEntity {
 	}
 	
 	async afterCreateElement() {
-		super.afterCreateElement();
-		
-		/* wait until we can get parentLyph.element */
-		// TODO: create 'element ready' promise for this
-		await new Promise((resolve) => { setTimeout(resolve) });
-		
-		this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
-			if (x1 === x2) {
-				result.attr({
-					x: x1-2,
-					y: y1,
-					width: 5,
-					height: Math.abs(y1 - y2)
-				});
-			} else {
-				result.attr({
-					x: x1,
-					y: y1-2,
-					width: Math.abs(x1 - x2),
-					height: 5
-				});
-			}
-		});
+		await super.afterCreateElement();
 		
 		this.root.inside.jq.children('.foreground').append(this.element);
 	}

@@ -18,6 +18,7 @@ import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor} from "../util/rxjs";
+import {afterMatching} from "../util/rxjs";
 
 
 export default class DragDropTool extends Tool {
@@ -27,14 +28,14 @@ export default class DragDropTool extends Tool {
 		
 		const {root} = context;
 		
-		const mousemove = fromEvent(root.element.jq, 'mousemove');
-		const mouseup   = fromEvent($(window),       'mouseup'  );
-		
+		const mousemove = fromEvent($(window), 'mousemove');
+		const mouseup   = fromEvent($(window), 'mouseup'  );
 		
 		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
 			::withLatestFrom(context.p('selected'))
+			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,draggedArtefact]) => draggedArtefact.draggable)
 			.subscribe(([down, draggedArtefact]) => {
 				
@@ -52,18 +53,25 @@ export default class DragDropTool extends Tool {
 					.subscribe( draggedArtefact::assign );
 				
 				/* stop dragging and drop */
+				let initial_dragged_xy     = draggedArtefact::pick('x', 'y');
+				let initial_dragged_parent = draggedArtefact.parent;
 				mouseup::withLatestFrom(context.p('selected'))::take(1)
 					.subscribe(([up, recipient]) => {
 						
 						/* either drop it on the recipient */
+						let success = false;
 						if (recipient && recipient.drop::isFunction()) {
-							recipient.drop(draggedArtefact, up);
-						} else {
+							success = recipient.drop(draggedArtefact, recipient) !== false;
+						}
+						
+						if (!success) {
 							draggedArtefact::assign(initial_dragged_xy);
 							draggedArtefact.parent = initial_dragged_parent;
 						}
+						
 						/* stop dragging */
 						draggedArtefact.dragging = false;
+						draggedArtefact.element.jq.mouseenter();
 				    });
 				
 			});

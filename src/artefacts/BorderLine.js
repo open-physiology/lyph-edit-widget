@@ -48,78 +48,69 @@ export default class BorderLine extends SvgEntity {
 	}
 	
 	createElement() {
-		
-		const dimKeys = ['x1', 'y1', 'x2', 'y2'];
-		
 		const group = gElement();
 		
-		const lineSegment = (()=> {
+		{
 			let result = group.line().attr({
 				strokeWidth   : '2px',
 				stroke        : 'black',
 				shapeRendering: 'crispEdges',
-				pointerEvents : 'none'
+				pointerEvents : 'none',
+				strokeLinecap : 'square'
 			});
 			
-			for (let key of dimKeys) {
-				this.p(key).subscribe(v => result.attr({ [key]: v }));
-			}
+			this.p('x1').subscribe(x1 => result.attr({ x1 }));
+			this.p('x2').subscribe(x2 => result.attr({ x2 }));
+			this.p('y1').subscribe(y1 => result.attr({ y1 }));
+			this.p('y2').subscribe(y2 => result.attr({ y2 }));
 			
-			this.model.p('nature').subscribe((v) => {
-				result.attr({
-					strokeDasharray: v === 'open' ? '5, 5' : 'none'
-				});
-			});
-			
-			return result;
-		})();
+			this.model.p('nature')
+				::map(n => ({ strokeDasharray: n === 'open' ? '5, 5' : 'none' }))
+				.subscribe( ::result.attr );
+		}
 		
 		/* return representation(s) of element */
-		return {
-			element: group.node
-		};
-		
+		return { element: group.node };
 	}
 	
 	async afterCreateElement() {
-		super.afterCreateElement();
-			
-		if (this.movable) {
-			
-			let parentLyph = this.findAncestor(a => a.free);
-			
-			/* wait until we can get parentLyph.element */
-			// TODO: create 'element ready' promise for this
-			await new Promise((resolve) => { setTimeout(resolve) });
-			
-			let result = gElement().rect();
-			$(result.node)
-				.css({ opacity: 0 })
-				.attr('controller', ''+this)
-				.data('controller', this);
-			
-			this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
-				if (x1 === x2) {
-					$(result.node).css({ cursor: 'col-resize' });
-					result.attr({
-						x: x1-2,
-						y: y1,
-						width: 5,
-						height: Math.abs(y1 - y2)
-					});
-				} else {
-					$(result.node).css({ cursor: 'row-resize' });
-					result.attr({
-						x: x1,
-						y: y1-2,
-						width: Math.abs(x1 - x2),
-						height: 5
-					});
-				}
-			});
-			
-			parentLyph.inside.jq.children('.foreground').append(result.node);
-		}
+		await super.afterCreateElement();
+		
+		let parentLyph = this.findAncestor(a => a.free);
+		
+		let result = gElement().rect();
+		
+		$(result.node)
+			.css({ opacity: 0 })
+			.attr('controller', ''+this)
+			.data('controller', this);
+		
+		this.p('movable')
+			::map(m => ({ pointerEvents: m ? 'inherit' : 'none' }))
+			.subscribe( ::result.attr );
+		
+		this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
+			if (x1 === x2) {
+				$(result.node).css({ cursor: 'col-resize' });
+				result.attr({
+					x: x1-2,
+					y: y1,
+					width: 5,
+					height: Math.abs(y1 - y2)
+				});
+			} else {
+				$(result.node).css({ cursor: 'row-resize' });
+				result.attr({
+					x: x1,
+					y: y1-2,
+					width: Math.abs(x1 - x2),
+					height: 5
+				});
+			}
+		});
+		
+		parentLyph.inside.jq.children('.foreground').append(result.node);
+		
 	}
 	
 	get draggable() { return false }

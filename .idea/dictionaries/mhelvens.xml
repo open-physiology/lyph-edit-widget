@@ -4,7 +4,11 @@
       <w>attrs</w>
       <w>ctrlr</w>
       <w>dasharray</w>
+      <w>dashoffset</w>
+      <w>delayedmousedown</w>
+      <w>delayedmousemove</w>
       <w>deregister</w>
+      <w>linecap</w>
       <w>partonomy</w>
       <w>rearg</w>
       <w>rects</w>

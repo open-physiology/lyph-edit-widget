@@ -1,9 +1,14 @@
 import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
 import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
+import {fromEvent} from 'rxjs/observable/fromEvent';
 import {filter} from 'rxjs/operator/filter';
+import {take} from 'rxjs/operator/take';
 
 import pick from 'lodash-bound/pick';
+import {afterMatching} from "../util/rxjs";
+import {stopPropagation} from "../util/misc";
+import {withoutMod} from "../util/misc";
 
 const $$context       = Symbol('$$context');
 const $$root          = Symbol('$$root');
@@ -11,22 +16,25 @@ const $$domEvents     = Symbol('$$domEvents');
 const $$subscriptions = Symbol('$$subscriptions');
 const $$scratchSVGPoint = Symbol('$$scratchSVGPoint');
 
-//extends ValueTracker
+const $$tools = Symbol('$$tools');
+
 export default class Tool  {
 	
-	constructor(context, {events}) {
+	constructor(context, {events = []} = {}) {
 		this[$$context] = context;
 		
 		const {root} = context;
+		
+		const addController = (event) => {
+			event.controller = $(event.currentTarget).data('controller');
+			return event;
+		};
 		
 		const jqArgs = [events.join(' '), '[controller]'];
 		this[$$domEvents] = fromEventPattern(
 			(handler) => { root.element.jq.on (...jqArgs, handler) },
 			(handler) => { root.element.jq.off(...jqArgs, handler) },
-			(event) => {
-				event.controller = $(event.currentTarget).data('controller');
-				return event;
-			}
+			addController
 		);
 		
 		/* create svg point for scratch use */

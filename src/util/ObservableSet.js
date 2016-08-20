@@ -71,13 +71,15 @@ export default class ObservableSet extends Set {
 		}
 	}
 	
-	add(obj) {
-		if (!this.has(obj)) {
+	//noinspection JSDuplicatedDeclaration
+	add(obj, { force = false } = {}) {
+		if (!this.has(obj) || force) {
 			super.add(obj);
 			this.e('add').next(obj);
 		}
 		return this;
 	}
+	//noinspection JSDuplicatedDeclaration
 	delete(obj) {
 		if (this.has(obj)) {
 			super.delete(obj);
@@ -86,6 +88,7 @@ export default class ObservableSet extends Set {
 		}
 		return false;
 	}
+	//noinspection JSDuplicatedDeclaration
 	clear() {
 		for (let value of this) { this.delete(value) }
 		return this;

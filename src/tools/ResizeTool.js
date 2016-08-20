@@ -14,6 +14,7 @@ import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import BorderLine from "../artefacts/BorderLine";
 import {log} from '../util/rxjs';
+import {afterMatching} from "../util/rxjs";
 
 
 const $$xy_controller = Symbol('$$xy_controller');
@@ -33,11 +34,13 @@ export default class ResizeTool extends Tool {
 		const mouseup   = fromEvent($(window),       'mouseup'  );
 		
 		this.e('mousedown')
+			::filter(withoutMod('ctrl', 'shift', 'meta'))
+			.do(stopPropagation)
 			::withLatestFrom(context.p('selected'),
 				(down, selected) => down::assign({ controller: selected }))
 			::filter(({controller}) => controller instanceof BorderLine)
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			.do(stopPropagation)
+			::filter(({controller}) => controller.movable)
+			::afterMatching(mousemove::take(5), mouseup)
             .do((down) => {
 	            let lyphC = down.controller.parent;
 	            lyphC.dragging = true;

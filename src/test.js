@@ -5,6 +5,11 @@ import ValueTracker from './util/ValueTracker';
 
 import assign from 'lodash-bound/assign';
 
+import {combineLatest} from 'rxjs/observable/combineLatest';
+
+import {filter} from 'rxjs/operator/filter';
+import {take} from 'rxjs/operator/take';
+
 import DragDropTool from './tools/DragDropTool';
 import ResizeTool   from './tools/ResizeTool';
 import ZoomTool     from './tools/ZoomTool';
@@ -16,10 +21,11 @@ import Snap from './libs/snap.svg';
 import Canvas from "./artefacts/Canvas";
 import NodeGlyph from "./artefacts/NodeGlyph";
 import ProcessLine from "./artefacts/ProcessLine";
+import BorderToggleTool from "./tools/BorderToggleTool";
 
 ////////////////////////////////////////////////////////////////////////////////
 
-let vesselWall, bloodLayer;
+let vesselWall, bloodLayer, node1, node2;
 let bloodVessel = model.classes.Lyph.new({
 	name: 'Blood Vessel',
 	layers: [
@@ -36,15 +42,18 @@ let bloodVessel = model.classes.Lyph.new({
 				)
 			]
 		}, { createRadialBorders: true })
+	],
+	nodes: [
+		node1 = model.classes.Node.new()
 	]
 }, { createAxis: true, createRadialBorders: true });
 
 let brain = model.classes.Lyph.new({
-	name: 'Brain'
+	name: 'Brain',
+	nodes: [
+		node2 = model.classes.Node.new()
+	]
 }, { createAxis: true, createRadialBorders: true });
-
-let node1 = model.classes.Node.new({ locations: [bloodLayer] });
-let node2 = model.classes.Node.new({ locations: [brain]      });
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,6 +68,7 @@ new DragDropTool(context);
 new ResizeTool  (context);
 new ZoomTool    (context);
 new PanTool     (context);
+new BorderToggleTool(context);
 
 /* print zoom-level */
 context.p(
@@ -85,22 +95,15 @@ let brainRectangle = new LyphRectangle({
 });
 brainRectangle.parent = root;
 
-// let nodeGlyph1 = new NodeGlyph({
-// 	model: node1,
-// 	x: 200,
-// 	y: 145
-// });
-// bloodVesselRectangle.nodes.add(nodeGlyph1);
-//
-// let nodeGlyph2 = new NodeGlyph({
-// 	model: node2,
-// 	x: 375,
-// 	y: 375
-// });
-// brainRectangle.nodes.add(nodeGlyph2);
 
-let processEdge = new ProcessLine({
-	source: [...bloodVesselRectangle.nodes][0],
-	target: [...brainRectangle.nodes][0]
+combineLatest(
+	bloodVesselRectangle.freeFloatingStuff.e('add')::filter(c=>c instanceof NodeGlyph),
+	brainRectangle      .freeFloatingStuff.e('add')::filter(c=>c instanceof NodeGlyph)
+)::take(1).subscribe(([node1, node2]) => {
+	debugger;
+	let processEdge = new ProcessLine({
+		source: node1,
+		target: node2
+	});
+	processEdge.parent = root;
 });
-processEdge.parent = root;

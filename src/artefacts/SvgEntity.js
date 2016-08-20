@@ -20,6 +20,10 @@ import SvgObject from './SvgObject.js';
 import ObservableSet from "../util/ObservableSet";
 import {subscribe_} from "../util/rxjs";
 
+
+const $$artefacts = Symbol('$$artefacts');
+
+
 export default class SvgEntity extends SvgObject {
 
 	@property() model;
@@ -32,6 +36,14 @@ export default class SvgEntity extends SvgObject {
 		
 		/* process options */
 		this.setFromObject(options, ['model', 'parent']);
+		
+		/* keep a (hidden) set of artefacts in each model */
+		this.p('model').do((m) => {
+			if (!m[$$artefacts]) { m[$$artefacts] = new ObservableSet() }
+		})::startWith(null)::pairwise().subscribe(([prev, curr]) => {
+			if (prev) { prev[$$artefacts].delete(this) }
+			if (curr) { curr[$$artefacts].add   (this) }
+		});
 		
 		/* maintain the root of this entity */
 		this.p('parent')

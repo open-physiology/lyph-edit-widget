@@ -8,6 +8,7 @@ import {map} from 'rxjs/operator/map';
 import {scan} from 'rxjs/operator/scan';
 import {takeUntil} from 'rxjs/operator/takeUntil';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
+import {take} from 'rxjs/operator/take';
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -17,6 +18,7 @@ import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {xy_add} from "../util/misc";
 import {subscribe_} from "../util/rxjs";
+import {afterMatching} from "../util/rxjs";
 
 
 const $$panTools = Symbol('$$panTools');

@@ -33,6 +33,8 @@ import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import BorderLine from './BorderLine';
 
 import model from '../model';
+import LyphRectangle from "./LyphRectangle";
+import ProcessLine from "./ProcessLine";
 
 
 const $$backgroundColor        = Symbol('$$backgroundColor');
@@ -61,14 +63,8 @@ export default class Canvas extends SvgEntity {
 		});
 		let canvas = root.children('g');
 		canvas.append($.svg(`<g class="lyphs"></g>`))
+		      .append($.svg(`<g class="processes"></g>`))
 		      .append($.svg(`<g id="foreground"></g>`));
-		
-		
-		this.children.e('add').subscribe((artefact) => {
-			if (model.classes.Lyph.hasInstance(artefact.model)) {
-				this.inside.jq.children('.lyphs').append(artefact.element);
-			}
-		});
 		
 		
 		/* return representation(s) of element */
@@ -78,8 +74,20 @@ export default class Canvas extends SvgEntity {
 		};
 	}
 	
+	async afterCreateElement() {
+		await super.afterCreateElement();
+		
+		this.children.e('add').subscribe((artefact) => {
+			if (artefact instanceof LyphRectangle) {
+				this.inside.jq.children('.lyphs').append(artefact.element);
+			} else if (artefact instanceof ProcessLine) {
+				this.inside.jq.children('.processes').append(artefact.element);
+			}
+		});
+		
+	}
+	
 	drop(droppedEntity) {
-		// TODO
 		droppedEntity.parent = this;
 		droppedEntity.free = true;
 		this.inside.jq.children('.lyphs').append(droppedEntity.element);
