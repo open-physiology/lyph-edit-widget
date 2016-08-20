@@ -71,7 +71,7 @@ export default class DragDropTool extends Tool {
 						
 						/* stop dragging */
 						draggedArtefact.dragging = false;
-						draggedArtefact.element.jq.mouseenter();
+						// draggedArtefact.element.jq.mouseenter(); // glitches if the mouse is already outside of it, so it won't mouseleave
 				    });
 				
 			});

@@ -35,6 +35,8 @@ import BorderLine from './BorderLine';
 import LyphRectangle from "./LyphRectangle";
 import ProcessLine from "./ProcessLine";
 import ValueTracker from "../util/ValueTracker";
+import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
+import NodeGlyph from "./NodeGlyph";
 
 const $$context = Symbol('$$context');
 const $$existingSVG = Symbol('$$existingSVG');
@@ -98,6 +100,10 @@ export default class Canvas extends SvgEntity {
 				this.inside.jq.children('.lyphs').append(artefact.element);
 			} else if (artefact instanceof ProcessLine) {
 				this.inside.jq.children('.processes').append(artefact.element);
+			} else if (artefact instanceof CoalescenceScenarioRectangle) {
+				this.inside.jq.children('.lyphs').append(artefact.element);
+			} else if (artefact instanceof NodeGlyph) {
+				this.inside.jq.children('.foreground').append(artefact.element);
 			}
 		});
 		

@@ -10,7 +10,10 @@ import assign from 'lodash-bound/assign';
 import sortBy from 'lodash-bound/sortBy';
 import maxBy from 'lodash-bound/maxBy';
 import max from 'lodash-bound/max';
+import min from 'lodash-bound/min';
 import ldMap from 'lodash-bound/map';
+import find from 'lodash-bound/find';
+import entries from 'lodash-bound/entries';
 
 import _isNumber from 'lodash/isNumber';
 import _isBoolean from 'lodash/isBoolean';
@@ -397,19 +400,17 @@ export default class LyphRectangle extends SvgEntity {
 		
 		/* new layer in the model --> new layer artifact */
 		this[$$relativeLayerPosition] = new WeakMap();
-		this.model['-->HasLayer'].e('add')
-			::map(rel => ({ layer: rel[2], relativePosition: rel.p('relativePosition') }))
-			::map(({layer, relativePosition}) => {
-				let layerBox = this[$$recycle](layer) || new LyphRectangle({
-					parent  : this,
-					model   : layer,
-					showAxis: false,
-					free    : false
-				});
-				this[$$relativeLayerPosition].set(layerBox, relativePosition);
-				return layerBox;
-			})
-			::subscribe_( this.layers.e('add') , n=>n() );
+		this.model['-->HasLayer'].e('add').subscribe((rel) => {
+			const removed = this.model['-->HasLayer'].e('delete')::filter(r=>r===rel);
+			let layerBox = this[$$recycle](rel[2]) || new LyphRectangle({
+				parent  : this,
+				model   : rel[2],
+				showAxis: false,
+				free    : false
+			});
+			this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition')::takeUntil(removed));
+			this.layers.add(layerBox);
+		});
 		
 		/* new layer artifact --> house svg element */
 		this.layers.e('add').subscribe((layer) => {
@@ -440,9 +441,9 @@ export default class LyphRectangle extends SvgEntity {
 			}))
 			::switchMap(
 				({dimensions, relativePositions}) =>
-					combineLatest(dimensions, relativePositions),
-				({layers}, [{width, height, x, y}, relativePositions]) => ({
-					layers: layers::sortBy((l, i) => relativePositions[i]),
+					combineLatest(dimensions, ...relativePositions),
+				({layers}, [{width, height, x, y}, ...relativePositions]) => ({
+					layers: layers::sortBy(l => -relativePositions[layers.indexOf(l)]),
 					wh_layer: {
 						width:   width,
 						height: (height - this.axisThickness) / layers.length
@@ -542,10 +543,18 @@ export default class LyphRectangle extends SvgEntity {
 		} else if (this.longitudinalBorders.has(originalDropzone)) {
 			// dropped onto longitudinal border (to become layer)
 			if ([LyphRectangle].includes(droppedEntity.constructor)) {
-				let newPosition = [...this.model['-->HasLayer']]
-					::ldMap('relativePosition')
-					::max() + 1;
-				this.model.layers.delete(droppedEntity.model);
+				const rels      = [...this.model['-->HasLayer']];
+				const positions = rels::ldMap('relativePosition');
+				let newPosition;
+				if (rels.length === 0) {
+					newPosition = 0;
+				} else if (originalDropzone === this.topBorder) {
+					newPosition = positions::max() + 1;
+				} else { // this.bottomBorder
+					newPosition = positions::min() - 1;
+				}
+				let oldRel = rels::find(rel => rel[2] === droppedEntity.model);
+				if (oldRel) { this.model['-->HasLayer'].delete(oldRel) }
 				this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
 				window.module.classes.HasLayer.new({
 					[1]: this.model,
