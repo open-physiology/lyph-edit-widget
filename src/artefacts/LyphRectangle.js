@@ -142,7 +142,7 @@ export default class LyphRectangle extends SvgEntity {
 		const lyphRectangle = (() => {
 			
 			let shadow = group.rect().attr({
-				filter: Snap('#svg').filter(Snap.filter.shadow(8, 8, 4, '#111111', 0.4)),
+				filter: this.root.paper.filter(Snap.filter.shadow(8, 8, 4, '#111111', 0.4)),
 			});
 			this.p(['free', 'dragging']).subscribe(([f, d]) => {
 				shadow.attr({ visibility: (f && d ? 'visible' : 'hidden') })

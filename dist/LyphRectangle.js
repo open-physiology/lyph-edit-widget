@@ -22295,7 +22295,7 @@ return /******/ (function(modules) { // webpackBootstrap
 				var lyphRectangle = function () {
 	
 					var shadow = group.rect().attr({
-						filter: (0, _snap2.default)('#svg').filter(_snap2.default.filter.shadow(8, 8, 4, '#111111', 0.4))
+						filter: _this2.root.paper.filter(_snap2.default.filter.shadow(8, 8, 4, '#111111', 0.4))
 					});
 					_this2.p(['free', 'dragging']).subscribe(function (_ref3) {
 						var _ref4 = _slicedToArray(_ref3, 2);
