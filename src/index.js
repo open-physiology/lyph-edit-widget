@@ -14,6 +14,10 @@ import SelectTool from'./tools/SelectTool';
 import Tool from'./tools/Tool';
 import ZoomTool from'./tools/ZoomTool';
 
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/take';
+
 export {
 	SvgObject,
 	SvgEntity,

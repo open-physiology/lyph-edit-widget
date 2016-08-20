@@ -1517,21 +1517,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var freeGlobal = __webpack_require__(187);
-	
-	/** Detect free variable `self`. */
-	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-	
-	/** Used as a reference to the global object. */
-	var root = freeGlobal || freeSelf || Function('return this')();
-	
-	module.exports = root;
-
-
-/***/ },
-/* 17 */
-/***/ function(module, exports, __webpack_require__) {
-
 	"use strict";
 	var __extends = (this && this.__extends) || function (d, b) {
 	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -1620,6 +1605,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return TakeSubscriber;
 	}(Subscriber_1.Subscriber));
 	//# sourceMappingURL=take.js.map
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var freeGlobal = __webpack_require__(187);
+	
+	/** Detect free variable `self`. */
+	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+	
+	/** Used as a reference to the global object. */
+	var root = freeGlobal || freeSelf || Function('return this')();
+	
+	module.exports = root;
+
 
 /***/ },
 /* 18 */
@@ -2597,7 +2597,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _map = __webpack_require__(8);
 	
@@ -15592,7 +15592,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _filter = __webpack_require__(5);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _pick = __webpack_require__(11);
 	
@@ -16437,7 +16437,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _map = __webpack_require__(8);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _filter = __webpack_require__(5);
 	
@@ -17821,7 +17821,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(47),
-	    root = __webpack_require__(16);
+	    root = __webpack_require__(17);
 	
 	/* Built-in method references that are verified to be native. */
 	var Map = getNative(root, 'Map');
@@ -17871,7 +17871,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 114 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(16);
+	var root = __webpack_require__(17);
 	
 	/** Built-in value references. */
 	var Symbol = root.Symbol;
@@ -23162,7 +23162,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _takeUntil = __webpack_require__(28);
 	
@@ -24234,7 +24234,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _map = __webpack_require__(8);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _switchMap = __webpack_require__(23);
 	
@@ -29688,7 +29688,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _map = __webpack_require__(8);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _filter = __webpack_require__(5);
 	
@@ -38231,7 +38231,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(47),
-	    root = __webpack_require__(16);
+	    root = __webpack_require__(17);
 	
 	/* Built-in method references that are verified to be native. */
 	var DataView = getNative(root, 'DataView');
@@ -38282,7 +38282,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(47),
-	    root = __webpack_require__(16);
+	    root = __webpack_require__(17);
 	
 	/* Built-in method references that are verified to be native. */
 	var Promise = getNative(root, 'Promise');
@@ -38294,7 +38294,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 329 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(16);
+	var root = __webpack_require__(17);
 	
 	/** Built-in value references. */
 	var Reflect = root.Reflect;
@@ -38307,7 +38307,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(47),
-	    root = __webpack_require__(16);
+	    root = __webpack_require__(17);
 	
 	/* Built-in method references that are verified to be native. */
 	var Set = getNative(root, 'Set');
@@ -38352,7 +38352,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 332 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(16);
+	var root = __webpack_require__(17);
 	
 	/** Built-in value references. */
 	var Uint8Array = root.Uint8Array;
@@ -38365,7 +38365,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(47),
-	    root = __webpack_require__(16);
+	    root = __webpack_require__(17);
 	
 	/* Built-in method references that are verified to be native. */
 	var WeakMap = getNative(root, 'WeakMap');
@@ -39599,7 +39599,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 370 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(16);
+	var root = __webpack_require__(17);
 	
 	/** Used to detect overreaching core-js shims. */
 	var coreJsData = root['__core-js_shared__'];
@@ -54880,7 +54880,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _takeUntil = __webpack_require__(28);
 	
@@ -55065,7 +55065,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _map = __webpack_require__(8);
 	
@@ -55179,7 +55179,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _map = __webpack_require__(8);
 	
@@ -55436,7 +55436,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _assign = __webpack_require__(45);
 	
@@ -55548,7 +55548,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _withLatestFrom = __webpack_require__(43);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _assign = __webpack_require__(45);
 	
@@ -58393,7 +58393,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var _filter = __webpack_require__(5);
 	
-	var _take = __webpack_require__(17);
+	var _take = __webpack_require__(16);
 	
 	var _DragDropTool = __webpack_require__(513);
 	
