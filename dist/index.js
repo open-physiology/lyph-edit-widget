@@ -53486,7 +53486,7 @@ return /******/ (function(modules) { // webpackBootstrap
 		}, {
 			key: 'paper',
 			get: function get() {
-				return this_paper;
+				return this._paper;
 			}
 		}]);
 	

@@ -61,7 +61,7 @@ export default class Canvas extends SvgEntity {
 	
 	get context() { return this[$$context] }
 	
-	get paper() { return this_paper }
+	get paper() { return this._paper }
 	
 	gElement() {
 		return this._paper.g();
