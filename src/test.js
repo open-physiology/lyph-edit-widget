@@ -45,7 +45,7 @@ let apicalBag = window.module.classes.Lyph.new({
 	],
 	// nodes: [
 	// 	node1 = window.module.classes.Node.new()
-	// ]
+	// ]l
 }, { createAxis: true, createRadialBorders: true });
 
 
@@ -126,13 +126,13 @@ let bloodVessel2 = window.module.classes.Lyph.new({
 	]
 }, { createAxis: true, createRadialBorders: true });
 
-
-let coalescence = window.module.classes.CoalescenceScenario.new({
-	lyphs: [
-		bloodVessel,
-		bloodVessel2
-	]
-});
+//
+// let coalescence = window.module.classes.CoalescenceScenario.new({
+// 	lyphs: [
+// 		bloodVessel,
+// 		bloodVessel2
+// 	]
+// });
 
 
 
@@ -192,30 +192,31 @@ root.context.p(
 // brainRectangle.parent = root;
 
 
-let coalescenceRectangle = new CoalescenceScenarioRectangle({
-	model: coalescence,
-	x:      200,
-	y:      200,
-	width:  400,
-	height: 400
-});
-coalescenceRectangle.parent = root;
+// let coalescenceRectangle = new CoalescenceScenarioRectangle({
+// 	model: coalescence,
+// 	x:      200,
+// 	y:      200,
+// 	width:  400,
+// 	height: 400
+// });
+// coalescenceRectangle.parent = root;
 
 
 let apicalRectangle = new LyphRectangle({
 	model:  apicalBag,
-	x:      500,
+	x:      100,
 	y:      100,
 	width:  150,
-	height: 150
+	height: 150,
+	rotation: 45
 });
 apicalRectangle.parent = root;
 
 
 let basolateralRectangle = new LyphRectangle({
 	model:  basolateralBag,
-	x:      500,
-	y:      400,
+	x:      300,
+	y:      200,
 	width:  150,
 	height: 150
 });
@@ -223,81 +224,81 @@ basolateralRectangle.parent = root;
 
 
 
-let node1 = window.module.classes.Node.new();
-let node2 = window.module.classes.Node.new();
-let node3 = window.module.classes.Node.new();
-let node4 = window.module.classes.Node.new();
-let node5 = window.module.classes.Node.new();
-let node6 = window.module.classes.Node.new();
-
-let nodeg1 = new NodeGlyph({
-	x: 10,
-	y: 10,
-	model: node1
-});
-nodeg1.parent = root;
-
-let nodeg2 = new NodeGlyph({
-	x: 10,
-	y: 60,
-	model: node2
-});
-nodeg2.parent = root;
-
-let nodeg3 = new NodeGlyph({
-	x: 10,
-	y: 110,
-	model: node3
-});
-nodeg3.parent = root;
-
-let nodeg4 = new NodeGlyph({
-	x: 600,
-	y: 10,
-	model: node4
-});
-nodeg4.parent = root;
-
-let nodeg5 = new NodeGlyph({
-	x: 600,
-	y: 60,
-	model: node5
-});
-nodeg5.parent = root;
-
-let nodeg6 = new NodeGlyph({
-	x: 600,
-	y: 110,
-	model: node6
-});
-nodeg6.parent = root;
-
-
-let processEdgeA = new ProcessLine({
-	source: nodeg1,
-	target: nodeg2
-});
-processEdgeA.parent = root;
-let processEdgeB = new ProcessLine({
-	source: nodeg2,
-	target: nodeg3
-});
-processEdgeB.parent = root;
-let processEdgeC = new ProcessLine({
-	source: nodeg2,
-	target: nodeg5
-});
-processEdgeC.parent = root;
-let processEdgeD = new ProcessLine({
-	source: nodeg4,
-	target: nodeg5
-});
-processEdgeD.parent = root;
-let processEdgeE = new ProcessLine({
-	source: nodeg5,
-	target: nodeg6
-});
-processEdgeE.parent = root;
+// let node1 = window.module.classes.Node.new();
+// let node2 = window.module.classes.Node.new();
+// let node3 = window.module.classes.Node.new();
+// let node4 = window.module.classes.Node.new();
+// let node5 = window.module.classes.Node.new();
+// let node6 = window.module.classes.Node.new();
+//
+// let nodeg1 = new NodeGlyph({
+// 	x: 10,
+// 	y: 10,
+// 	model: node1
+// });
+// nodeg1.parent = root;
+//
+// let nodeg2 = new NodeGlyph({
+// 	x: 10,
+// 	y: 60,
+// 	model: node2
+// });
+// nodeg2.parent = root;
+//
+// let nodeg3 = new NodeGlyph({
+// 	x: 10,
+// 	y: 110,
+// 	model: node3
+// });
+// nodeg3.parent = root;
+//
+// let nodeg4 = new NodeGlyph({
+// 	x: 600,
+// 	y: 10,
+// 	model: node4
+// });
+// nodeg4.parent = root;
+//
+// let nodeg5 = new NodeGlyph({
+// 	x: 600,
+// 	y: 60,
+// 	model: node5
+// });
+// nodeg5.parent = root;
+//
+// let nodeg6 = new NodeGlyph({
+// 	x: 600,
+// 	y: 110,
+// 	model: node6
+// });
+// nodeg6.parent = root;
+//
+//
+// let processEdgeA = new ProcessLine({
+// 	source: nodeg1,
+// 	target: nodeg2
+// });
+// processEdgeA.parent = root;
+// let processEdgeB = new ProcessLine({
+// 	source: nodeg2,
+// 	target: nodeg3
+// });
+// processEdgeB.parent = root;
+// let processEdgeC = new ProcessLine({
+// 	source: nodeg2,
+// 	target: nodeg5
+// });
+// processEdgeC.parent = root;
+// let processEdgeD = new ProcessLine({
+// 	source: nodeg4,
+// 	target: nodeg5
+// });
+// processEdgeD.parent = root;
+// let processEdgeE = new ProcessLine({
+// 	source: nodeg5,
+// 	target: nodeg6
+// });
+// processEdgeE.parent = root;
 
 
 // merge(

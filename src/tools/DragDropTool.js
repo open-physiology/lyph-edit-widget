@@ -19,6 +19,9 @@ import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
+import {shiftedMatrixMovementFor} from "../util/rxjs";
+import {POINT} from "../util/svg";
+import {svgPageCoordinates} from "../util/rxjs";
 
 
 export default class DragDropTool extends Tool {
@@ -41,20 +44,25 @@ export default class DragDropTool extends Tool {
 				
 				/* start dragging */
 				draggedArtefact.dragging = true;
-				draggedArtefact.element.jq.appendTo(root.inside.jq.children('.foreground'));
 				for (let a of draggedArtefact.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
+				const startMatrix = root.element.getTransformToElement(draggedArtefact.element);
+				
 				
 				/* move while dragging */
 				of(down)::concat(mousemove::takeUntil(mouseup))
-					::map(::this.xy_viewport_to_canvas)
-					::shiftedMovementFor(draggedArtefact.pObj(['x', 'y']))
-					.subscribe( draggedArtefact::assign );
+					// ::map(::this.xy_page_to_viewport) // not needed, because we're interested in the delta
+					::map(svgPageCoordinates)
+					::map(xy => xy.matrixTransform(startMatrix))
+					::shiftedMatrixMovementFor(draggedArtefact.p('transformation'))
+					.subscribe((m) => {
+						draggedArtefact.transformation = m;
+					});
 				
 				/* stop dragging and drop */
-				let initial_dragged_xy     = draggedArtefact::pick('x', 'y');
-				let initial_dragged_parent = draggedArtefact.parent;
+				let initial_dragged_transformation = draggedArtefact.transformation;
+				let initial_dragged_parent         = draggedArtefact.parent;
 				mouseup::withLatestFrom(context.p('selected'))::take(1)
 					.subscribe(([up, recipient]) => {
 						
@@ -63,15 +71,19 @@ export default class DragDropTool extends Tool {
 						if (recipient && recipient.drop::isFunction()) {
 							success = recipient.drop(draggedArtefact, recipient) !== false;
 						}
-						
+						/* or revert to previous state if recipient rejects it */
 						if (!success) {
-							draggedArtefact::assign(initial_dragged_xy);
-							draggedArtefact.parent = initial_dragged_parent;
+							draggedArtefact::assign({
+								transformation: initial_dragged_transformation,
+								parent: initial_dragged_parent
+							});
 						}
 						
 						/* stop dragging */
 						draggedArtefact.dragging = false;
-						// draggedArtefact.element.jq.mouseenter(); // glitches if the mouse is already outside of it, so it won't mouseleave
+						// draggedArtefact.element.jq.mouseenter();
+						// ^ glitches if the mouse is already outside of it, so it won't mouseleave
+						// TODO: do it conditionally; check if the mouse pointer is inside it
 				    });
 				
 			});

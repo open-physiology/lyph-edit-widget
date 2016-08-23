@@ -4,11 +4,13 @@ import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
 import {fromEvent} from 'rxjs/observable/fromEvent';
 import {filter} from 'rxjs/operator/filter';
 import {take} from 'rxjs/operator/take';
+import {map} from 'rxjs/operator/map';
 
 import pick from 'lodash-bound/pick';
 import {afterMatching} from "../util/rxjs";
 import {stopPropagation} from "../util/misc";
 import {withoutMod} from "../util/misc";
+import {createSVGPoint} from "../util/svg";
 
 const $$context       = Symbol('$$context');
 const $$root          = Symbol('$$root');

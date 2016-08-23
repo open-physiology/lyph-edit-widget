@@ -38,6 +38,9 @@ export default class BorderLine extends SvgEntity {
 	@property({ isValid: _isNumber }) x2;
 	@property({ isValid: _isNumber }) y2;
 	
+	@property() x;
+	@property() y;
+	
 	@flag(true) movable;
 	
 	toString() { return `[${this.constructor.name}]` }
@@ -45,8 +48,19 @@ export default class BorderLine extends SvgEntity {
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, [
-			'x1', 'y1', 'x2', 'y2', 'free', 'movable'
+			'x1', 'x2', 'x',
+			'y1', 'y2', 'y',
+			'free', 'movable',
+		    'resizes'
 		]);
+			
+		/* sync x1,x2,y1,y2 with x,y */
+		this.p(['x1', 'x2'], (x1, x2) => x1===x2?x1:null).subscribe( this.p('x') );
+		this.p(['y1', 'y2'], (y1, y2) => y1===y2?y1:null).subscribe( this.p('y') );
+		this.p('x').subscribe( this.p('x1') );
+		this.p('x').subscribe( this.p('x2') );
+		this.p('y').subscribe( this.p('y1') );
+		this.p('y').subscribe( this.p('y2') );
 	}
 	
 	createElement() {
@@ -61,11 +75,13 @@ export default class BorderLine extends SvgEntity {
 				strokeLinecap : 'square'
 			});
 			
+			/* manifest coordinates in the DOM */
 			this.p('x1').subscribe(x1 => result.attr({ x1 }));
 			this.p('x2').subscribe(x2 => result.attr({ x2 }));
 			this.p('y1').subscribe(y1 => result.attr({ y1 }));
 			this.p('y2').subscribe(y2 => result.attr({ y2 }));
 			
+			/* manifest nature in the DOM */
 			this.model.p('nature')
 				::map(n => ({ strokeDasharray: n === 'open' ? '5, 5' : 'none' }))
 				.subscribe( ::result.attr );
@@ -74,7 +90,7 @@ export default class BorderLine extends SvgEntity {
 		
 		
 		const highlightedBorder = (() => {
-			let result = this.root.gElement().g().attr({
+			let result = group.g().attr({
 				pointerEvents : 'none'
 			});
 
@@ -102,7 +118,7 @@ export default class BorderLine extends SvgEntity {
 
 
 			this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-				visibility: highlighted && !dragging ? 'visible' : 'hidden'
+				visibility: (highlighted && !dragging) ? 'visible' : 'hidden'
 			})).subscribe( ::result.attr );
 
 			this.p(['x1', 'x2', 'y1', 'y2'], (x1, x2, y1, y2) => ({
@@ -117,7 +133,7 @@ export default class BorderLine extends SvgEntity {
 			// this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
 			// this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
 
-			$('#foreground').append(result.node);
+			// $('#foreground').append(result.node);
 
 			return result.node;
 		})();
@@ -132,7 +148,6 @@ export default class BorderLine extends SvgEntity {
 	async afterCreateElement() {
 		await super.afterCreateElement();
 		
-		let parentLyph = this.findAncestor(a => a.free);
 		
 		let result = this.root.gElement().rect();
 		
@@ -147,7 +162,7 @@ export default class BorderLine extends SvgEntity {
 		
 		this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
 			if (x1 === x2) {
-				$(result.node).css({ cursor: 'col-resize' });
+				// $(result.node).css({ cursor: 'col-resize' });
 				result.attr({
 					x: x1-2,
 					y: y1,
@@ -155,7 +170,7 @@ export default class BorderLine extends SvgEntity {
 					height: Math.abs(y1 - y2)
 				});
 			} else {
-				$(result.node).css({ cursor: 'row-resize' });
+				// $(result.node).css({ cursor: 'row-resize' });
 				result.attr({
 					x: x1,
 					y: y1-2,
@@ -165,6 +180,7 @@ export default class BorderLine extends SvgEntity {
 			}
 		});
 		
+		let parentLyph = this.findAncestor(a => a.free);
 		parentLyph.inside.jq.children('.foreground').append(result.node);
 		
 	}

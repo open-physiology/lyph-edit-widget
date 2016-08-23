@@ -39,14 +39,14 @@ export default class SvgEntity extends SvgObject {
 			::switchMap(e => e ? e.p('root') : of(this))
 			::subscribe_( this.p('root') , n=>n() );
 		
-		/* maintain the children of the parent of this entity */
+		/* maintain this entity as a child of its parent */
 		this.p('parent')::startWith(null)::pairwise()
 			.subscribe(([prev, curr]) => {
 				if (prev) { prev.children.delete(this) }
 				if (curr) { curr.children.add   (this) }
 			});
 		
-		/* maintain the parent of the children of this entity */
+		/* maintain this entity as a parent of its children */
 		this.children.e('add')                               .subscribe(e => { e.parent = this });
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
 		
@@ -61,10 +61,6 @@ export default class SvgEntity extends SvgObject {
 		let pred = other::isFunction() ? other : (o => o === other);
 		if (pred(this)) { return this }
 		return this.parent && this.parent.findAncestor(pred);
-		
-		// let current = this;
-		// while (current && !pred(current)) { current = current.parent }
-		// return current || null;
 	}
 	
 	*traverse(order = 'pre') {

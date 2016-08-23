@@ -40,6 +40,13 @@
     "webpack": "~1"
   },
   "dependencies": {
+    "@angular/common": "2.0.0-rc.5",
+    "@angular/compiler": "2.0.0-rc.5",
+    "@angular/core": "2.0.0-rc.5",
+    "@angular/platform-browser": "2.0.0-rc.5",
+    "@angular/platform-browser-dynamic": "2.0.0-rc.5",
+    "almost-equal": "^1.1.0",
+    "babel-polyfill": "~6",
     "bound-native-methods": "~0.1",
     "chroma-js": "~1",
     "fraction.js": "~3",
@@ -55,12 +62,7 @@
     "snap.svg.zpd": "0.0.11",
     "snapsvg-cjs": "0.0.4",
     "svg-innerhtml": "~1",
-    "@angular/common": "2.0.0-rc.5",
-    "@angular/compiler": "2.0.0-rc.5",
-    "@angular/core": "2.0.0-rc.5",
-    "@angular/platform-browser": "2.0.0-rc.5",
-    "@angular/platform-browser-dynamic": "2.0.0-rc.5",
-    "babel-polyfill": "~6",
+    "transformation-matrix-js": "^2.6.5",
     "zone.js": "~0.6"
   },
   "keywords": [

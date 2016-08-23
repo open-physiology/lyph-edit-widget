@@ -9,9 +9,12 @@
       <w>delayedmousemove</w>
       <w>deregister</w>
       <w>linecap</w>
+      <w>nesw</w>
+      <w>nwse</w>
       <w>partonomy</w>
       <w>rearg</w>
       <w>rects</w>
+      <w>resizes</w>
       <w>tump</w>
     </words>
   </dictionary>

@@ -5,16 +5,26 @@ import {filter} from 'rxjs/operator/filter';
 import {takeUntil} from 'rxjs/operator/takeUntil';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
 import {take} from 'rxjs/operator/take';
+import {of} from 'rxjs/observable/of';
+import {concat} from 'rxjs/operator/concat';
+import {map} from 'rxjs/operator/map';
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
+import isNull from 'lodash-bound/isNull';
 
 import Tool from './Tool';
-import {withoutMod} from "../util/misc";
+import {asw, withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import BorderLine from "../artefacts/BorderLine";
 import {log} from '../util/rxjs';
 import {afterMatching} from "../util/rxjs";
+import {svgPageCoordinates} from "../util/rxjs";
+import {shiftedMatrixMovementFor} from "../util/rxjs";
+import {tX} from "../util/svg";
+import {tY} from "../util/svg";
+import {ID_MATRIX, M11, M12, M21, M22} from "../util/svg";
+import CornerHandle from "../artefacts/CornerHandle";
 
 
 const $$xy_controller = Symbol('$$xy_controller');
@@ -26,59 +36,91 @@ const $$updater = Symbol('$$updater');
 export default class ResizeTool extends Tool {
 	
 	constructor(context) {
-		super(context, { events: ['mousedown'] });
+		super(context, { events: ['mousedown', 'mouseenter'] });
 		
 		const {root} = context;
 		
 		const mousemove = fromEvent(root.element.jq, 'mousemove');
 		const mouseup   = fromEvent($(window),       'mouseup'  );
 		
+		/* use the right mouse-pointer */
+		this.e('mouseenter')
+			::withLatestFrom(context.p('selected'))
+			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
+			::filter(([,handleArtifact]) => handleArtifact.movable)
+			.subscribe(([enter, handleArtifact]) => {
+				const CURSORS = [
+					'ns-resize',   // 0,   0:  |
+					'nesw-resize', // 1,  45:  /
+					'ew-resize',   // 2,  90:  -
+					'nwse-resize'  // 3, 135:  \
+				];
+				let s = handleArtifact.resizes;
+				let angle = 0;
+				// if (s.top)    { angle = 0 }
+				// if (s.bottom) { angle = 0 }
+				if (s.right)              { angle =  90 }
+				if (s.left)               { angle =  90 }
+				if (s.top    && s.left )  { angle = 135 }
+				if (s.top    && s.right)  { angle =  45 }
+				if (s.bottom && s.left )  { angle =  45 }
+				if (s.bottom && s.right)  { angle = 135 }
+				const m = enter.toElement.getScreenCTM();
+				angle += Math.atan2(m[M21], m[M22]) * 180 / Math.PI;
+				let i = Math.floor((angle + 360 + 22.5) % 180 / 45) % 4;
+				$(enter.toElement).css('cursor', CURSORS[i]);
+			});
+		
+		/* allow resizing */
 		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
-			::withLatestFrom(context.p('selected'),
-				(down, selected) => down::assign({ controller: selected }))
-			::filter(({controller}) => controller instanceof BorderLine)
-			::filter(({controller}) => controller.movable)
-			::afterMatching(mousemove::take(5), mouseup)
-            .do((down) => {
-	            let lyphC = down.controller.parent;
-	            lyphC.dragging = true;
+			::withLatestFrom(context.p('selected'))
+			::afterMatching(mousemove::take(4), mouseup)
+			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
+			::filter(([,handleArtifact]) => handleArtifact.movable)
+            .subscribe(([down, handleArtifact]) => {
+            	
+            	/* start resizing */
+            	const resizedArtifact    = handleArtifact.parent;
+	            resizedArtifact.dragging = true; // TODO: use 'resizing' instead of 'dragging'?
+	            
+	            /* record start dimensions */
+	            const start              = resizedArtifact::pick('transformation', 'width', 'height');
+	            const rootToHandleMatrix = root.element.getTransformToElement(handleArtifact.element);
+	            const handleStart        = handleArtifact::pick('x', 'y');
+	            
+	            /* resize while dragging */
+	            of(down)::concat(mousemove::takeUntil(mouseup))
+		            ::map(svgPageCoordinates)
+		            ::map(xy => xy.matrixTransform(rootToHandleMatrix))
+		            .subscribe(({x, y}) => {
+			            let width  = start.width;
+			            let height = start.height;
+			            let transformation = start.transformation;
+			            if (handleArtifact.resizes.left) {
+				            transformation = transformation.translate(x - handleStart.x, 0);
+				            width -= x - handleStart.x;
+			            } else if (handleArtifact.resizes.right) {
+			            	width += x - handleStart.x;
+			            }
+			            if (handleArtifact.resizes.top) {
+				            transformation = transformation.translate(0, y - handleStart.y);
+				            height -= y - handleStart.y;
+			            } else if (handleArtifact.resizes.bottom) {
+			            	height += y - handleStart.y;
+			            }
+			            resizedArtifact::assign({
+				            transformation,
+				            width, height
+			            });
+		            });
+	            
+	            /* stop resizing */
 	            mouseup::take(1).subscribe(() => {
-		            lyphC.dragging = false;
+		            resizedArtifact.dragging = false;
 	            });
-	            let start = lyphC::pick('x', 'y', 'width', 'height');
-	            switch (down.controller) {
-		            case lyphC.leftBorder: { down[$$updater] = ({dx}) => ({
-			            x:     start.x     + dx,
-			            width: start.width - dx
-		            })} break;
-		            case lyphC.rightBorder: { down[$$updater] = ({dx}) => ({
-                        width: start.width + dx
-                    })} break;
-		            case lyphC.topBorder: { down[$$updater] = ({dy}) => ({
-                        y:      start.y      + dy,
-                        height: start.height - dy
-                    })} break;
-		            case lyphC.bottomBorder: { down[$$updater] = ({dy}) => ({
-                        height: start.height + dy
-                    })} break;
-	            } // TODO: use sw
-	            down[$$xy_mousedown] = this.xy_viewport_to_canvas(down);
-            })
-			::switchMap(
-				() => mousemove::takeUntil(mouseup),
-				(down, move) => {
-					let d = down[$$xy_mousedown];
-					let m = this.xy_viewport_to_canvas(move);
-					return ({
-						controller: down.controller.parent,
-						newDims: down[$$updater]({ dx: m.x - d.x, dy: m.y - d.y })
-					});
-				})
-			.subscribe(({controller, newDims}) => {
-				controller::assign(newDims);
-			});
+            });
 		
 		
 	}

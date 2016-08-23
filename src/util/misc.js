@@ -94,6 +94,18 @@ export const sw = (val, {autoInvoke = true} = {}) => (map) => {
 	return result;
 };
 
+export const asw = (val, {autoInvoke = true} = {}) => (...map) => {
+	let result;
+	let defaultValue;
+	for (let [guard, value] of map) {
+		if (val === guard) { result = value }
+		if (guard === 'default') { defaultValue = value }
+	}
+	if (result::isUndefined()) { result = defaultValue }
+	if (autoInvoke && result::isFunction()) { result = result() }
+	return result;
+};
+
 export function definePropertyByValue(key, value, options = {}) {
 	this::defineProperty(key, { ...options, value });
 }
