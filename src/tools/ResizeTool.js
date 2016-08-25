@@ -43,33 +43,54 @@ export default class ResizeTool extends Tool {
 		const mousemove = fromEvent(root.element.jq, 'mousemove');
 		const mouseup   = fromEvent($(window),       'mouseup'  );
 		
-		/* use the right mouse-pointer */
-		this.e('mouseenter')
-			::withLatestFrom(context.p('selected'))
-			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
-			::filter(([,handleArtifact]) => handleArtifact.parent.free)
-			::filter(([enter]) => !enter.mouseCursorSet)
-			.subscribe(([enter, handleArtifact]) => {
-				let s = handleArtifact.resizes;
-				let angle = 0;
-				// if (s.top)    { angle = 0 }
-				// if (s.bottom) { angle = 0 }
-				if (s.right)              { angle =  90 }
-				if (s.left)               { angle =  90 }
-				if (s.top    && s.left )  { angle = 135 }
-				if (s.top    && s.right)  { angle =  45 }
-				if (s.bottom && s.left )  { angle =  45 }
-				if (s.bottom && s.right)  { angle = 135 }
-				const m = enter.currentTarget.getScreenCTM();
-				angle += Math.atan2(m[M21], m[M22]) * 180 / Math.PI;
-				$(enter.currentTarget).css('cursor', [
-					'ns-resize',   // 0,   0:  |
-					'nesw-resize', // 1,  45:  /
-					'ew-resize',   // 2,  90:  -
-					'nwse-resize'  // 3, 135:  \
-				][Math.floor((angle + 180/8) % 180 / (180/4)) % 4]);
-				enter.mouseCursorSet = true;
-			});
+		context.registerCursor([BorderLine, CornerHandle], (handleArtifact) => {
+			if (!handleArtifact.parent.free) { return false }
+			let s = handleArtifact.resizes;
+			let angle = 0;
+			// if (s.top)    { angle = 0 }
+			// if (s.bottom) { angle = 0 }
+			if (s.right)              { angle =  90 }
+			if (s.left)               { angle =  90 }
+			if (s.top    && s.left )  { angle = 135 }
+			if (s.top    && s.right)  { angle =  45 }
+			if (s.bottom && s.left )  { angle =  45 }
+			if (s.bottom && s.right)  { angle = 135 }
+			const m = handleArtifact.handle.getScreenCTM();
+			angle += Math.atan2(m[M21], m[M22]) * 180 / Math.PI;
+			return [
+				'ns-resize',   // 0,   0:  |
+				'nesw-resize', // 1,  45:  /
+				'ew-resize',   // 2,  90:  -
+				'nwse-resize'  // 3, 135:  \
+			][Math.floor((angle + 180/8) % 180 / (180/4)) % 4];
+		});
+		
+		// /* use the right mouse-pointer */
+		// this.e('mouseenter')
+		// 	::withLatestFrom(context.p('selected'))
+		// 	::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
+		// 	::filter(([,handleArtifact]) => handleArtifact.parent.free)
+		// 	::filter(([enter]) => !enter.mouseCursorSet)
+		// 	.subscribe(([enter, handleArtifact]) => {
+		// 		let s = handleArtifact.resizes;
+		// 		let angle = 0;
+		// 		// if (s.top)    { angle = 0 }
+		// 		// if (s.bottom) { angle = 0 }
+		// 		if (s.right)              { angle =  90 }
+		// 		if (s.left)               { angle =  90 }
+		// 		if (s.top    && s.left )  { angle = 135 }
+		// 		if (s.top    && s.right)  { angle =  45 }
+		// 		if (s.bottom && s.left )  { angle =  45 }
+		// 		if (s.bottom && s.right)  { angle = 135 }
+		// 		const m = enter.currentTarget.getScreenCTM();
+		// 		angle += Math.atan2(m[M21], m[M22]) * 180 / Math.PI;
+		// 		$(enter.currentTarget).css('cursor', [
+		// 			'ns-resize',   // 0,   0:  |
+		// 			'nesw-resize', // 1,  45:  /
+		// 			'ew-resize',   // 2,  90:  -
+		// 			'nwse-resize'  // 3, 135:  \
+		// 		][Math.floor((angle + 180/8) % 180 / (180/4)) % 4]);
+		// 	});
 		
 		/* allow resizing */
 		this.e('mousedown')

@@ -68,10 +68,8 @@ export default class BorderLine extends Transformable {
 		this.p(['y1', 'y2'], (y1, y2) => Math.min(y1, y2)).subscribe( this.pSubject('y') );
 		this.p('x')::filter(() => this.x1 === this.x2).subscribe((x) => { this.x1 = this.x2 = x });
 		this.p('y')::filter(() => this.y1 === this.y2).subscribe((y) => { this.y1 = this.y2 = y });
-	   
 		
 		this[$$toBeRecycled] = new WeakMap();
-				
 	}
 	
 	[$$recycle](model) {
@@ -85,11 +83,15 @@ export default class BorderLine extends Transformable {
 		const group = this.root.gElement();
 		
 		group.g().addClass('main-shape');
+		let handle = group.g().addClass('handle');
 		group.g().addClass('nodes');
 		group.g().addClass('measurables');
 		
 		/* return representation(s) of element */
-		return { element: group.node };
+		return {
+			element: group.node,
+			handle:  handle.node
+		};
 	}
 	
 	async afterCreateElement() {
@@ -166,7 +168,7 @@ export default class BorderLine extends Transformable {
 			// TODO: put this in SelectTool.js; Why wasn't this easy??
 		}
 		{
-			let hitBoxGroup = this.root.gElement().addClass('hit-box');
+			let hitBoxGroup = this.handle.svg;
 			
 			$(hitBoxGroup.node)
 				.css({ opacity: 0 })
@@ -198,7 +200,7 @@ export default class BorderLine extends Transformable {
 			
 			(await this.parent.insideCreated).jq
 			    .children('.borders')
-			    .append(hitBoxGroup.node);
+			    .append(this.handle);
 		}
 		{
 			this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );

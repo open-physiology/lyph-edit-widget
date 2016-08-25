@@ -25,6 +25,7 @@ import tail from 'lodash-bound/tail';
 import clamp from 'lodash-bound/clamp';
 import defaults from 'lodash-bound/defaults';
 import sum from 'lodash-bound/sum';
+import isArray from 'lodash-bound/isArray';
 
 import _head from 'lodash/head';
 import _add from 'lodash/add';
@@ -69,14 +70,29 @@ export default class SelectTool extends Tool {
 			context[$$selectTools] = true;
 			context.newProperty('selected');
 			
-			// context.cursorStack = [
-			// 	{ artifact: root, cursor: 'auto' }
-			// ];
-			// context.registerCursor = ({artifact, cursor}) => {
-			// 	context.cursorStack.push({ artifact, cursor })
-			//
-			// };
 			
+			context.cursorMap = new Map();
+			context.p('selected')::filter(a=>a).subscribe((artifact) => {
+				let candidates = context.cursorMap.get(artifact.constructor);
+				if (!candidates) {
+					root.inside.jq.css('cursor', 'auto');
+				} else for (let candidate of candidates) {
+					let cursor = candidate(artifact);
+					if (cursor) { root.inside.jq.css('cursor', cursor) }
+				}
+			});
+			context.registerCursor = (ArtifactClass, cursor) => {
+				for (let cls of ArtifactClass::isArray() ? ArtifactClass : [ArtifactClass]) {
+					if (!context.cursorMap.has(cls)) {
+						context.cursorMap.set(cls, new Set);
+					}
+					context.cursorMap.get(cls).add(cursor);
+				}
+			};
+			context.registerCursor({
+				artifact: root,
+				cursor: () => 'auto'
+			});
 		}
 		
 		/* basic event-streams */

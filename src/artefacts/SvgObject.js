@@ -57,6 +57,7 @@ export default class SvgObject extends ValueTracker {
 	
 	get elementCreated() { return this[$$elementCreated].promise.then(() => this.element) }
 	get insideCreated()  { return this[$$elementCreated].promise.then(() => this.inside ) }
+	get handleCreated()  { return this[$$elementCreated].promise.then(() => this.handle ) }
 	
 	[$$create]() {
 		if (!this[$$creation]) {
@@ -74,6 +75,12 @@ export default class SvgObject extends ValueTracker {
 				this[$$creation].inside = this[$$creation].element;
 			} else {
 				let el = this[$$creation].inside;
+				el::defaults({ jq: $(el), svg: Snap(el) });
+			}
+			if (!this[$$creation].handle) {
+				this[$$creation].handle = this[$$creation].element;
+			} else {
+				let el = this[$$creation].handle;
 				el::defaults({ jq: $(el), svg: Snap(el) });
 			}
 			
@@ -105,6 +112,7 @@ export default class SvgObject extends ValueTracker {
 	
 	get element() { return this[$$create]().element }
 	get inside () { return this[$$create]().inside  }
+	get handle () { return this[$$create]().handle  }
 	
 	@args('oa?o?') setFromObject(obj, picked = [], defaultValues = {}) {
 		let keyVals = obj
