@@ -1,3 +1,5 @@
+import $ from 'jquery';
+
 export const M11 = 'a';
 export const M12 = 'c';
 export const M21 = 'b';
@@ -15,4 +17,16 @@ export function createSVGPoint(x, y) {
 	result.x = x;
 	result.y = y;
 	return result;
+}
+
+export function matrixEquals(M1, M2) {
+	return ['a', 'b', 'c', 'd', 'e', 'f'].every(key => M1[key] === M2[key]);
+}
+
+export function setCTM(matrix) {
+	if (!$(this).attr('transform')) {
+		$(this).attr('transform', '');
+	}
+	this.transform.baseVal
+	       .initialize(createSVGTransformFromMatrix(matrix));
 }

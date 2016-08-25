@@ -47,14 +47,9 @@ export default class ResizeTool extends Tool {
 		this.e('mouseenter')
 			::withLatestFrom(context.p('selected'))
 			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
-			::filter(([,handleArtifact]) => handleArtifact.movable)
+			::filter(([,handleArtifact]) => handleArtifact.parent.free)
+			::filter(([enter]) => !enter.mouseCursorSet)
 			.subscribe(([enter, handleArtifact]) => {
-				const CURSORS = [
-					'ns-resize',   // 0,   0:  |
-					'nesw-resize', // 1,  45:  /
-					'ew-resize',   // 2,  90:  -
-					'nwse-resize'  // 3, 135:  \
-				];
 				let s = handleArtifact.resizes;
 				let angle = 0;
 				// if (s.top)    { angle = 0 }
@@ -65,10 +60,15 @@ export default class ResizeTool extends Tool {
 				if (s.top    && s.right)  { angle =  45 }
 				if (s.bottom && s.left )  { angle =  45 }
 				if (s.bottom && s.right)  { angle = 135 }
-				const m = enter.toElement.getScreenCTM();
+				const m = enter.currentTarget.getScreenCTM();
 				angle += Math.atan2(m[M21], m[M22]) * 180 / Math.PI;
-				let i = Math.floor((angle + 360 + 22.5) % 180 / 45) % 4;
-				$(enter.toElement).css('cursor', CURSORS[i]);
+				$(enter.currentTarget).css('cursor', [
+					'ns-resize',   // 0,   0:  |
+					'nesw-resize', // 1,  45:  /
+					'ew-resize',   // 2,  90:  -
+					'nwse-resize'  // 3, 135:  \
+				][Math.floor((angle + 180/8) % 180 / (180/4)) % 4]);
+				enter.mouseCursorSet = true;
 			});
 		
 		/* allow resizing */
@@ -78,7 +78,7 @@ export default class ResizeTool extends Tool {
 			::withLatestFrom(context.p('selected'))
 			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
-			::filter(([,handleArtifact]) => handleArtifact.movable)
+			::filter(([,handleArtifact]) => handleArtifact.parent.free)
             .subscribe(([down, handleArtifact]) => {
             	
             	/* start resizing */

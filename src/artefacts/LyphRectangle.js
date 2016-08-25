@@ -16,6 +16,7 @@ import find from 'lodash-bound/find';
 import entries from 'lodash-bound/entries';
 
 import _isNumber from 'lodash/isNumber';
+import _isFinite from 'lodash/isFinite';
 import _isBoolean from 'lodash/isBoolean';
 import _add from 'lodash/add';
 import _defer from 'lodash/defer';
@@ -59,6 +60,7 @@ import NodeGlyph from "./NodeGlyph";
 import Transformable from "./Transformable";
 import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
+import MeasurableGlyph from "./MeasurableGlyph";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -68,11 +70,9 @@ const $$relativeLayerPosition = Symbol('$$relativeLayerPosition');
 
 
 export default class LyphRectangle extends Transformable {
-	
-	@flag(true) free;
-	
-	@property({ isValid: _isNumber }) width;
-	@property({ isValid: _isNumber }) height;
+		
+	@property({ isValid: _isFinite }) width;
+	@property({ isValid: _isFinite }) height;
 	
 	get axisThickness() { return this.model.axis && this.showAxis ? 14 : 0 }
 	
@@ -99,7 +99,7 @@ export default class LyphRectangle extends Transformable {
 		this.setFromObject(options, [
 			'width',
 			'height'
-		], { showAxis: !!this.model.axis });
+		], { showAxis: !!this.model.axis, draggable: true, free: true });
 		
 		this[$$toBeRecycled] = new WeakMap();
 		
@@ -107,8 +107,7 @@ export default class LyphRectangle extends Transformable {
 		for (let setKey of ['radialBorders', 'longitudinalBorders']) {
 			this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
 				parent : this,
-				model  : border,
-				movable: this.free
+				model  : border
 			}))::subscribe_( this[setKey].e('add') , n=>n() );
 		}
 		
@@ -130,198 +129,19 @@ export default class LyphRectangle extends Transformable {
 	}
 	
 	createElement() {
-		const at = this.axisThickness;
 		const group = this.root.gElement();
-				
-		const lyphRectangle = (() => {
-			
-			let shadow = group.rect().attr({
-				filter: this.root.paper.filter(Snap.filter.shadow(8, 8, 4, '#111111', 0.4)),
-			});
-			this.p(['free', 'dragging']).subscribe(([f, d]) => {
-				shadow.attr({ visibility: (f && d ? 'visible' : 'hidden') })
-			});
-			
-			let result = group.rect().attr({
-				stroke        : 'none',
-				fill          : this.model[$$backgroundColor],
-				shapeRendering: 'crispEdges'
-			});
-			
-			this.p('width').subscribe(width  => {
-				result.attr({ width });
-				shadow.attr({ width });
-			});
-			this.p('height').subscribe(height => {
-				result.attr({ height });
-				shadow.attr({ height });
-			});
-			
-		})();
 		
-		const highlightedBorder = (() => {
-			// let result = this.root.g().attr({
-			// 	pointerEvents : 'none'
-			// });
-			let result = group.g().attr({
-				pointerEvents : 'none'
-			});
-			
-			result.rect().attr({
-				stroke:      'black',
-				strokeWidth: '3px',
-				x: -4,
-				y: -4
-			});
-			result.rect().attr({
-				stroke:      'white',
-				strokeWidth: '1px',
-				x: -4,
-				y: -4
-			});
-			let rects = result.selectAll('rect').attr({
-				fill:            'none',
-				shapeRendering:  'crispEdges',
-				pointerEvents :  'none',
-				strokeDasharray: '8, 5', // 13
-				strokeDashoffset: 0
-			});
-			
-			/* animate selection border */
-			interval(1000/60)
-				::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
-				.subscribe( ::rects.attr );
-			
-			
-			this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-				visibility: highlighted && !dragging ? 'visible' : 'hidden'
-			})).subscribe( ::result.attr );
-			
-			this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
-			this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
-			
-			// $('#foreground').append(result.node);
-			
-			return result.node;
-		})();
-		
-		const axis = (() => {
-			
-			if (!this.showAxis) { return null }
-			
-			const result = group.g().addClass('axis').attr({
-				pointerEvents: 'none'
-			});
-			
-			const background = result.rect().attr({
-				stroke        : 'black',
-				fill          : 'black',
-				shapeRendering: 'crispEdges',
-				height        : at,
-				x             : 0
-			});
-			this.p('height').subscribe(height => background.attr({ y: height - at }));
-			this.p('width').subscribe(width => background.attr({ width }));
-			
-			const clipPath = result.rect().addClass('axis-clip-path').attr({
-				height: at,
-				x:      at
-			});
-			const minusText = result.text().attr({
-				textAnchor: 'middle',
-				x:           at / 2
-			});
-			minusText.node.innerHTML='&minus;';
-			const labelText = result.text().attr({
-				textAnchor: 'middle',
-				clip:        clipPath
-			});
-			const plusText = result.text().attr({
-				text:       '+',
-				textAnchor: 'middle'
-			});
-			const allText = group.selectAll('text').attr({
-				fill            : 'white',
-				fontSize        : `${at}px`,
-				textRendering   : 'geometricPrecision',
-				pointerEvents   : 'none',
-				dominantBaseline: 'central',
-			});
-			
-			this.p('width').subscribe((width) => {
-				clipPath.attr({ width: width - 2*at });
-				labelText.attr({ x: width/2 });
-				plusText.attr({ x: width - at/2 });
-			});
-			
-			this.p('height').subscribe((height) => {
-				allText .attr({ y: height - at/2 });
-				clipPath.attr({ y: height - at   });
-			});
-			
-			this.model.p('name')::map(n=>({ text: n })).subscribe( ::labelText.attr );
-			
-			return result;
-			
-		})();
-		
-		
+		group.g().addClass('main-shadow');
+		group.g().addClass('main-shape');
+		group.g().addClass('highlight-border');
+		group.g().addClass('axis');
 		group.g().addClass('parts');
 		group.g().addClass('layers');
 		group.g().addClass('segments'); // TODO: segments
-		
-
-		const borderGroup = (() => {
-			const result = group.g().addClass('borders');
-			
-			this.leftBorder  = null;
-			this.rightBorder = null;
-			this.radialBorders.e('add').subscribe((borderLine) => {
-				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
-				result.append(borderLine.element.svg);
-				removed.subscribe(() => { borderLine.element.remove() });
-				borderLine.y1 = 0;
-				this.p('height')::subscribe_( borderLine.p('y2') , n=>n() );
-				if (!this.leftBorder) {
-					this.leftBorder = borderLine;
-					borderLine.resizes = { left: true };
-					borderLine.x = 0;
-					removed.subscribe(() => { this.leftBorder = null });
-				} else if (!this.rightBorder) {
-					this.rightBorder = borderLine;
-					borderLine.resizes = { right: true };
-					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
-					removed.subscribe(() => { this.rightBorder = null });
-				} else {
-					throw new Error('Trying to add a third radial border.');
-				}
-			});
-			
-			this.topBorder    = null;
-			this.bottomBorder = null; // also axis
-			this.longitudinalBorders.e('add').subscribe((borderLine) => {
-				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
-				result.append(borderLine.element.svg);
-				removed.subscribe(() => { borderLine.element.remove() });
-				borderLine.x1 = 0;
-				this.p('width')::subscribe_( borderLine.p('x2') , n=>n() );
-				if (!this.topBorder) {
-					this.topBorder = borderLine;
-					borderLine.resizes = { top: true };
-					borderLine.y = 0;
-					removed.subscribe(() => { this.topBorder = null });
-				} else if (!this.bottomBorder) {
-					this.bottomBorder = borderLine;
-					borderLine.resizes = { bottom: true };
-					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
-					removed.subscribe(() => { this.bottomBorder = this.axis = null });
-				}
-			});
-			
-		})();
-		
+		group.g().addClass('borders');
 		group.g().addClass('corners');
 		group.g().addClass('nodes');
+		group.g().addClass('measurables');
 		
 		/* return representation(s) of element */
 		return { element: group.node };
@@ -337,30 +157,55 @@ export default class LyphRectangle extends Transformable {
 	async afterCreateElement() {
 		await super.afterCreateElement();
 		
-		
-		
+		{
+			let mainShadowGroup = this.inside.svg.select('.main-shadow');
 			
-		/* corner resize handles */
-		this.corners = {};
-		for (let [c, resizes] of [
-			['tl', { top:    true, left:  true }],
-			['tr', { top:    true, right: true }],
-			['bl', { bottom: true, left:  true }],
-			['br', { bottom: true, right: true }]
-		]) {
-			this.corners[c] = new CornerHandle({ parent: this, movable: this.free, resizes });
-			this.inside.jq.children('.corners').append(this.corners[c].element);
+			let shadow = mainShadowGroup.rect().attr({
+				filter: this.root.element.svg.filter(Snap.filter.shadow(8, 8, 4, '#111111', 0.4)),
+			});
+			
+			this.p(['free', 'dragging']).subscribe(([f, d]) => {
+				shadow.attr({ visibility: (f && d ? 'visible' : 'hidden') })
+			});
+			
+			this.p('width') .subscribe((width)  => { shadow.attr({ width  }) });
+			this.p('height').subscribe((height) => { shadow.attr({ height }) });
 		}
-		this.corners.tl::assign({ x: 0, y: 0});
-		this.corners.tr::assign({ y: 0 });
-		this.corners.bl::assign({ x: 0 });
-		this.p(['width', 'height']).subscribe(([w, h]) => {
-			this.corners.tr::assign({ x: w });
-			this.corners.bl::assign({ y: h });
-			this.corners.br::assign({ x: w, y: h});
-		});
 		
+		{
+			let mainRectangleGroup = this.inside.svg.select('.main-shape');
+			
+			let rectangle = mainRectangleGroup.rect().attr({
+				stroke        : 'none',
+				fill          : this.model[$$backgroundColor],
+				shapeRendering: 'crispEdges'
+			});
+			
+			this.p('width') .subscribe((width)  => { rectangle.attr({ width  }) });
+			this.p('height').subscribe((height) => { rectangle.attr({ height }) });
+		}
 		
+		/* corner resize handles */
+		{
+			this.corners = {};
+			for (let [c, resizes] of [
+				['tl', { top:    true, left:  true }],
+				['tr', { top:    true, right: true }],
+				['bl', { bottom: true, left:  true }],
+				['br', { bottom: true, right: true }]
+			]) {
+				this.corners[c] = new CornerHandle({ parent: this, resizes });
+				this.inside.jq.children('.corners').append(this.corners[c].element);
+			}
+			this.corners.tl::assign({ x: 0, y: 0 });
+			this.corners.tr::assign({ y: 0 });
+			this.corners.bl::assign({ x: 0 });
+			this.p(['width', 'height']).subscribe(([w, h]) => {
+				this.corners.tr::assign({ x: w });
+				this.corners.bl::assign({ y: h });
+				this.corners.br::assign({ x: w, y: h });
+			});
+		}
 		
 		/* new layer in the model --> new layer artifact */
 		this[$$relativeLayerPosition] = new WeakMap();
@@ -381,15 +226,21 @@ export default class LyphRectangle extends Transformable {
 			this.inside.jq.children('.layers').append(layer.element);
 			const removed = layer.p('parent')::filter(parent=>parent!==this);
 			
-			this.leftBorder.model.p('nature')
+			this.p('leftBorder.model.nature')
+				::withLatestFrom(layer.p('leftBorder.model'))
 				::takeUntil(removed)
-				::subscribe_( layer.leftBorder.model.p('nature'), v=>v() );
-			this.rightBorder.model.p('nature')
+				.subscribe(([nature, layerModel]) => {
+					layerModel.nature = nature;
+				});
+			this.p('rightBorder.model.nature')
+				::withLatestFrom(layer.p('rightBorder.model'))
 				::takeUntil(removed)
-				::subscribe_( layer.rightBorder.model.p('nature'), v=>v() );
+				.subscribe(([nature, layerModel]) => {
+					layerModel.nature = nature;
+				});
 			
 			removed.subscribe(() => {
-				if (layer.element.jq.parent()[0] === this.element) {
+				if (layer.element.jq.parent()[0] === this.inside.jq.children('.layers')[0]) {
 					layer.element.jq.remove();
 				}
 			});
@@ -418,6 +269,7 @@ export default class LyphRectangle extends Transformable {
 					}, {
 						width,
 						height,
+						free: false,
 						transformation: ID_MATRIX.translate(0, i * height)
 					});
 				}
@@ -450,12 +302,129 @@ export default class LyphRectangle extends Transformable {
 			})
 		);
 		
+		this.syncModelWithArtefact(
+			'HasMeasurable',
+			MeasurableGlyph,
+			this.inside.jq.children('.measurables'),
+			({model, width, height}) => new MeasurableGlyph({
+				model,
+				x: width / 2, // TODO: pick unique new position and size (auto-layout)
+				y: height - 16 - this.axisThickness
+			})
+		);
+		
+		
+		
+		{
+			const borderGroup = this.inside.jq.children('.borders');
+			
+			this.leftBorder  = null;
+			this.rightBorder = null;
+			this.radialBorders.e('add').subscribe((borderLine) => {
+				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
+				borderGroup.append(borderLine.element);
+				removed.subscribe(() => { borderLine.element.remove() });
+				borderLine.y1 = 0;
+				this.p('height')::subscribe_( borderLine.p('y2') , n=>n() );
+				if (!this.leftBorder) {
+					this.leftBorder = borderLine;
+					borderLine.resizes = { left: true };
+					borderLine.x = 0;
+					removed.subscribe(() => { this.leftBorder = null });
+				} else if (!this.rightBorder) {
+					this.rightBorder = borderLine;
+					borderLine.resizes = { right: true };
+					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
+					removed.subscribe(() => { this.rightBorder = null });
+				} else {
+					throw new Error('Trying to add a third radial border.');
+				}
+			});
+			this.topBorder    = null;
+			this.bottomBorder = null; // also axis
+			this.longitudinalBorders.e('add').subscribe((borderLine) => {
+				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
+				borderGroup.append(borderLine.element);
+				removed.subscribe(() => { borderLine.element.remove() });
+				borderLine.x1 = 0;
+				this.p('width')::subscribe_( borderLine.p('x2') , n=>n() );
+				if (!this.topBorder) {
+					this.topBorder = borderLine;
+					borderLine.resizes = { top: true };
+					borderLine.y = 0;
+					removed.subscribe(() => { this.topBorder = null });
+				} else if (!this.bottomBorder) {
+					this.bottomBorder = borderLine;
+					borderLine.resizes = { bottom: true };
+					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
+					removed.subscribe(() => { this.bottomBorder = this.axis = null });
+				}
+			});
+		}
+		
+		
+		if (this.showAxis) {
+			const axisGroup = this.inside.svg.select('.axis').attr({
+				pointerEvents: 'none'
+			});
+			
+			const at = this.axisThickness;
+			
+			const background = axisGroup.rect().attr({
+				stroke        : 'black',
+				fill          : 'black',
+				shapeRendering: 'crispEdges',
+				height        : at,
+				x             : 0
+			});
+			this.p('height').subscribe(height => background.attr({ y: height - at }));
+			this.p('width') .subscribe(width  => background.attr({ width }));
+			
+			const clipPath = axisGroup.rect().addClass('axis-clip-path').attr({
+				height: at,
+				x:      at
+			});
+			const minusText = axisGroup.text().attr({
+				textAnchor: 'middle',
+				x:           at / 2
+			});
+			minusText.node.innerHTML='&minus;';
+			const labelText = axisGroup.text().attr({
+				textAnchor: 'middle',
+				clip:        clipPath
+			});
+			const plusText = axisGroup.text().attr({
+				text:       '+',
+				textAnchor: 'middle'
+			});
+			const allText = axisGroup.selectAll('text').attr({
+				fill            : 'white',
+				fontSize        : `${at}px`,
+				textRendering   : 'geometricPrecision',
+				pointerEvents   : 'none',
+				dominantBaseline: 'central',
+			});
+			
+			this.p('width').subscribe((width) => {
+				clipPath.attr({ width: width - 2*at });
+				labelText.attr({ x: width/2 });
+				plusText.attr({ x: width - at/2 });
+			});
+			
+			this.p('height').subscribe((height) => {
+				allText .attr({ y: height - at/2 });
+				clipPath.attr({ y: height - at   });
+			});
+			
+			this.model.p('name')::map(n=>({ text: n })).subscribe( ::labelText.attr );
+		}
+		
 	}
 	
 	
 	syncModelWithArtefact(relationship, cls, parentElement, createNewArtefact) {
 		/* new free-floating thing in the model --> new artifact */
-		this.model['-->'+relationship].e('add')
+		this.model[`-->${relationship}`].e('add')
 			::filter(c => c.class === relationship)
 			::map(c=>c[2])
 			::withLatestFrom(this.p('width'), this.p('height'))
@@ -473,19 +442,17 @@ export default class LyphRectangle extends Transformable {
 				parentElement.append(artefact.element);
 			    /* remove from dom when removed */
 				removed.subscribe(() => {
-					if (artefact.element.jq.parent()[0] === this.element) {
+					if (artefact.element.jq.parent()[0] === parentElement) {
 						artefact.element.jq.remove();
 					}
 				});
 			});
 	}
 	
-	get draggable() { return true }
-	
 	drop(droppedEntity, originalDropzone = this) {
 		if (originalDropzone === this) {
 			// dropped directly into this lyph rectangle
-			if ([LyphRectangle, NodeGlyph].includes(droppedEntity.constructor)) {
+			if ([LyphRectangle, NodeGlyph, MeasurableGlyph].includes(droppedEntity.constructor)) {
 				this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
 				this.freeFloatingStuff.add(droppedEntity, { force: true });
 			} else {
@@ -518,6 +485,14 @@ export default class LyphRectangle extends Transformable {
 			}
 			// TODO: dropped on border (also put code in border class)
 		}
+	}
+	
+	p(...args) {
+		switch (args[0]) {
+			case 'layers': return this.layers.p('value');
+			default:       return super.p(...args);
+		}
+		
 	}
 	
 }

@@ -1,102 +1,67 @@
-import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
-
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-import assign from 'lodash-bound/assign';
-import sortBy from 'lodash-bound/sortBy';
-import maxBy from 'lodash-bound/maxBy';
-import max from 'lodash-bound/max';
-import min from 'lodash-bound/min';
-import ldMap from 'lodash-bound/map';
-import find from 'lodash-bound/find';
-import entries from 'lodash-bound/entries';
-
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _add from 'lodash/add';
-import _defer from 'lodash/defer';
-import _zip from 'lodash/zip';
-
-import uniqueId from 'lodash/uniqueId';
-
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {of} from 'rxjs/observable/of';
-
-// import {map} from '../util/bound-hybrid-functions';
-
-import {merge} from 'rxjs/observable/merge';
-import {range} from 'rxjs/observable/range';
-import {interval} from 'rxjs/observable/interval';
-
-import {sampleTime} from 'rxjs/operator/sampleTime';
 import {filter} from 'rxjs/operator/filter';
 import {pairwise} from 'rxjs/operator/pairwise';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {mergeMap} from 'rxjs/operator/mergeMap';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {toPromise} from 'rxjs/operator/toPromise';
-import {concat} from 'rxjs/operator/concat';
 import {map} from 'rxjs/operator/map';
 
-import chroma from '../libs/chroma.js';
+import isNaN from 'lodash-bound/isNaN';
 
 import SvgEntity from './SvgEntity.js';
 
-import {property} from '../util/ValueTracker.js';
-import ObservableSet, {copySetContent} from "../util/ObservableSet";
-import BorderLine from './BorderLine';
+import {property, flag} from '../util/ValueTracker';
 
 import {subscribe_} from "../util/rxjs";
-import {shiftedMovementFor, log} from "../util/rxjs";
-import {flag} from "../util/ValueTracker";
-import NodeGlyph from "./NodeGlyph";
 
-import almostEqual from 'almost-equal';
-import {ID_MATRIX} from "../util/svg";
-import {createSVGTransformFromMatrix} from "../util/svg";
+import {ID_MATRIX, matrixEquals, setCTM} from "../util/svg";
 
 
-const $$backgroundColor = Symbol('$$backgroundColor');
-const $$toBeRecycled = Symbol('$$toBeRecycled');
-const $$recycle = Symbol('$$recycle');
+const $$backgroundColor       = Symbol('$$backgroundColor');
+const $$toBeRecycled          = Symbol('$$toBeRecycled');
+const $$recycle               = Symbol('$$recycle');
 const $$relativeLayerPosition = Symbol('$$relativeLayerPosition');
 
-function matrixEquals(M1, M2) {
-	return ['a', 'b', 'c', 'd', 'e', 'f'].every(key => almostEqual(M1[key], M2[key]));
-}
 
 export default class Transformable extends SvgEntity {
 	
-	@flag(true) transformable;
-	
 	@property({ initial: ID_MATRIX, isEqual: matrixEquals }) transformation;
+	@property({ initial: ID_MATRIX, isEqual: matrixEquals }) canvasTransformation;
 	
 	constructor(options) {
 		super(options);
 		
-		this.setFromObject(options, [], { showAxis: !!this.model.axis });
+		this.setFromObject(options, [
+			'transformation',
+		    'rotation'
+		]);
 		
-		this.transformation = ID_MATRIX
-			.translate(options.width/2, options.height/2)
-			.rotate(options.rotation || 0)
-			.translate(-options.width/2, -options.height/2)
-			.translate(options.x || 0, options.y || 0);
-		
+		/* set initial transformation */
+		{
+			let {
+				width:    w = 0,
+			    height:   h = 0,
+                rotation: r = 0,
+			    x           = 0,
+			    y           = 0
+			} = options;
+			this.transformation = ID_MATRIX
+				.translate(x, y)
+				.translate(w/2, h/2)
+				.rotate(r)
+				.translate(-w/2, -h/2);
+		}
 		
 		/* convert local transformation the moment it gets a new parent, */
 		/* so that it will not moved w.r.t. the global coordinate system */
 		this.p('parent')
 			::filter(p=>p)
 			::pairwise()
-			::map(([prev, curr]) => prev.element.getTransformToElement(curr.element))
-			::withLatestFrom(this.p('transformation'), (tr, loc) => loc.multiply(tr))
+			::withLatestFrom(this.p('transformation'), ([prev, curr], loc) =>
+							prev.inside.getTransformToElement(curr.inside).multiply(loc))
 			::subscribe_( this.p('transformation'), v=>v() );
+		
+		/* maintain canvas-rooted transformation */
+		this.p(['parent.canvasTransformation', 'transformation'], (pct, t) => pct.multiply(t))
+			::subscribe_( this.p('canvasTransformation'), v=>v() );
+		
 	}
 	
 	async afterCreateElement() {
@@ -105,10 +70,7 @@ export default class Transformable extends SvgEntity {
 		/* enacting local transformation */
 		this.element.jq.attr({ transform: '' });
 		this.p('transformation')
-		    ::map(createSVGTransformFromMatrix)
-		    .subscribe( ::this.element.transform.baseVal.initialize );
+		    .subscribe( this.element::setCTM );
 	}
-	
-	get draggable() { return this.transformable }
 	
 }

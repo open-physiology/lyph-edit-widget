@@ -13,12 +13,16 @@ import _defer from 'lodash/defer'
 
 import uniqueId from 'lodash/uniqueId';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
 import {interval} from 'rxjs/observable/interval';
+import {of} from 'rxjs/observable/of';
 
+import {combineLatest} from 'rxjs/observable/combineLatest';
 import {map} from 'rxjs/operator/map';
 import {take} from 'rxjs/operator/take';
-import {filter} from 'rxjs/operator/filter';
+import {switchMap} from 'rxjs/operator/switchMap';
+import {sampleTime} from 'rxjs/operator/sampleTime';
+
+import {ID_MATRIX} from "../util/svg";
 
 import chroma from '../libs/chroma.js';
 
@@ -27,68 +31,63 @@ import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import {flag} from "../util/ValueTracker";
-import {$$elementCtrl} from "../symbols";
+import {subscribe_} from "../util/rxjs";
+import Transformable from "./Transformable";
+import ProcessLine from "./ProcessLine";
+import {setCTM} from "../util/svg";
+import BorderLine from "./BorderLine";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 
 
-export default class CornerHandle extends SvgEntity {
-	
-	@property({ isValid: _isNumber }) x;
-	@property({ isValid: _isNumber }) y;
+export default class MeasurableGlyph extends Transformable {
 	
 	constructor(options) {
 		super(options);
-		this.setFromObject(options, [
-			'x', 'y',
-		    'resizes'
-		]);
+		
+		this.setFromObject(options, { draggable: true });
 	}
 	
 	createElement() {
+		
 		const group = this.root.gElement();
 		
-		group.g().addClass('highlight-border');
+		group.g().addClass('main-shape');
 		
 		/* return representation(s) of element */
 		return { element: group.node };
+		
 	}
 	
 	async afterCreateElement() {
 		await super.afterCreateElement();
 		
+		const POLY_POINTS = [
+			 30,   0,
+			 15,  26,
+			-15,  26,
+			-30,   0,
+			-15, -26,
+			 15, -26
+		];
+
 		{
-			let hitBoxGroup = this.root.gElement().addClass('hit-box');
-			
-			$(hitBoxGroup.node)
-				.css({ opacity: 0 })
-				.attr('controller', ''+this);
-			window[$$elementCtrl].set(hitBoxGroup.node, this);
-			
-			this.p('parent.free')
-				.subscribe((free) => {
-					hitBoxGroup.attr({
-						pointerEvents: (free ? 'inherit' : 'none')
-					});
-				});
-			
-			let circle = hitBoxGroup.circle();
-			
-			this.p(['x', 'y']).subscribe(([x, y]) => {
-				circle.attr({
-					cx: x,
-					cy: y,
-					r:  10
-				});
+			let mainShapeGroup = this.inside.svg.select('.main-shape');
+			let polygon = mainShapeGroup.polygon(POLY_POINTS.map(p=>p/2.5)).attr({
+				strokeWidth: '1px',
+				stroke:      '#111111',
+				fill:        '#dddddd'
 			});
 			
-			(await this.parent.insideCreated).jq
-			    .children('.corners')
-			    .append(hitBoxGroup.node);
-			
-			// TODO: make this work without the go-around, just as a lyph-rectangle child
+			this.p('parent')
+				::map(p => p instanceof ProcessLine || p instanceof BorderLine ? 0.75 : 1)
+				::map(f => ID_MATRIX.scale(f))
+				.subscribe( polygon.node::setCTM )
 		}
-		
 	}
+	
+	// drop(droppedEntity) {
+	// 	// TODO
+	// }
 	
 }

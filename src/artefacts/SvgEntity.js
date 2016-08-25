@@ -27,6 +27,10 @@ export default class SvgEntity extends SvgObject {
 	@property() root;
 	@property() parent;
 	children = new ObservableSet();
+	
+	toString() {
+		return `[${this.constructor.name}: ${this.model && this.model.name}]`;
+	}
 
 	constructor(options) {
 		super(options);
@@ -51,8 +55,8 @@ export default class SvgEntity extends SvgObject {
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
 		
 		/* when a parent is dragging, its children are dragging */
-		this.p('parent')
-			::switchMap(parent => parent ? parent.p('dragging') : of(true))
+		this.p('parent.dragging')
+			// ::switchMap(parent => parent ? parent.p('dragging') : of(true))
 			::subscribe_( this.p('dragging') , n=>n() );
 		
 	}

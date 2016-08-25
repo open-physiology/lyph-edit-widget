@@ -22,17 +22,31 @@ import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {POINT} from "../util/svg";
 import {svgPageCoordinates} from "../util/rxjs";
+import {combineLatest} from "rxjs/observable/combineLatest";
 
 
 export default class DragDropTool extends Tool {
 	
 	constructor(context) {
-		super(context, { events: ['mousedown'] });
+		super(context, { events: ['mousedown', 'mouseenter'] });
 		
 		const {root} = context;
 		
 		const mousemove = fromEvent($(window), 'mousemove');
 		const mouseup   = fromEvent($(window), 'mouseup'  );
+		
+		// /* use the right mouse-pointer */
+		// combineLatest(
+		// 	this.e('mouseenter'),
+		// 	context.p('selected')
+		// )
+		// 	::filter(([,handleArtifact]) => handleArtifact.draggable)
+		// 	::filter(([enter]) => !enter.mouseCursorSet)
+		// 	.subscribe(([enter, handleArtifact]) => {
+		// 		$(enter.currentTarget).css('cursor', 'grab');
+		// 		enter.mouseCursorSet = true;
+		// 	});
+		
 		
 		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
@@ -42,11 +56,23 @@ export default class DragDropTool extends Tool {
 			::filter(([,draggedArtefact]) => draggedArtefact.draggable)
 			.subscribe(([down, draggedArtefact]) => {
 				
+				function reassessMouseHover(a) {
+					if (!a){ return }
+					a.element.jq.mouseleave();
+					reassessMouseHover(a.parent);
+					if (a.element.jq.is(':hover')) {
+						a.element.jq.mouseenter();
+					}
+				}
+								
 				/* start dragging */
 				draggedArtefact.dragging = true;
 				for (let a of draggedArtefact.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
+				reassessMouseHover(draggedArtefact.parent);
+				
+				
 				const startMatrix = root.element.getTransformToElement(draggedArtefact.element);
 				
 				
@@ -81,9 +107,6 @@ export default class DragDropTool extends Tool {
 						
 						/* stop dragging */
 						draggedArtefact.dragging = false;
-						// draggedArtefact.element.jq.mouseenter();
-						// ^ glitches if the mouse is already outside of it, so it won't mouseleave
-						// TODO: do it conditionally; check if the mouse pointer is inside it
 				    });
 				
 			});

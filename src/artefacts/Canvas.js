@@ -37,6 +37,7 @@ import ProcessLine from "./ProcessLine";
 import ValueTracker from "../util/ValueTracker";
 import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
 import NodeGlyph from "./NodeGlyph";
+import MeasurableGlyph from "./MeasurableGlyph";
 
 const $$context = Symbol('$$context');
 const $$existingSVG = Symbol('$$existingSVG');
@@ -63,32 +64,30 @@ export default class Canvas extends SvgEntity {
 	
 	get context() { return this[$$context] }
 	
-	get paper() { return this._paper }
-	
 	gElement() {
-		return this._paper.g();
+		let result = this.element.svg.g();
+		$(result.node).detach();
+		return result;
 	}
 	
 	createElement() {
 		window.E  = ""; // <-- ugly hack to fix snap.svg.zpd bug
-		let root  = this[$$existingSVG] || $(`<svg></svg>`);
-		let paper = Snap(root[0]);
-		this._paper = paper;
-		paper.zpd({
+		let viewport = Snap((this[$$existingSVG] || $(`<svg>`))[0]);
+		viewport.zpd({
 			pan:  false,
 			zoom: false,
 			drag: false
 		});
-		let canvas = root.children('g');
-		canvas.append($.svg(`<g class="lyphs"></g>`))
-		      .append($.svg(`<g class="processes"></g>`))
-		      .append($.svg(`<g id="foreground"></g>`));
+		let canvas = viewport.select('g[id^="snapsvg-zpd-"]');
 		
+		canvas.g().addClass('free-floating-entities');
+		canvas.g().addClass('processes');
+		canvas.g().addClass('foreground');
 		
 		/* return representation(s) of element */
 		return {
-			element: paper.node,
-			inside:  canvas[0]
+			element: viewport.node,
+			inside:  canvas  .node
 		};
 	}
 	
@@ -97,21 +96,26 @@ export default class Canvas extends SvgEntity {
 		
 		this.children.e('add').subscribe((artefact) => {
 			if (artefact instanceof LyphRectangle) {
-				this.inside.jq.children('.lyphs').append(artefact.element);
+				this.inside.jq.children('.free-floating-entities').append(artefact.element);
 			} else if (artefact instanceof ProcessLine) {
 				this.inside.jq.children('.processes').append(artefact.element);
 			} else if (artefact instanceof CoalescenceScenarioRectangle) {
-				this.inside.jq.children('.lyphs').append(artefact.element);
+				this.inside.jq.children('.free-floating-entities').append(artefact.element);
 			} else if (artefact instanceof NodeGlyph) {
-				this.inside.jq.children('.foreground').append(artefact.element);
+				this.inside.jq.children('.free-floating-entities').append(artefact.element);
+			} else if (artefact instanceof MeasurableGlyph) {
+				this.inside.jq.children('.free-floating-entities').append(artefact.element);
 			}
 		});
-		
 	}
 	
 	drop(droppedEntity, originalDropzone = this) {
-		droppedEntity.parent = this;
-		droppedEntity.free = true;
+		droppedEntity::assign({
+			parent:    this,
+			free:      true,
+			draggable: true,
+			resizable: true
+		});
 		this.inside.jq.children('.lyphs').append(droppedEntity.element);
 	}
 	

@@ -11,14 +11,16 @@ import {afterMatching} from "../util/rxjs";
 import {stopPropagation} from "../util/misc";
 import {withoutMod} from "../util/misc";
 import {createSVGPoint} from "../util/svg";
+import {$$elementCtrl} from "../symbols";
+import {$$context} from "../symbols";
 
-const $$context       = Symbol('$$context');
 const $$root          = Symbol('$$root');
 const $$domEvents     = Symbol('$$domEvents');
 const $$subscriptions = Symbol('$$subscriptions');
 const $$scratchSVGPoint = Symbol('$$scratchSVGPoint');
 
 const $$tools = Symbol('$$tools');
+const $$toolTools = Symbol('$$toolTools');
 
 export default class Tool  {
 	
@@ -28,16 +30,14 @@ export default class Tool  {
 		const {root} = context;
 		
 		const addController = (event) => {
-			event.controller = $(event.currentTarget).data('controller');
-			return event;
+			event.controller = window[$$elementCtrl].get(event.currentTarget);
 		};
 		
 		const jqArgs = [events.join(' '), '[controller]'];
 		this[$$domEvents] = fromEventPattern(
 			(handler) => { root.element.jq.on (...jqArgs, handler) },
-			(handler) => { root.element.jq.off(...jqArgs, handler) },
-			addController
-		);
+			(handler) => { root.element.jq.off(...jqArgs, handler) }
+		).do(addController);
 		
 		/* create svg point for scratch use */
 		this[$$scratchSVGPoint] = root.element.createSVGPoint();

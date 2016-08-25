@@ -22,6 +22,8 @@ import {take} from 'rxjs/operator/take';
 import {switchMap} from 'rxjs/operator/switchMap';
 import {sampleTime} from 'rxjs/operator/sampleTime';
 
+import {ID_MATRIX} from "../util/svg";
+
 
 import chroma from '../libs/chroma.js';
 
@@ -31,104 +33,51 @@ import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import {flag} from "../util/ValueTracker";
 import {subscribe_} from "../util/rxjs";
+import Transformable from "./Transformable";
+import BorderLine from "./BorderLine";
+import {setCTM} from "../util/svg";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 
 
-export default class NodeGlyph extends SvgEntity {
-	
-	@property({ isValid: _isNumber }) x;
-	@property({ isValid: _isNumber }) y;
-	
-	@property({ initial: Snap.matrix() }) gTransform; // local --> global
-	
-	toString() { return `[${this.constructor.name}]` }
+export default class NodeGlyph extends Transformable {
 	
 	constructor(options) {
 		super(options);
-		this.setFromObject(options, [
-			'x', 'y'
-		]);
+		
+		this.setFromObject(options, { draggable: true });
 	}
 	
 	createElement() {
-		
 		const group = this.root.gElement();
 		
-		let glyph = group.circle().attr({
-			strokeWidth: '1px',
-			stroke     : '#aa0000',
-			fill       : '#ff5555',
-			r          : 9
-		});
+		group.g().addClass('main-shape');
 		
-		this.p('x').subscribe((x) => { glyph.attr({ cx: x }) });
-		this.p('y').subscribe((y) => { glyph.attr({ cy: y }) });
-		
-		
-		
-		const highlightedBorder = (() => {
-			let result = this.root.gElement().g().attr({
-				pointerEvents : 'none'
-			});
-			let thickCircle = result.circle().attr({
-				stroke:      'black',
-				strokeWidth: '3px'
-			});
-			let thinCircle = result.circle().attr({
-				stroke:      'white',
-				strokeWidth: '1px'
-			});
-			let circles = result.selectAll('circle').attr({
-				fill:            'none',
-				pointerEvents :  'none',
-				r:                13,
-				strokeDasharray: '7, 4', // 11
-				strokeDashoffset: 0
-			});
-			
-			interval(1000/60)
-				::map(n => ({ strokeDashoffset: -(n / 3.5 % 11) }))
-				.subscribe( ::circles.attr );
-			
-			this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-				visibility: highlighted && !dragging ? 'visible' : 'hidden'
-			})).subscribe( ::result.attr );
-			
-			this.p('x').subscribe((x) => { circles.attr({ cx: x }) });
-			this.p('y').subscribe((y) => { circles.attr({ cy: y }) });
-			
-			$('#foreground').append(result.node);
-			
-			return result.node;
-		})();
-		
-		
-		
-		/* return representation(s) of element */
-		return {
-			element: group.node
-		};
-		
+		return { element: group.node };
 	}
 	
 	async afterCreateElement() {
 		await super.afterCreateElement();
-		
-		combineLatest(
-			this.p('parent')::switchMap(p=>p?p.p('gTransform'):of(0)),
-			this.p('x'), this.p('y')
-		)
-			// ::sampleTime(1000/30)
-			::map(()=>this.element.svg.transform().globalMatrix)
-			::subscribe_( this.p('gTransform'), v=>v() );
-		
+
+		{
+			let mainShapeGroup = this.inside.svg.select('.main-shape');
+			let circle = mainShapeGroup.circle().attr({
+				strokeWidth: '1px',
+				stroke     : '#aa0000',
+				fill       : '#ff5555',
+				cx         : 0,
+				cy         : 0
+			});
+			
+			this.p('parent')
+				::map(p => p instanceof BorderLine ? 6 : 8)
+				::map(r => ({ r }))
+				.subscribe( ::circle.attr )
+		}
 	}
 	
-	get draggable() { return true }
-	
-	drop(droppedEntity) {
-		// TODO
-	}
+	// drop(droppedEntity) {
+	// 	// TODO
+	// }
 	
 }

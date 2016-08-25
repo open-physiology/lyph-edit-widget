@@ -132,10 +132,10 @@ export default class ValueTracker {
 		
 		/* define the bus which manages the property */
 		let subject = this[$$settableProperties][name] = new BehaviorSubject(initial)
-			::filter              (this[$$filterBy] )
+			// ::filter              (this[$$filterBy] )
 			::filter              (this::isValid    )
-			::map                 (this::transform  )
-			::takeUntil           (this[$$takeUntil])
+			// ::map                 (this::transform  )
+			// ::takeUntil           (this[$$takeUntil])
 			::distinctUntilChanged(this::isEqual    );
 		this[$$properties][name] = readonly ? subject.asObservable() : subject;
 		
@@ -188,7 +188,7 @@ export default class ValueTracker {
 			if (tail.length > 0) {
 				return this.p(head)::switchMap((obj) => {
 					if (!obj) { return never() }
-					assert(obj instanceof ValueTracker, humanMsg`
+					assert(obj.p::isFunction(), humanMsg`
 						The '${head}' property did not return
 						a ValueTracker-based object,
 						so it cannot be chained.

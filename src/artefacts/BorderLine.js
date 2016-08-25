@@ -27,47 +27,80 @@ import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import {flag} from "../util/ValueTracker";
+import {$$elementCtrl} from "../symbols";
+import NodeGlyph from "./NodeGlyph";
+import LyphRectangle from "./LyphRectangle";
+import MeasurableGlyph from "./MeasurableGlyph";
+import {subscribe_} from "../util/rxjs";
+import {withLatestFrom} from "rxjs/operator/withLatestFrom";
+import Transformable from "./Transformable";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
+const $$toBeRecycled    = Symbol('$$toBeRecycled');
+const $$recycle = Symbol('$$recycle');
 
 
-export default class BorderLine extends SvgEntity {
+export default class BorderLine extends Transformable {
 	
 	@property({ isValid: _isNumber }) x1;
 	@property({ isValid: _isNumber }) y1;
 	@property({ isValid: _isNumber }) x2;
 	@property({ isValid: _isNumber }) y2;
 	
-	@property() x;
-	@property() y;
+	@property({ isValid: _isNumber }) x;
+	@property({ isValid: _isNumber }) y;
 	
-	@flag(true) movable;
+	freeFloatingStuff = new ObservableSet();
 	
-	toString() { return `[${this.constructor.name}]` }
+	get width()  { return Math.abs(this.x1 - this.x2) }
+	get height() { return Math.abs(this.y1 - this.y2) }
 	
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, [
 			'x1', 'x2', 'x',
 			'y1', 'y2', 'y',
-			'free', 'movable',
-		    'resizes'
-		]);
+			'resizes'
+		], { free: false });
 			
-		/* sync x1,x2,y1,y2 with x,y */
-		this.p(['x1', 'x2'], (x1, x2) => x1===x2?x1:null).subscribe( this.p('x') );
-		this.p(['y1', 'y2'], (y1, y2) => y1===y2?y1:null).subscribe( this.p('y') );
-		this.p('x').subscribe( this.p('x1') );
-		this.p('x').subscribe( this.p('x2') );
-		this.p('y').subscribe( this.p('y1') );
-		this.p('y').subscribe( this.p('y2') );
+		/* sync x1,x2,y1,y2,x,y,width,height */
+		this.p(['x1', 'x2'], (x1, x2) => Math.min(x1, x2)).subscribe( this.pSubject('x') );
+		this.p(['y1', 'y2'], (y1, y2) => Math.min(y1, y2)).subscribe( this.pSubject('y') );
+		this.p('x')::filter(() => this.x1 === this.x2).subscribe((x) => { this.x1 = this.x2 = x });
+		this.p('y')::filter(() => this.y1 === this.y2).subscribe((y) => { this.y1 = this.y2 = y });
+	   
+		
+		this[$$toBeRecycled] = new WeakMap();
+				
+	}
+	
+	[$$recycle](model) {
+		if (!this[$$toBeRecycled].has(model)) { return false }
+		let result = this[$$toBeRecycled].get(model);
+		this[$$toBeRecycled].delete(model);
+		return result;
 	}
 	
 	createElement() {
 		const group = this.root.gElement();
 		
+		group.g().addClass('main-shape');
+		group.g().addClass('nodes');
+		group.g().addClass('measurables');
+		
+		/* return representation(s) of element */
+		return { element: group.node };
+	}
+	
+	async afterCreateElement() {
+		await super.afterCreateElement();
+		
+		let group = this.inside.svg;
+		
 		{
-			let result = group.line().attr({
+			let mainShapeGroup = this.inside.svg.select('.main-shape');
+			
+			let line = mainShapeGroup.line().attr({
 				strokeWidth   : '2px',
 				stroke        : 'black',
 				shapeRendering: 'crispEdges',
@@ -76,36 +109,34 @@ export default class BorderLine extends SvgEntity {
 			});
 			
 			/* manifest coordinates in the DOM */
-			this.p('x1').subscribe(x1 => result.attr({ x1 }));
-			this.p('x2').subscribe(x2 => result.attr({ x2 }));
-			this.p('y1').subscribe(y1 => result.attr({ y1 }));
-			this.p('y2').subscribe(y2 => result.attr({ y2 }));
+			this.p('x1').subscribe(x1 => line.attr({ x1 }));
+			this.p('x2').subscribe(x2 => line.attr({ x2 }));
+			this.p('y1').subscribe(y1 => line.attr({ y1 }));
+			this.p('y2').subscribe(y2 => line.attr({ y2 }));
 			
 			/* manifest nature in the DOM */
 			this.model.p('nature')
 				::map(n => ({ strokeDasharray: n === 'open' ? '5, 5' : 'none' }))
-				.subscribe( ::result.attr );
+				.subscribe( ::line.attr );
+			
+			// this.findAncestor(a => a.free).inside.jq
+			//     .children('.foreground')
+			//     .append(lineGroup.node);
 		}
-		
-		
-		
-		const highlightedBorder = (() => {
-			let result = group.g().attr({
+		{
+			let highlightBorderGroup = group.g().attr({
 				pointerEvents : 'none'
 			});
 
-			this.p('gTransform')::filter(v=>v)::map(m=>m.toTransformString())
-			    .subscribe( ::result.transform );
-
-			result.rect().attr({
+			highlightBorderGroup.rect().attr({
 				stroke:      'black',
 				strokeWidth: '3px'
 			});
-			result.rect().attr({
+			highlightBorderGroup.rect().attr({
 				stroke:      'white',
 				strokeWidth: '1px'
 			});
-			let rects = result.selectAll('rect').attr({
+			let rects = highlightBorderGroup.selectAll('rect').attr({
 				fill:            'none',
 				shapeRendering:  'crispEdges',
 				pointerEvents :  'none',
@@ -116,10 +147,9 @@ export default class BorderLine extends SvgEntity {
 				::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
 				.subscribe( ::rects.attr );
 
-
-			this.p(['highlighted', 'dragging'], (highlighted, dragging) => ({
-				visibility: (highlighted && !dragging) ? 'visible' : 'hidden'
-			})).subscribe( ::result.attr );
+			this.p(['selected', 'dragging'], (selected, dragging) => ({
+				visibility: (selected && !dragging) ? 'visible' : 'hidden'
+			})).subscribe( ::highlightBorderGroup.attr );
 
 			this.p(['x1', 'x2', 'y1', 'y2'], (x1, x2, y1, y2) => ({
 				x:      Math.min(x1, x2) - 4,
@@ -127,68 +157,116 @@ export default class BorderLine extends SvgEntity {
 				width:  Math.abs(x1-x2) + 8,
 				height: Math.abs(y1-y2) + 8
 			})).subscribe( ::rects.attr );
-			
-			// this.p('x1')     .subscribe((x)      => { rects.attr({ x:      x-4      }) });
-			// this.p('y')     .subscribe((y)      => { rects.attr({ y:      y-4      }) });
-			// this.p('width') .subscribe((width)  => { rects.attr({ width:  width+7  }) });
-			// this.p('height').subscribe((height) => { rects.attr({ height: height+7 }) });
 
+			// this.findAncestor(a => a.free).inside.jq
+			//     .children('.foreground')
+			//     .append(highlightBorderGroup.node);
 			// $('#foreground').append(result.node);
-
-			return result.node;
-		})();
-		
-		
-		
-		
-		/* return representation(s) of element */
-		return { element: group.node };
+			
+			// TODO: put this in SelectTool.js; Why wasn't this easy??
+		}
+		{
+			let hitBoxGroup = this.root.gElement().addClass('hit-box');
+			
+			$(hitBoxGroup.node)
+				.css({ opacity: 0 })
+				.attr('controller', ''+this);
+			window[$$elementCtrl].set(hitBoxGroup.node, this);
+			
+			this.p('parent.free')
+				.subscribe((free) => { hitBoxGroup.attr({ pointerEvents: free ? 'inherit' : 'none' }) });
+			
+			let rectangle = hitBoxGroup.rect();
+			
+			this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
+				if (x1 === x2) {
+					rectangle.attr({
+						x: x1-2,
+						y: y1,
+						width: 5,
+						height: Math.abs(y1 - y2)
+					});
+				} else {
+					rectangle.attr({
+						x: x1,
+						y: y1-2,
+						width: Math.abs(x1 - x2),
+						height: 5
+					});
+				}
+			});
+			
+			(await this.parent.insideCreated).jq
+			    .children('.borders')
+			    .append(hitBoxGroup.node);
+		}
+		{
+			this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
+			this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
+			this.syncModelWithArtefact(
+				'ContainsNode',
+				NodeGlyph,
+				this.inside.jq.children('.nodes'),
+				({model, x1, x2, y1, y2}) => new NodeGlyph({
+					model,
+					x: (x1+x2)/2, // TODO: pick unique new position and size (auto-layout)
+					y: (y1+y2)/2, //
+				})
+			);
+		}
+		{
+			this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
+			this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
+			this.syncModelWithArtefact(
+				'HasMeasurable',
+				MeasurableGlyph,
+				this.inside.jq.children('.measurables'),
+				({model, x1, x2, y1, y2}) => new MeasurableGlyph({
+					model,
+					x: (x1+x2)/2, // TODO: pick unique new position and size (auto-layout)
+					y: (y1+y2)/2, //
+				})
+			);
+		}
 	}
 	
-	async afterCreateElement() {
-		await super.afterCreateElement();
-		
-		
-		let result = this.root.gElement().rect();
-		
-		$(result.node)
-			.css({ opacity: 0 })
-			.attr('controller', ''+this)
-			.data('controller', this);
-		
-		this.p('movable')
-			::map(m => ({ pointerEvents: m ? 'inherit' : 'none' }))
-			.subscribe( ::result.attr );
-		
-		this.p(['x1', 'x2', 'y1', 'y2']).subscribe(([x1, x2, y1, y2]) => {
-			if (x1 === x2) {
-				// $(result.node).css({ cursor: 'col-resize' });
-				result.attr({
-					x: x1-2,
-					y: y1,
-					width: 5,
-					height: Math.abs(y1 - y2)
-				});
-			} else {
-				// $(result.node).css({ cursor: 'row-resize' });
-				result.attr({
-					x: x1,
-					y: y1-2,
-					width: Math.abs(x1 - x2),
-					height: 5
-				});
-			}
-		});
-		
-		let parentLyph = this.findAncestor(a => a.free);
-		parentLyph.inside.jq.children('.foreground').append(result.node);
-		
-	}
 	
-	get draggable() { return false }
+	syncModelWithArtefact(relationship, cls, parentElement, createNewArtefact) {
+		/* new free-floating thing in the model --> new artifact */
+		this.model[`-->${relationship}`].e('add')
+			::filter(c => c.class === relationship)
+			::map(c=>c[2])
+			::withLatestFrom(this.p('x1'), this.p('x2'), this.p('y1'), this.p('y2'))
+			::map(([model, x1, x2, y1, y2]) =>
+				this[$$recycle](model) ||
+				createNewArtefact({ model, x1, x2, y1, y2 }))
+			.do((artefact) => { artefact.free = true })
+			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
+		/* new part artifact --> house svg element */
+		this.freeFloatingStuff.e('add')
+		    .subscribe((artefact) => {
+			    /* event when removed */
+			    const removed = artefact.p('parent')::filter(p=>p!==this);
+		    	/* put into the dom */
+				parentElement.append(artefact.element);
+			    /* remove from dom when removed */
+				removed.subscribe(() => {
+					if (artefact.element.jq.parent()[0] === parentElement) {
+						artefact.element.jq.remove();
+					}
+				});
+			});
+	}
 	
 	drop(droppedEntity, originalDropzone = this) {
-		this.parent.drop(droppedEntity, originalDropzone);
+		if ([LyphRectangle].includes(droppedEntity.constructor)) {
+			return this.parent.drop(droppedEntity, originalDropzone);
+		} else if ([NodeGlyph, MeasurableGlyph].includes(droppedEntity.constructor)) {
+			this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
+			this.freeFloatingStuff.add(droppedEntity, { force: true });
+		} else {
+			return false;
+		}
 	}
 	
 	
