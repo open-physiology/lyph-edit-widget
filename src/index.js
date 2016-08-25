@@ -13,6 +13,7 @@ import ResizeTool from'./tools/ResizeTool';
 import SelectTool from'./tools/SelectTool';
 import Tool from'./tools/Tool';
 import ZoomTool from'./tools/ZoomTool';
+import DrawingTool from'./tools/DrawingTool';
 
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/filter';
@@ -32,5 +33,6 @@ export {
 	ResizeTool,
 	SelectTool,
 	Tool,
-	ZoomTool
+	ZoomTool,
+	DrawingTool
 };
