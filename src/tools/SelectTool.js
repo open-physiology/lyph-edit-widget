@@ -39,7 +39,6 @@ import {which} from "../util/misc";
 
 
 import indent from 'indent-string';
-import {$$context} from "../symbols";
 import {createSVGTransformFromMatrix} from "../util/svg";
 import LyphRectangle from "../artefacts/LyphRectangle";
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
@@ -68,7 +67,7 @@ export default class SelectTool extends Tool {
 		/* equip context object */
 		if (!context[$$selectTools]) {
 			context[$$selectTools] = true;
-			context.newProperty('selected');
+			context.newProperty('selected', { initial: root });
 			
 			
 			context.cursorMap = new Map();
@@ -126,7 +125,7 @@ export default class SelectTool extends Tool {
 				}
 			}, root)
 			::distinctUntilChanged()
-			// .do((v)=>{ console.log('(top)', v.model.name) })
+			// .do((v)=>{ console.log('(top)', v.model && v.model.name) })
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
 				.do(stopPropagation)
@@ -158,7 +157,7 @@ export default class SelectTool extends Tool {
 	
 	
 	createRectangularSelectBox() {
-		const context = this[$$context];
+		const context = this.context;
 		
 		if (context.rectangularSelectBox) { return }
 		
@@ -240,7 +239,7 @@ export default class SelectTool extends Tool {
 	
 	
 	createPointSelectBox() {
-		const context = this[$$context];
+		const context = this.context;
 		
 		if (context.pointSelectBox) { return }
 		

@@ -29,6 +29,7 @@ import ProcessLine from "./artefacts/ProcessLine";
 import BorderToggleTool from "./tools/BorderToggleTool";
 import CoalescenceScenarioRectangle from "./artefacts/CoalescenceScenarioRectangle";
 import {log} from "./util/rxjs";
+import DrawingTool from "./tools/DrawingTool";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -146,11 +147,19 @@ let processEdge = new ProcessLine({
 root.elementCreated.then(() => {
 	/* initialize tools */
 	new SelectTool      (root.context);
-	new DragDropTool    (root.context);
+	// new DragDropTool    (root.context);
 	new ResizeTool      (root.context);
 	new ZoomTool        (root.context);
-	new PanTool         (root.context);
+	// new PanTool         (root.context);
 	new BorderToggleTool(root.context);
+	let drawingTool = new DrawingTool     (root.context);
+	
+	
+	/* testing the drawing tool */
+	drawingTool.model = classes.Lyph.new({
+		name: 'New Lyph'
+	});
+	
 
 	/* print zoom-level */
 	root.context.p(
