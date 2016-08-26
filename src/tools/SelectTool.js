@@ -127,7 +127,7 @@ export default class SelectTool extends Tool {
 				}
 			}, root)
 			::distinctUntilChanged()
-			.do((v)=>{ console.log('(top)', v.model && v.model.name) })
+			// .do((v)=>{ console.log('(top)', v.model && v.model.name) })
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
 				.do(stopPropagation)

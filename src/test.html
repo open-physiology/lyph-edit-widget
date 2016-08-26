@@ -9,21 +9,29 @@
             height:  100%;
             overflow: hidden;
         }
-        #info {
+        #corner {
             position: absolute;
             top:  4px;
-            left: 26px;
+            left: 4px;
         }
-
-        #svg {
-            margin: 26px !important;
-            border: solid 1px black;
+        #info, #controls {
+            display: inline-block;
+            border: dotted 1px black;
+            height: 22px;
+            padding: 1px 3px;
+            vertical-align: top;
+        }
+        #info *, #controls * {
+            vertical-align: middle;
         }
     </style>
 </head>
 <body>
 
-    <div id="info"></div>
+    <div id="corner">
+        <div id="info"><span></span></div>
+        <div id="controls"><label title="draw new lyph"><input type="checkbox"> Draw new lyph</label></div>
+    </div>
 
     <svg id="svg"></svg>
 

@@ -156,8 +156,16 @@ root.elementCreated.then(() => {
 	
 	
 	/* testing the drawing tool */
-	drawingTool.model = classes.Lyph.new({
-		name: 'New Lyph'
+	let checkbox = $('#controls input[type="checkbox"]');
+	checkbox.change(function ({currentTarget}) {
+		drawingTool.model = $(currentTarget).prop('checked')
+			? classes.Lyph.new({
+				name: 'New Lyph'
+			  }, { createRadialBorders: true, createAxis: true })
+			: null;
+	});
+	drawingTool.p('active')::filter(v=>!v).subscribe(() => {
+		checkbox.prop('checked', false);
 	});
 	
 
@@ -165,7 +173,7 @@ root.elementCreated.then(() => {
 	root.context.p(
 		['zoomExponent', 'zoomFactor'],
 		(zExp, zFact) => `Zoom: ${zExp} (${Math.round(zFact*100)}%)`
-	).subscribe(::($('#info').text));
+	).subscribe(::($('#info > span').text));
 });
 
 /* initiate element creation */
