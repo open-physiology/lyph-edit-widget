@@ -43,9 +43,9 @@ export default class PanTool extends Tool {
 		}
 		
 		/* relevant mouse-event streams */
-		const mousedown = fromEvent(root.element.jq, 'mousedown');
-		const mousemove = fromEvent(root.element.jq, 'mousemove');
-		const mouseup   = fromEvent($(window),       'mouseup'  );
+		const mousedown = this.rootE  ('mousedown')::filter(() => this.active);
+		const mousemove = this.windowE('mousemove')::filter(() => this.active);
+		const mouseup   = this.windowE('mouseup'  )::filter(() => this.active);
 		
 		/* maintaining pan */
 		const canvasDrag = mousedown

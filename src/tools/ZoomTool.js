@@ -44,7 +44,7 @@ export default class ZoomTool extends Tool {
 			});
 		}
 		
-		const mousewheel = fromEvent(root.element.jq, 'mousewheel');
+		const mousewheel = this.rootE('mousewheel');
 		
 		/* maintain zoom-exponent by mouse-wheel */
 		mousewheel

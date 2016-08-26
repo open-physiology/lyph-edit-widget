@@ -28,7 +28,7 @@ export default class BorderToggleTool extends Tool {
 		
 		const {root} = context;
 		
-		const click = fromEvent(root.element.jq, 'click');
+		const click = this.rootE('click');
 		
 		click
 			::filter(withoutMod('ctrl', 'shift', 'meta'))

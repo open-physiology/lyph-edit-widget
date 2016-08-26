@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import {fromEvent} from 'rxjs/observable/fromEvent';
 import {of} from 'rxjs/observable/of';
+import {combineLatest} from 'rxjs/observable/combineLatest';
 import {switchMap} from 'rxjs/operator/switchMap';
 import {filter} from 'rxjs/operator/filter';
 import {takeUntil} from 'rxjs/operator/takeUntil';
@@ -17,12 +18,16 @@ import defaults from 'lodash-bound/defaults';
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
-import {shiftedMovementFor} from "../util/rxjs";
+import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {POINT} from "../util/svg";
 import {svgPageCoordinates} from "../util/rxjs";
-import {combineLatest} from "rxjs/observable/combineLatest";
+import {never} from "rxjs/observable/never";
+import {ignoreElements} from "rxjs/operator/ignoreElements";
+import {skipUntil} from "rxjs/operator/skipUntil";
+import {delay} from "rxjs/operator/delay";
+import {skip} from "rxjs/operator/skip";
 
 
 export default class DragDropTool extends Tool {
@@ -32,28 +37,31 @@ export default class DragDropTool extends Tool {
 		
 		const {root} = context;
 		
-		const mousemove = fromEvent($(window), 'mousemove');
-		const mouseup   = fromEvent($(window), 'mouseup'  );
+		const mousemove = this.windowE('mousemove', false);
+		const mouseup   = this.windowE('mouseup', false  );
 		
-		// /* use the right mouse-pointer */
-		// combineLatest(
-		// 	this.e('mouseenter'),
-		// 	context.p('selected')
-		// )
-		// 	::filter(([,handleArtifact]) => handleArtifact.draggable)
-		// 	::filter(([enter]) => !enter.mouseCursorSet)
-		// 	.subscribe(([enter, handleArtifact]) => {
-		// 		$(enter.currentTarget).css('cursor', 'grab');
-		// 		enter.mouseCursorSet = true;
-		// 	});
+		// context.registerCursor((handleArtifact) => {
+		// 	if (!handleArtifact.draggable) { return false }
+		// 	let isDragging    = handleArtifact.p('dragging')::filter(d=>d);
+		// 	let isNotDragging = handleArtifact.p('dragging')::filter(d=>!d);
+		// 	let isSelected    = handleArtifact.p('selected')::filter(s=>s);
+		// 	let isNotSelected = handleArtifact.p('selected')::filter(s=>!s);
+		// 	let GRAB     = '-webkit-grab -moz-grab grab';
+		// 	let GRABBING = '-webkit-grabbing -moz-grabbing grabbing';
+		// 	return of(GRAB)::concat(isDragging
+		// 		// ::takeUntil( combineLatest(isNotDragging::skip(1), isNotSelected::skip(1)::delay(100), (nd,ns)=>nd&&ns)::filter(v=>v) )
+		// 		::switchMap(() => of(GRABBING)
+		// 			::concat(never()::takeUntil(isNotDragging))
+		// 			::concat(of(GRAB)))
+		// 	);
+		// });
 		
-		
-		this.e('mousedown')
+		this.e('mousedown', false)
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
 			::withLatestFrom(context.p('selected'))
 			::afterMatching(mousemove::take(4), mouseup)
-			::filter(([,draggedArtefact]) => draggedArtefact.draggable)
+			::filter(([,handleArtifact]) => handleArtifact.draggable)
 			.subscribe(([down, draggedArtefact]) => {
 				
 				function reassessMouseHover(a) {
@@ -73,7 +81,8 @@ export default class DragDropTool extends Tool {
 				reassessMouseHover(draggedArtefact.parent);
 				
 				
-				const startMatrix = root.element.getTransformToElement(draggedArtefact.element);
+				// let offset = root.element.jq.offset();
+				const startMatrix = root.element.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
 				
 				
 				/* move while dragging */

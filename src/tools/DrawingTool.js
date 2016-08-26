@@ -36,22 +36,24 @@ const classes = window.module.classes;
 export default class DrawingTool extends Tool {
 	
 	@property({ initial: null }) model;
-		
+	
 	constructor(context) {
 		super(context, { events: ['mousedown'] });
 		
 		this.p('model')::map(c=>!!c).subscribe( this.p('active') );
 		this.p('active')::filter(a=>!a)::map(c=>null).subscribe( this.p('model') );
 		
+		this.p('active')::map(a=>!a).subscribe( context.PanTool     .p('active') );
+		this.p('active')::map(a=>!a).subscribe( context.DragDropTool.p('active') );
+		
 		const {root} = context;
 		
-		const mousemove = fromEvent($(window), 'mousemove');
-		const mouseup   = fromEvent($(window), 'mouseup'  );
-		
+		const mousemove = this.windowE('mousemove')::filter(() => this.active);
+		const mouseup   = this.windowE('mouseup'  )::filter(() => this.active);
 		
 		merge(
 			this.e('mousedown'),
-			fromEvent(root.handle.jq, 'mousedown')
+			this.rootE('mousedown')
 		)
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
@@ -70,10 +72,11 @@ export default class DrawingTool extends Tool {
 				let artefact = new LyphRectangle({
 					model: model,
 					parent: selectedArtefact,
-					...startXY::pick('x', 'y'),
-					width:  10, // TODO: use minimal width/height
-					height: 10, //
-					dragging: true // TODO: 'resizing' or 'creating'
+					x:        startXY.x,
+					y:        startXY.y,
+					width:    10,    // TODO: use minimal width/height
+					height:   10,    //
+					dragging: true   // TODO: 'resizing' or 'creating'
 				});
 				
 				/* move while dragging */

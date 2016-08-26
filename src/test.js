@@ -146,13 +146,13 @@ let processEdge = new ProcessLine({
 
 root.elementCreated.then(() => {
 	/* initialize tools */
-	new SelectTool      (root.context);
-	// new DragDropTool    (root.context);
-	new ResizeTool      (root.context);
-	new ZoomTool        (root.context);
-	// new PanTool         (root.context);
-	new BorderToggleTool(root.context);
-	let drawingTool = new DrawingTool     (root.context);
+	new SelectTool                   (root.context);
+	new DragDropTool                 (root.context);
+	new ResizeTool                   (root.context);
+	new ZoomTool                     (root.context);
+	new PanTool                      (root.context);
+	new BorderToggleTool             (root.context);
+	let drawingTool = new DrawingTool(root.context);
 	
 	
 	/* testing the drawing tool */

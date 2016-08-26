@@ -62,6 +62,11 @@ export default class MeasurableGlyph extends Transformable {
 	async afterCreateElement() {
 		await super.afterCreateElement();
 		
+		/* tooltip */
+		let tooltipText = $.svg(`<title></title>`).appendTo(this.element);
+		this.p('model.name').subscribe( ::tooltipText.text );
+		
+		/* drawing a polygon */
 		const POLY_POINTS = [
 			 30,   0,
 			 15,  26,
@@ -82,7 +87,8 @@ export default class MeasurableGlyph extends Transformable {
 			this.p('parent')
 				::map(p => p instanceof ProcessLine || p instanceof BorderLine ? 0.75 : 1)
 				::map(f => ID_MATRIX.scale(f))
-				.subscribe( polygon.node::setCTM )
+				.subscribe( polygon.node::setCTM );
+			
 		}
 	}
 	

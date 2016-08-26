@@ -26,6 +26,7 @@ import clamp from 'lodash-bound/clamp';
 import defaults from 'lodash-bound/defaults';
 import sum from 'lodash-bound/sum';
 import isArray from 'lodash-bound/isArray';
+import isString from 'lodash-bound/isString';
 
 import _head from 'lodash/head';
 import _add from 'lodash/add';
@@ -49,6 +50,10 @@ import NodeGlyph from "../artefacts/NodeGlyph";
 import BorderLine from "../artefacts/BorderLine";
 import MeasurableGlyph from "../artefacts/MeasurableGlyph";
 import {setCTM} from "../util/svg";
+import {of} from "rxjs/observable/of";
+import {from} from "rxjs/observable/from";
+import {Observable} from "rxjs/Observable";
+import {exhaustMap} from "rxjs/operator/exhaustMap";
 
 
 const $$selectTools = Symbol('$$selectTools');
@@ -67,36 +72,33 @@ export default class SelectTool extends Tool {
 		/* equip context object */
 		if (!context[$$selectTools]) {
 			context[$$selectTools] = true;
+			
+			/* 'selected' property */
 			context.newProperty('selected', { initial: root });
 			
-			
-			context.cursorMap = new Map();
-			context.p('selected')::filter(a=>a).subscribe((artifact) => {
-				let candidates = context.cursorMap.get(artifact.constructor);
-				if (!candidates) {
-					root.inside.jq.css('cursor', 'auto');
-				} else for (let candidate of candidates) {
+			/* registering mouse cursors for specific types of artifact */
+			context.cursorSet = new Set();
+			context.registerCursor = ::context.cursorSet.add;
+			context.p('selected')::switchMap((artifact) => {
+				for (let candidate of context.cursorSet) {
 					let cursor = candidate(artifact);
-					if (cursor) { root.inside.jq.css('cursor', cursor) }
-				}
-			});
-			context.registerCursor = (ArtifactClass, cursor) => {
-				for (let cls of ArtifactClass::isArray() ? ArtifactClass : [ArtifactClass]) {
-					if (!context.cursorMap.has(cls)) {
-						context.cursorMap.set(cls, new Set);
+					if (cursor) {
+						if (cursor::isString()) { return of(cursor) }
+						else                    { return cursor     }
 					}
-					context.cursorMap.get(cls).add(cursor);
 				}
-			};
-			context.registerCursor({
-				artifact: root,
-				cursor: () => 'auto'
+				return of('auto');
+			}).subscribe((cursor) => {
+				root.inside.jq.attr(
+					'style',
+					`auto ${cursor}`.split(' ').map(c=>`cursor: ${c};`).join(' ')
+				);
 			});
 		}
 		
 		/* basic event-streams */
 		const mouseenter = this.e('mouseenter');
-		const mousewheel = fromEvent(root.element.jq, 'mousewheel');
+		const mousewheel = this.rootE('mousewheel');
 		const mouseleave = this.e('mouseleave');
 		
 		/* build selected artefact stream */
@@ -125,7 +127,7 @@ export default class SelectTool extends Tool {
 				}
 			}, root)
 			::distinctUntilChanged()
-			// .do((v)=>{ console.log('(top)', v.model && v.model.name) })
+			.do((v)=>{ console.log('(top)', v.model && v.model.name) })
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
 				.do(stopPropagation)
