@@ -68,6 +68,9 @@ export default class DrawingTool extends Tool {
 				const startMatrix = root.element.getTransformToElement(selectedArtefact.element);
 				
 				let startXY = svgPageCoordinates(down).matrixTransform(startMatrix);
+				let offset = root.element.jq.offset();
+				startXY.x = startXY.x + offset.left;
+				startXY.y = startXY.y + offset.top;
 				
 				let artefact = new LyphRectangle({
 					model: model,

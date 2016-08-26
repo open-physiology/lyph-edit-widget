@@ -56106,6 +56106,9 @@ return /******/ (function(modules) { // webpackBootstrap
 				var startMatrix = root.element.getTransformToElement(selectedArtefact.element);
 	
 				var startXY = (0, _rxjs.svgPageCoordinates)(down).matrixTransform(startMatrix);
+				var offset = root.element.jq.offset();
+				startXY.x = startXY.x + offset.left;
+				startXY.y = startXY.y + offset.top;
 	
 				var artefact = new _LyphRectangle2.default({
 					model: model,
