@@ -60,6 +60,7 @@ import Transformable from "./Transformable";
 import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
 import LyphRectangle from "./LyphRectangle";
+import {startWith} from "rxjs/operator/startWith";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -85,6 +86,8 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 	@property() normalLyph;
 	@property() rotatedLyph;
 	
+	@property() sharedLayer;
+	
 	constructor(options) {
 		super(options);
 		
@@ -102,7 +105,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// 		model  : border
 		// 	}))::subscribe_( this[setKey].e('add') , n=>n() );
 		// }
-		// TODO: coalescence-scenario does not have borders of itself
+		// TODO: coalescence-scenario does not (yet) have borders of its own
 		
 		/* create the lyph artifacts */
 		this.model.lyphs.e('add')::map(lyph => this[$$recycle](lyph) || new LyphRectangle({
@@ -111,6 +114,19 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			draggable: false,
 			free     : false
 		}))::subscribe_( this.lyphs.e('add') , n=>n() );
+		
+		/* create the shared layer artifacts */
+		this.p('normalLyph.model.-->HasLayer')
+			::filter(layers => layers.size > 0)
+			::map(layers => [...layers]::maxBy('relativePosition')[2])
+			::filter(layer => layer !== (this.sharedLayer && this.sharedLayer.model))
+			::map(layer => this[$$recycle](layer) || new LyphRectangle({
+				parent   : this,
+				model    : layer,
+				draggable: false,
+				free     : false
+			}))
+			::subscribe_( this.p('sharedLayer'), v=>v() );
 		
 		/* synchronize specific children with the 'children' set */
 		for (let setKey of [
@@ -121,6 +137,10 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this[setKey].e('add')::subscribe_( this.children.e('add') , n=>n() );
 			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
 		}
+		this.p('sharedLayer')::startWith(null)::pairwise().subscribe(([prev, curr]) => {
+			if (prev) { this.children.delete(prev) }
+			if (curr) { this.children.add(curr) }
+		});
 		
 		/* create a random color (one per layer, stored in the model) */
 		if (!this.model[$$backgroundColor]) {
@@ -134,6 +154,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		
 		group.g().addClass('main-shadow');
 		group.g().addClass('main-shape');
+		group.g().addClass('shared-layer');
 		group.g().addClass('lyphs');
 		group.g().addClass('borders');
 		group.g().addClass('corners');
@@ -179,6 +200,8 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.p('width') .subscribe((width)  => { rectangle.attr({ width  }) });
 			this.p('height').subscribe((height) => { rectangle.attr({ height }) });
 		}
+		
+		
 		
 		/* corner resize handles */
 		{
@@ -258,7 +281,11 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.lyphs.e('add').subscribe((lyph) => {
 				const removed = this.lyphs.e('delete')::filter(l=>l===lyph);
 				lyphGroup.append(lyph.element);
-				removed.subscribe(() => { lyph.element.remove() });
+				lyph.hideOuterLayer = true;
+				removed.subscribe(() => {
+					lyph.hideOuterLayer = false;
+					lyph.element.remove();
+				});
 				if (!this.normalLyph) {
 					this.normalLyph = lyph;
 					removed.subscribe(() => { this.normalLyph = null });
@@ -274,20 +301,136 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			    'width', 'height'
 			])  ::filter(([nl, rl]) => nl.size > 0 && rl.size > 0)
 				.subscribe(([normalLayers, rotatedLayers, normalLyph, rotatedLyph, width, height]) => {
-				normalLyph.width = rotatedLyph.width = width;
-				const layerHeight = (height - normalLyph.axisThickness - rotatedLyph.axisThickness) /
-				                    (normalLayers.size + rotatedLayers.size - 1);
-				normalLyph .height = normalLayers .size * layerHeight + normalLyph .axisThickness;
-				rotatedLyph.height = rotatedLayers.size * layerHeight + rotatedLyph.axisThickness;
-				rotatedLyph.transformation = ID_MATRIX
-					.translate(rotatedLyph.width / 2, rotatedLyph.height / 2)
-					.rotate(180)
-					.translate(-rotatedLyph.width / 2, -rotatedLyph.height / 2);
-				normalLyph.transformation = ID_MATRIX
-					.translate(0, normalLyph.axisThickness + (normalLayers.size - 1) * layerHeight);
-			});
+					normalLyph.width = rotatedLyph.width = width;
+					const layerThickness = (height - normalLyph.axisThickness - rotatedLyph.axisThickness) /
+					                       (normalLayers.size + rotatedLayers.size - 1);
+					normalLyph .height = normalLayers .size * layerThickness + normalLyph .axisThickness;
+					rotatedLyph.height = rotatedLayers.size * layerThickness + rotatedLyph.axisThickness;
+					rotatedLyph.transformation = ID_MATRIX
+						.translate(rotatedLyph.width / 2, rotatedLyph.height / 2)
+						.rotate(180)
+						.translate(-rotatedLyph.width / 2, -rotatedLyph.height / 2);
+					normalLyph.transformation = ID_MATRIX
+						.translate(0, rotatedLyph.axisThickness + (rotatedLayers.size - 1) * layerThickness);
+				});
 			
 		}
+		
+		{
+			const sharedLayerGroup = this.inside.jq.children('.shared-layer');
+			
+			this.p('sharedLayer')::filter(v=>v).subscribe((sharedLayer) => {
+				const removed = this.p('sharedLayer')::filter(sl=>sl!==sharedLayer);
+				sharedLayerGroup.append(sharedLayer.element);
+				sharedLayer.p('topBorder')
+					::takeUntil(removed)
+					::filter(v=>v)
+					.subscribe((topBorder) => { topBorder.isInnerBorder = true });
+				removed.subscribe(() => {
+					if (sharedLayer.topBorder) { sharedLayer.topBorder.isInnerBorder = false }
+					sharedLayer.element.remove();
+				});
+			});
+			
+			this.p([
+				'normalLyph.layers', 'rotatedLyph.layers', 'sharedLayer',
+				'normalLyph',        'rotatedLyph',
+			    'width', 'height'
+			])  ::filter(([nl, rl, sl]) => nl.size > 0 && rl.size > 0 && sl)
+				.subscribe(([normalLayers, rotatedLayers, sharedLayer, normalLyph, rotatedLyph, width, height]) => {
+					sharedLayer.width = width;
+					const layerThickness = (height - normalLyph.axisThickness - rotatedLyph.axisThickness) /
+					                       (normalLayers.size + rotatedLayers.size - 1);
+					sharedLayer.height = layerThickness;
+					sharedLayer.transformation = ID_MATRIX
+						.translate(0, rotatedLyph.axisThickness + (rotatedLayers.size - 1) * layerThickness);
+					sharedLayer.spillover  = (rotatedLayers.size - 1) * layerThickness;
+					sharedLayer.spillunder = (normalLayers .size - 1) * layerThickness;
+				});
+			
+			// TODO
+			
+		}
+		
+		// /* shared layer */
+		// {
+		//
+		//
+		// 	/* new layer in the model --> new layer artifact */
+		// 	this[$$relativeLayerPosition] = new WeakMap();
+		// 	this.model['-->HasLayer'].e('add').subscribe((rel) => {
+		// 		const removed = this.model['-->HasLayer'].e('delete')::filter(r=>r===rel);
+		// 		let layerBox = this[$$recycle](rel[2]) || new LyphRectangle({
+		// 			parent  : this,
+		// 			model   : rel[2],
+		// 			showAxis: false,
+		// 			free    : false
+		// 		});
+		// 		this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition')::takeUntil(removed));
+		// 		this.layers.add(layerBox);
+		// 	});
+		//
+		// 	/* new layer artifact --> house svg element */
+		// 	this.layers.e('add').subscribe((layer) => {
+		// 		this.inside.jq.children('.layers').append(layer.element);
+		// 		const removed = layer.p('parent')::filter(parent=>parent!==this);
+		//
+		// 		for (let [source, target,  border      ] of [
+		// 			     [this,   layer,  'leftBorder' ],
+		// 			     [this,   layer,  'rightBorder'],
+		// 			     [layer,  this,   'leftBorder' ],
+		// 			     [layer,  this,   'rightBorder']
+		// 		]) {
+		// 			source.p(`${border}.model.nature`)
+		// 				::takeUntil(removed)
+		// 				::withLatestFrom(target.p(`${border}.model`))
+		// 				.subscribe(([nature, borderModel]) => {
+		// 					borderModel.nature = nature;
+		// 				});
+		// 		}
+		//
+		// 		removed.subscribe(() => {
+		// 			if (layer.element.jq.parent()[0] === this.inside.jq.children('.layers')[0]) {
+		// 				layer.element.jq.remove();
+		// 			}
+		// 		});
+		// 	});
+		//
+		// 	/* layer artifact set changed --> refresh layer order */
+		// 	combineLatest(this.layers.p('value'), this.p('hideOuterLayer'))
+		// 		::map(([layers, hideOuterLayer]) => [[...layers], hideOuterLayer])
+		// 		::map(([layers, hideOuterLayer]) => ({
+		// 			dimensions:        this.pObj(['width', 'height']),
+		// 			layers:            layers,
+		// 			relativePositions: layers.map(::this[$$relativeLayerPosition].get),
+		// 			hideOuterLayer:    hideOuterLayer
+		// 		}))
+		// 		::switchMap(
+		// 			({dimensions, relativePositions}) =>
+		// 				combineLatest(dimensions, ...relativePositions),
+		// 			({layers, hideOuterLayer}, [{width, height}, ...relativePositions]) => ({
+		// 				layers:         layers::sortBy(l => -relativePositions[layers.indexOf(l)]),
+		// 				width:          width,
+		// 				height:        (height - this.axisThickness) / layers.length,
+		// 				hideOuterLayer: hideOuterLayer
+		// 			}))
+		// 		.subscribe(({layers, width, height, hideOuterLayer}) => {
+		// 			if (hideOuterLayer) { layers[0].hidden = true }
+		// 			for (let i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
+		// 				layers[i]::assign({
+		// 					parent: this
+		// 				}, {
+		// 					width:          width,
+		// 					height:         height,
+		// 					hidden:         false,
+		// 					free:           false,
+		// 					spillunder:     (layers.length - i - 1) * height,
+		// 					transformation: ID_MATRIX.translate(0, i * height)
+		// 				});
+		// 				layers[i].moveToFront();
+		// 			}
+		// 		});
+		// }
 		
 		
 	}

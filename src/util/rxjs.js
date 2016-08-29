@@ -43,8 +43,6 @@ export function shiftedMovementFor(obj_xy) {
 	);
 }
 
-const ID_MATRIX = document.createElementNS("http://www.w3.org/2000/svg", "svg").createSVGMatrix();
-
 export function shiftedMatrixMovementFor(obj_m) {
 	return combineLatest(
 		this::take(1), obj_m::take(1),

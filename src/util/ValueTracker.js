@@ -16,6 +16,7 @@ import {args, humanMsg} from './misc';
 
 import {Subject}              from 'rxjs/Subject';
 import {BehaviorSubject}      from 'rxjs/BehaviorSubject';
+import {of}                   from 'rxjs/observable/of';
 import {never}                from 'rxjs/observable/never';
 import {combineLatest}        from 'rxjs/observable/combineLatest';
 import {distinctUntilChanged} from 'rxjs/operator/distinctUntilChanged';
@@ -134,7 +135,7 @@ export default class ValueTracker {
 		let subject = this[$$settableProperties][name] = new BehaviorSubject(initial)
 			// ::filter              (this[$$filterBy] )
 			::filter              (this::isValid    )
-			// ::map                 (this::transform  )
+			::map                 (this::transform  )
 			// ::takeUntil           (this[$$takeUntil])
 			::distinctUntilChanged(this::isEqual    );
 		this[$$properties][name] = readonly ? subject.asObservable() : subject;
@@ -184,21 +185,44 @@ export default class ValueTracker {
 				::withLatestFrom(...optionalPassiveDeps.map(::this.p),
 				(active, ...passive) => optionalTransformer(...active, ...passive));
 		} else if (name) {
-			const [head, ...tail] = name.split('.');
-			if (tail.length > 0) {
+			let head = name, sep, tail;
+			const match = name.match(/^(.+?)(\??\.)(.+)$/);
+			// console.log('(p-regex)', name, match); // TODO: remove
+			if (match) {
+				[,head,sep,tail] = match;
+				let loose = (sep === '?.');
 				return this.p(head)::switchMap((obj) => {
-					if (!obj) { return never() }
+					if (!obj) {
+						if (loose) { return of(null) }
+						else       { return never()  }
+					}
 					assert(obj.p::isFunction(), humanMsg`
 						The '${head}' property did not return
 						a ValueTracker-based object,
 						so it cannot be chained.
-					`);
-					return obj.p(tail.join('.'));
+					`); // TODO: allow simple property chaining (even if not observables)
+					return obj.p(tail);
 				});
 			} else {
-				assert(this[$$properties][head], humanMsg`No property '${name}' exists.`);
-				return this[$$properties][head];
+				assert(this[$$properties][name], humanMsg`No property '${name}' exists.`);
+				return this[$$properties][name];
 			}
+			
+			// const [head, ...tail] = name.split('.');
+			// if (tail.length > 0) {
+			// 	return this.p(head)::switchMap((obj) => {
+			// 		if (!obj) { return never() }
+			// 		assert(obj.p::isFunction(), humanMsg`
+			// 			The '${head}' property did not return
+			// 			a ValueTracker-based object,
+			// 			so it cannot be chained.
+			// 		`);
+			// 		return obj.p(tail.join('.'));
+			// 	});
+			// } else {
+			// 	assert(this[$$properties][head], humanMsg`No property '${name}' exists.`);
+			// 	return this[$$properties][head];
+			// }
 		}
 	}
 	

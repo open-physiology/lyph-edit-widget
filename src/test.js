@@ -30,6 +30,9 @@ import BorderToggleTool from "./tools/BorderToggleTool";
 import CoalescenceScenarioRectangle from "./artefacts/CoalescenceScenarioRectangle";
 import {log} from "./util/rxjs";
 import DrawingTool from "./tools/DrawingTool";
+import MaterialGlyph from "./artefacts/MaterialGlyph";
+import MeasurableGlyph from "./artefacts/MeasurableGlyph";
+import CausalityArrow from "./artefacts/CausalityArrow";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +72,9 @@ let basolateralBag = classes.Lyph.new({
 let node1 = classes.Node.new();
 let node2 = classes.Node.new();
 
+let material1 = classes.Material.new({
+	name: 'Water'
+});
 
 let coalescenceScenario = classes.CoalescenceScenario.new({
 	name: 'My Coalescence',
@@ -79,65 +85,110 @@ let coalescenceScenario = classes.CoalescenceScenario.new({
 });
 
 
+let measurable1 = classes.Measurable.new({
+	name:    "concentration of water in blood",
+	quality: 'concentration'
+});
+
+let measurable2 = classes.Measurable.new({
+	name:    "concentration of other stuff in blood",
+	quality: 'concentration'
+});
+
+let causality = classes.Causality.new({
+	cause: measurable1,
+	effect: measurable2
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 
 
 let root = new Canvas({ element: $('#svg') });
 
 
-new LyphRectangle({
-	parent:  root,
-	model:   apicalBag,
-	x:       100,
-	y:       100,
-	width:   150,
-	height:  150,
-	rotation: 45
-});
-
-
-new LyphRectangle({
-	parent: root,
-	model:  basolateralBag,
-	x:      300,
-	y:      200,
-	width:  150,
-	height: 150
-});
+// new LyphRectangle({
+// 	parent:  root,
+// 	model:   apicalBag,
+// 	x:       100,
+// 	y:       100,
+// 	width:   150,
+// 	height:  150,
+// 	rotation: 45
+// });
+//
+//
+// new LyphRectangle({
+// 	parent: root,
+// 	model:  basolateralBag,
+// 	x:      300,
+// 	y:      200,
+// 	width:  150,
+// 	height: 150
+// });
 
 
 new CoalescenceScenarioRectangle({
 	parent: root,
 	model: coalescenceScenario,
 	x: 600,
-	y: 500,
-	width: 150,
-	height: 270,
+	y: 300,
+	width: 200,
+	height: 300,
 	rotation: 90
 });
 
 
-let nodeg1 = new NodeGlyph({
-	parent: root,
-	x: 300,
-	y: 20,
-	model: node1
-});
+// let nodeg1 = new NodeGlyph({
+// 	parent: root,
+// 	x: 300,
+// 	y: 20,
+// 	model: node1
+// });
+//
+//
+// let nodeg2 = new NodeGlyph({
+// 	parent: root,
+// 	x: 400,
+// 	y: 100,
+// 	model: node2
+// });
 
 
-let nodeg2 = new NodeGlyph({
-	parent: root,
-	x: 400,
-	y: 100,
-	model: node2
-});
+// let processEdge = new ProcessLine({
+// 	parent: root,
+// 	source: nodeg1,
+// 	target: nodeg2
+// });
+//
+//
+// let materialg1 = new MaterialGlyph({
+// 	parent: root,
+// 	x: 400,
+// 	y: 150,
+// 	model: material1
+// });
+//
+// let measurableg1 = new MeasurableGlyph({
+// 	model: measurable1,
+// 	parent: root,
+// 	x: 40,
+// 	y: 300
+// });
+//
+// let measurableg2 = new MeasurableGlyph({
+// 	model: measurable2,
+// 	parent: root,
+// 	x: 60,
+// 	y: 350
+// });
+//
+// let causalityArrow = new CausalityArrow({
+// 	cause: measurableg1,
+// 	effect: measurableg2,
+// 	parent: root,
+// 	model: causality
+// });
 
-
-let processEdge = new ProcessLine({
-	parent: root,
-	source: nodeg1,
-	target: nodeg2
-});
 
 
 

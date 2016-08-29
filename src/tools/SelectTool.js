@@ -54,6 +54,7 @@ import {of} from "rxjs/observable/of";
 import {from} from "rxjs/observable/from";
 import {Observable} from "rxjs/Observable";
 import {exhaustMap} from "rxjs/operator/exhaustMap";
+import MaterialGlyph from "../artefacts/MaterialGlyph";
 
 
 const $$selectTools = Symbol('$$selectTools');
@@ -274,12 +275,16 @@ export default class SelectTool extends Tool {
 			strokeDasharray: [5, 3]
 		};
 		NodeGlyph.prototype[$$isPoint] = {
-			r:                10,
+			r:                11,
 			strokeDasharray: [5, 3]
 		};
 		MeasurableGlyph.prototype[$$isPoint] = {
 			r:                15,
 			strokeDasharray: [8, 4]
+		};
+		MaterialGlyph.prototype[$$isPoint] = {
+			r:                23,
+			strokeDasharray: [10, 5]
 		};
 		
 		/* visibility observable */

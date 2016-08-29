@@ -2,6 +2,7 @@ import SvgObject from './artefacts/SvgObject';
 import SvgEntity from './artefacts/SvgEntity';
 import BorderLine from './artefacts/BorderLine';
 import Canvas from './artefacts/Canvas';
+import MaterialGlyph from './artefacts/MaterialGlyph';
 import LyphRectangle from './artefacts/LyphRectangle';
 import NodeGlyph from './artefacts/NodeGlyph';
 import ProcessLine from './artefacts/ProcessLine';
@@ -25,6 +26,7 @@ export {
 	BorderLine,
 	Canvas,
 	LyphRectangle,
+	MaterialGlyph,
 	NodeGlyph,
 	ProcessLine,
 	BorderToggleTool,

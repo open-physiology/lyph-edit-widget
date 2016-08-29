@@ -37,8 +37,8 @@ export class Point {
 	
 	svg = refSVG.createSVGPoint();
 	
-	constructor(...args) {
-		this.init(...args);
+	constructor(x, y) {
+		this.svg::assign({x, y});
 	}
 	
 	get x() { return this.svg.x }

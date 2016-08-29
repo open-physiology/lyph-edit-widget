@@ -38,6 +38,8 @@ import ValueTracker from "../util/ValueTracker";
 import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
 import NodeGlyph from "./NodeGlyph";
 import MeasurableGlyph from "./MeasurableGlyph";
+import MaterialGlyph from "./MaterialGlyph";
+import CausalityArrow from "./CausalityArrow";
 
 const $$context = Symbol('$$context');
 const $$existingSVG = Symbol('$$existingSVG');
@@ -94,18 +96,13 @@ export default class Canvas extends SvgEntity {
 	async afterCreateElement() {
 		await super.afterCreateElement();
 		
-		this.children.e('add').subscribe((artefact) => {
-			if (artefact instanceof LyphRectangle) {
-				this.inside.jq.children('.free-floating-entities').append(artefact.element);
-			} else if (artefact instanceof ProcessLine) {
-				this.inside.jq.children('.processes').append(artefact.element);
-			} else if (artefact instanceof CoalescenceScenarioRectangle) {
-				this.inside.jq.children('.free-floating-entities').append(artefact.element);
-			} else if (artefact instanceof NodeGlyph) {
-				this.inside.jq.children('.free-floating-entities').append(artefact.element);
-			} else if (artefact instanceof MeasurableGlyph) {
-				this.inside.jq.children('.free-floating-entities').append(artefact.element);
+		this.children.e('add').subscribe((droppedEntity) => {
+			if ([LyphRectangle, NodeGlyph, MeasurableGlyph, MaterialGlyph, CoalescenceScenarioRectangle].includes(droppedEntity.constructor)) {
+				this.inside.jq.children('.free-floating-entities').append(droppedEntity.element);
+			} else if ([ProcessLine, CausalityArrow].includes(droppedEntity.constructor)) {
+				this.inside.jq.children('.processes').append(droppedEntity.element);
 			}
+			
 		});
 	}
 	

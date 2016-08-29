@@ -31,9 +31,11 @@ import {$$elementCtrl} from "../symbols";
 import NodeGlyph from "./NodeGlyph";
 import LyphRectangle from "./LyphRectangle";
 import MeasurableGlyph from "./MeasurableGlyph";
-import {subscribe_} from "../util/rxjs";
+import {subscribe_, log} from "../util/rxjs";
+import {ID_MATRIX} from '../util/svg';
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import Transformable from "./Transformable";
+import {takeUntil} from "rxjs/operator/takeUntil";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 const $$toBeRecycled    = Symbol('$$toBeRecycled');
@@ -50,6 +52,8 @@ export default class BorderLine extends Transformable {
 	@property({ isValid: _isNumber }) x;
 	@property({ isValid: _isNumber }) y;
 	
+	@flag(false) isInnerBorder;
+	
 	freeFloatingStuff = new ObservableSet();
 	
 	get width()  { return Math.abs(this.x1 - this.x2) }
@@ -60,12 +64,12 @@ export default class BorderLine extends Transformable {
 		this.setFromObject(options, [
 			'x1', 'x2', 'x',
 			'y1', 'y2', 'y',
-			'resizes'
+			'resizes', 'isInnerBorder'
 		], { free: false });
-			
+		
 		/* sync x1,x2,y1,y2,x,y,width,height */
-		this.p(['x1', 'x2'], (x1, x2) => Math.min(x1, x2)).subscribe( this.pSubject('x') );
-		this.p(['y1', 'y2'], (y1, y2) => Math.min(y1, y2)).subscribe( this.pSubject('y') );
+		this.p(['x1', 'x2'], Math.min).subscribe( this.pSubject('x') );
+		this.p(['y1', 'y2'], Math.min).subscribe( this.pSubject('y') );
 		this.p('x')::filter(() => this.x1 === this.x2).subscribe((x) => { this.x1 = this.x2 = x });
 		this.p('y')::filter(() => this.y1 === this.y2).subscribe((y) => { this.y1 = this.y2 = y });
 		
@@ -248,9 +252,23 @@ export default class BorderLine extends Transformable {
 		this.freeFloatingStuff.e('add')
 		    .subscribe((artefact) => {
 			    /* event when removed */
-			    const removed = artefact.p('parent')::filter(p=>p!==this);
+			    const removed = artefact.p('parent')::filter(p=>p!==this)::log('(removed)');
 		    	/* put into the dom */
 				parentElement.append(artefact.element);
+			    /* move when the border moves */
+			    let transformation = artefact.transformation;
+			    let initial = this::pick('x1', 'x2', 'y1', 'y2');
+			    if (initial.x1 === initial.x2) {
+			    	this.p('x1')
+					    ::takeUntil(removed)
+					    ::map(x1 => ID_MATRIX.translate(x1 - initial.x1, 0).multiply(transformation))
+					    ::subscribe_( artefact.p('transformation') );
+			    } else if (initial.y1 === initial.y2) {
+				    this.p('y1')
+					    ::takeUntil(removed)
+					    ::map(y1 => ID_MATRIX.translate(0, y1 - initial.y1).multiply(transformation))
+					    ::subscribe_( artefact.p('transformation') );
+			    }
 			    /* remove from dom when removed */
 				removed.subscribe(() => {
 					if (artefact.element.jq.parent()[0] === parentElement) {

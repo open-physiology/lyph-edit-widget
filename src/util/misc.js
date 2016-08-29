@@ -20,6 +20,7 @@ import {defineProperty} from 'bound-native-methods';
 import {filter} from 'rxjs/operator/filter';
 
 import _zip from 'lodash/zip';
+import _isFinite from 'lodash/isFinite';
 
 import assert from 'power-assert';
 
@@ -155,3 +156,6 @@ export const xy_add = (a, b) => ({
 	x: a.x + b.x,
 	y: a.y + b.y
 });
+
+export const _isNonNegative = (v) =>
+	(_isFinite(v) && v >= 0);

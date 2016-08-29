@@ -38,6 +38,7 @@ export default class SvgObject extends ValueTracker {
 	
 	@flag(false) selected;
 	@flag(false) dragging;
+	@flag(false) hidden;
 	
 	@flag(false) free;
 	@flag(false) draggable;
@@ -103,10 +104,13 @@ export default class SvgObject extends ValueTracker {
 		await this.elementCreated;
 		
 		/* manage 'dragging' property */
-		this.p('dragging').subscribe((dragging) => {
-			this.element.jq.css(dragging
+		this.p(['hidden', 'dragging']).subscribe(([hidden, dragging]) => {
+			this.element.jq.css(
+				hidden
+				? { pointerEvents: 'none', opacity: 0   }
+				: dragging
 				? { pointerEvents: 'none', opacity: 0.8 }
-				: { pointerEvents: 'auto', opacity: 1   });
+				: { pointerEvents: '',     opacity: 1   });
 		});
 	}
 	
