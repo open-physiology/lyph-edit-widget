@@ -17252,10 +17252,15 @@ return /******/ (function(modules) { // webpackBootstrap
 										if (hideOuterLayer) {
 											layers[0].hidden = true;
 										}
-										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
+	
+										var _loop = function _loop(i) {
 											var _context12;
 	
-											(_context12 = layers[i], _assign2.default).call(_context12, {
+											var layer = layers[i];
+											var removed = (_context12 = layer.p('parent'), _filter.filter).call(_context12, function (parent) {
+												return parent !== _this2;
+											});
+											_assign2.default.call(layer, {
 												parent: _this2
 											}, {
 												width: width,
@@ -17265,8 +17270,24 @@ return /******/ (function(modules) { // webpackBootstrap
 												spillunder: (layers.length - i - 1) * height,
 												transformation: _svg.ID_MATRIX.translate(0, i * height)
 											});
-											layers[i].moveToFront();
+											var spillunder = (layers.length - i - 1) * height;
+											(_context12 = (0, _combineLatest.combineLatest)(_this2.p('dragging'), layer.p('dragging'), function (td, ld) {
+												return td || !ld;
+											}), _takeUntil.takeUntil).call(_context12, removed).subscribe(function (spill) {
+												_assign2.default.call(layer, { spillunder: spill ? spillunder : 0 });
+											});
+											_take.take.call(removed, 1).subscribe(function () {
+												_assign2.default.call(layer, {
+													spillunder: 0
+												});
+											});
+											layer.moveToFront();
+										};
+	
+										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
+											_loop(i);
 										}
+										console.log('New layer set!');
 									});
 	
 									// TODO: if a lyph has no axis, do draw an extra border-like
@@ -17431,19 +17452,20 @@ return /******/ (function(modules) { // webpackBootstrap
 												borderLine.element.remove();
 											});
 	
-											(_context18 = _this2.p('leftCornerRadius'), _rxjs.subscribe_).call(_context18, borderLine.p('x1'), function (v) {
-												return v();
-											});
-	
-											(_context18 = _this2.p(['rightCornerRadius', 'width'], function (rcr, w) {
-												return w - rcr;
-											}), _rxjs.subscribe_).call(_context18, borderLine.p('x2'), function (v) {
-												return v();
-											});
 											if (!_this2.topBorder) {
 												var _context19;
 	
 												_this2.topBorder = borderLine;
+												(_context19 = _this2.p(['leftCornerRadius'], function (lcr) {
+													return lcr;
+												}), _rxjs.subscribe_).call(_context19, borderLine.p('x1'), function (v) {
+													return v();
+												});
+												(_context19 = _this2.p(['rightCornerRadius', 'width'], function (rcr, w) {
+													return w - rcr;
+												}), _rxjs.subscribe_).call(_context19, borderLine.p('x2'), function (v) {
+													return v();
+												});
 												borderLine.resizes = { top: true };
 												(_context19 = _this2.p('hiddenOuterLayerLength'), _rxjs.subscribe_).call(_context19, borderLine.p('y'), function (n) {
 													return n();
@@ -17455,6 +17477,16 @@ return /******/ (function(modules) { // webpackBootstrap
 												var _context20;
 	
 												_this2.bottomBorder = borderLine;
+												(_context20 = _this2.p(['leftCornerRadius', 'free'], function (lcr, free) {
+													return free ? 0 : lcr;
+												}), _rxjs.subscribe_).call(_context20, borderLine.p('x1'), function (v) {
+													return v();
+												});
+												(_context20 = _this2.p(['rightCornerRadius', 'width', 'free'], function (rcr, w, free) {
+													return free ? w : w - rcr;
+												}), _rxjs.subscribe_).call(_context20, borderLine.p('x2'), function (v) {
+													return v();
+												});
 												borderLine.resizes = { bottom: true };
 												(_context20 = _this2.p('height'), _rxjs.subscribe_).call(_context20, borderLine.p('y'), function (n) {
 													return n();
@@ -17742,7 +17774,7 @@ return /******/ (function(modules) { // webpackBootstrap
 			return typeof input === 'undefined' ? 'undefined' : _typeof(input);
 		} else if (Array.isArray(input)) {
 			if (input.length > 0) {
-				var _ret4 = function () {
+				var _ret5 = function () {
 					if (depth > maxDepth) return {
 							v: '[...]'
 						};
@@ -17764,7 +17796,7 @@ return /******/ (function(modules) { // webpackBootstrap
 					}
 				}();
 
-				if ((typeof _ret4 === 'undefined' ? 'undefined' : _typeof(_ret4)) === "object") return _ret4.v;
+				if ((typeof _ret5 === 'undefined' ? 'undefined' : _typeof(_ret5)) === "object") return _ret5.v;
 			} else {
 				return 'Array';
 			}
@@ -59314,7 +59346,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 				var handleArtifact = _ref4[1];
 				return handleArtifact.parent.free;
-			}).subscribe(function (_ref5) {
+			})
+			// ::filter(([,handleArtifact]) => handleArtifact.activeHandle)
+			.subscribe(function (_ref5) {
 				var _context2;
 	
 				var _ref6 = _slicedToArray(_ref5, 2);

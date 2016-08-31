@@ -349,7 +349,9 @@ export default class LyphRectangle extends Transformable {
 			.subscribe(({layers, width, height, hideOuterLayer}) => {
 				if (hideOuterLayer) { layers[0].hidden = true }
 				for (let i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
-					layers[i]::assign({
+					let layer = layers[i];
+					const removed = layer.p('parent')::filter(parent=>parent!==this);
+					layer::assign({
 						parent: this
 					}, {
 						width:          width,
@@ -359,8 +361,22 @@ export default class LyphRectangle extends Transformable {
 						spillunder:     (layers.length - i - 1) * height,
 						transformation: ID_MATRIX.translate(0, i * height)
 					});
-					layers[i].moveToFront();
+					let spillunder = (layers.length - i - 1) * height;
+					combineLatest(
+						this.p('dragging'),
+						layer.p('dragging'),
+						(td, ld) => td || !ld
+					)::takeUntil(removed).subscribe((spill) => {
+						layer::assign({ spillunder: spill ? spillunder : 0 });
+					});
+					removed::take(1).subscribe(() => {
+						layer::assign({
+							spillunder: 0
+						});
+					});
+					layer.moveToFront();
 				}
+				console.log('New layer set!');
 			});
 		
 		
@@ -483,23 +499,26 @@ export default class LyphRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				
-				this.p('leftCornerRadius')::subscribe_( borderLine.p('x1'), v=>v() );
-				
-				this.p(['rightCornerRadius', 'width'], (rcr, w) => w-rcr)
-					::subscribe_( borderLine.p('x2') , v=>v() );
 				if (!this.topBorder) {
 					this.topBorder = borderLine;
+					this.p(['leftCornerRadius'], (lcr) => lcr)
+						::subscribe_( borderLine.p('x1') , v=>v() );
+					this.p(['rightCornerRadius', 'width'], (rcr, w) => w-rcr)
+						::subscribe_( borderLine.p('x2') , v=>v() );
 					borderLine.resizes = { top: true };
 					this.p('hiddenOuterLayerLength')::subscribe_( borderLine.p('y') , n=>n() );
 					removed.subscribe(() => { this.topBorder = null });
 				} else if (!this.bottomBorder) {
 					this.bottomBorder = borderLine;
+					this.p(['leftCornerRadius', 'free'], (lcr, free) => (free ? 0 : lcr))
+						::subscribe_( borderLine.p('x1') , v=>v() );
+					this.p(['rightCornerRadius', 'width', 'free'], (rcr, w, free) => (free ? w : w-rcr))
+						::subscribe_( borderLine.p('x2') , v=>v() );
 					borderLine.resizes = { bottom: true };
 					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
 					removed.subscribe(() => { this.bottomBorder = null });
 				}
 			});
-			
 			
 		}
 		

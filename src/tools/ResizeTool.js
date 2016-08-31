@@ -74,6 +74,7 @@ export default class ResizeTool extends Tool {
 			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
 			::filter(([,handleArtifact]) => handleArtifact.parent.free)
+			// ::filter(([,handleArtifact]) => handleArtifact.activeHandle)
             .subscribe(([down, handleArtifact]) => {
             	
             	/* start resizing */
