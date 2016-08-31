@@ -88,7 +88,7 @@ export default class DragDropTool extends Tool {
 				reassessHoveredArtefact(draggedArtefact.parent);
 				
 				
-				const M = root.inside.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
+				const M = root.element.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
 				
 				
 				/* move while dragging */

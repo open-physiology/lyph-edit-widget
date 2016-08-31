@@ -16854,6 +16854,21 @@ return /******/ (function(modules) { // webpackBootstrap
 											x: 0,
 											y: CLOSED_CORNER_RADIUS
 										});
+	
+										/* tooltip placement for three main rectangles */
+										{
+											var tooltipText = _jquery2.default.svg('<title></title>').appendTo(rectangleTL.node);
+											_this2.p('model.name').subscribe(tooltipText.text.bind(tooltipText));
+										}
+										{
+											var _tooltipText = _jquery2.default.svg('<title></title>').appendTo(rectangleTR.node);
+											_this2.p('model.name').subscribe(_tooltipText.text.bind(_tooltipText));
+										}
+										{
+											var _tooltipText2 = _jquery2.default.svg('<title></title>').appendTo(rectangleB.node);
+											_this2.p('model.name').subscribe(_tooltipText2.text.bind(_tooltipText2));
+										}
+	
 										_this2.p('width').subscribe(function (width) {
 											rectangleB.attr({ width: width });
 											rectangleTL.attr({ width: width - CLOSED_CORNER_RADIUS });
@@ -16893,6 +16908,9 @@ return /******/ (function(modules) { // webpackBootstrap
 												ry: radius
 											});
 										});
+	
+										/* tooltip */
+	
 										return mainRectangleGroup;
 									};
 	
@@ -17161,7 +17179,6 @@ return /******/ (function(modules) { // webpackBootstrap
 										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
 											_loop(i);
 										}
-										console.log('New layer set!');
 									});
 	
 									// TODO: if a lyph has no axis, do draw an extra border-like
@@ -17187,36 +17204,49 @@ return /******/ (function(modules) { // webpackBootstrap
 										});
 									});
 	
+									if (!this.glyphPosition) {
+										// TODO: this is a hack; do actual auto-layout
+										this.glyphPosition = 3;
+										this.newGlyphPosition = function () {
+											_this2.glyphPosition += 25;
+											return _this2.glyphPosition;
+										};
+										this.newFarGlyphPosition = function () {
+											_this2.glyphPosition += 45;
+											return _this2.glyphPosition;
+										};
+									}
+	
 									this.syncModelWithArtefact('ContainsNode', _NodeGlyph2.default, this.inside.jq.children('.nodes'), function (_ref28) {
 										var model = _ref28.model;
 										var width = _ref28.width;
 										var height = _ref28.height;
 										return new _NodeGlyph2.default({
 											model: model,
-											x: width - 13, // TODO: pick unique new position and size (auto-layout)
-											y: height - 13 - _this2.axisThickness
+											x: _this2.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
-									this.syncModelWithArtefact('HasMeasurable', _MeasurableGlyph2.default, this.inside.jq.children('.measurables'), function (_ref29) {
+									this.syncModelWithArtefact('ContainsMaterial', _MaterialGlyph2.default, this.inside.jq.children('.materials'), function (_ref29) {
 										var model = _ref29.model;
 										var width = _ref29.width;
 										var height = _ref29.height;
-										return new _MeasurableGlyph2.default({
+										return new _MaterialGlyph2.default({
 											model: model,
-											x: width / 2, // TODO: pick unique new position and size (auto-layout)
-											y: height - 16 - _this2.axisThickness
+											x: _this2.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
-									this.syncModelWithArtefact('ContainsMaterial', _MaterialGlyph2.default, this.inside.jq.children('.materials'), function (_ref30) {
+									this.syncModelWithArtefact('HasMeasurable', _MeasurableGlyph2.default, this.inside.jq.children('.measurables'), function (_ref30) {
 										var model = _ref30.model;
 										var width = _ref30.width;
 										var height = _ref30.height;
-										return new _MaterialGlyph2.default({
+										return new _MeasurableGlyph2.default({
 											model: model,
-											x: width / 2, // TODO: pick unique new position and size (auto-layout)
-											y: height - 16 - _this2.axisThickness
+											x: _this2.newFarGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
@@ -17439,7 +17469,7 @@ return /******/ (function(modules) { // webpackBootstrap
 										})();
 									}
 	
-								case 44:
+								case 45:
 								case 'end':
 									return _context22.stop();
 							}

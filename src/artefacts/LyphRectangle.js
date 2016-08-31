@@ -219,6 +219,22 @@ export default class LyphRectangle extends Transformable {
 				x: 0,
 				y: CLOSED_CORNER_RADIUS
 			});
+			
+		
+			/* tooltip placement for three main rectangles */
+			{
+				let tooltipText = $.svg(`<title></title>`).appendTo(rectangleTL.node);
+				this.p('model.name').subscribe( ::tooltipText.text );
+			}
+			{
+				let tooltipText = $.svg(`<title></title>`).appendTo(rectangleTR.node);
+				this.p('model.name').subscribe( ::tooltipText.text );
+			}
+			{
+				let tooltipText = $.svg(`<title></title>`).appendTo(rectangleB.node);
+				this.p('model.name').subscribe( ::tooltipText.text );
+			}
+			
 			this.p('width').subscribe((width)  => {
 				rectangleB .attr({ width: width                        });
 				rectangleTL.attr({ width: width - CLOSED_CORNER_RADIUS });
@@ -245,6 +261,9 @@ export default class LyphRectangle extends Transformable {
 					ry: radius
 				});
 			});
+			
+			/* tooltip */
+			
 			return mainRectangleGroup;
 		};
 		
@@ -376,12 +395,12 @@ export default class LyphRectangle extends Transformable {
 					});
 					layer.moveToFront();
 				}
-				console.log('New layer set!');
 			});
 		
 		
 		// TODO: if a lyph has no axis, do draw an extra border-like
 		//     : line to cover up the 'closed side' gaps
+		
 		
 		
 		this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
@@ -399,25 +418,26 @@ export default class LyphRectangle extends Transformable {
 			})
 		);
 		
+		if (!this.glyphPosition) { // TODO: this is a hack; do actual auto-layout
+			this.glyphPosition = 3;
+			this.newGlyphPosition = () => {
+				this.glyphPosition += 25;
+				return this.glyphPosition;
+			};
+			this.newFarGlyphPosition = () => {
+				this.glyphPosition += 45;
+				return this.glyphPosition;
+			};
+		}
+		
 		this.syncModelWithArtefact(
 			'ContainsNode',
 			NodeGlyph,
 			this.inside.jq.children('.nodes'),
 			({model, width, height}) => new NodeGlyph({
 				model,
-				x: width  - 13, // TODO: pick unique new position and size (auto-layout)
-				y: height - 13 - this.axisThickness
-			})
-		);
-		
-		this.syncModelWithArtefact(
-			'HasMeasurable',
-			MeasurableGlyph,
-			this.inside.jq.children('.measurables'),
-			({model, width, height}) => new MeasurableGlyph({
-				model,
-				x: width / 2, // TODO: pick unique new position and size (auto-layout)
-				y: height - 16 - this.axisThickness
+				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+				y: height - 20 - this.axisThickness
 			})
 		);
 		
@@ -427,8 +447,19 @@ export default class LyphRectangle extends Transformable {
 			this.inside.jq.children('.materials'),
 			({model, width, height}) => new MaterialGlyph({
 				model,
-				x: width / 2, // TODO: pick unique new position and size (auto-layout)
-				y: height - 16 - this.axisThickness
+				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+				y: height - 20 - this.axisThickness
+			})
+		);
+		
+		this.syncModelWithArtefact(
+			'HasMeasurable',
+			MeasurableGlyph,
+			this.inside.jq.children('.measurables'),
+			({model, width, height}) => new MeasurableGlyph({
+				model,
+				x: this.newFarGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+				y: height - 20 - this.axisThickness
 			})
 		);
 		

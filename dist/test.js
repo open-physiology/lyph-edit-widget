@@ -16980,6 +16980,21 @@ return /******/ (function(modules) { // webpackBootstrap
 											x: 0,
 											y: CLOSED_CORNER_RADIUS
 										});
+	
+										/* tooltip placement for three main rectangles */
+										{
+											var tooltipText = _jquery2.default.svg('<title></title>').appendTo(rectangleTL.node);
+											_this2.p('model.name').subscribe(tooltipText.text.bind(tooltipText));
+										}
+										{
+											var _tooltipText = _jquery2.default.svg('<title></title>').appendTo(rectangleTR.node);
+											_this2.p('model.name').subscribe(_tooltipText.text.bind(_tooltipText));
+										}
+										{
+											var _tooltipText2 = _jquery2.default.svg('<title></title>').appendTo(rectangleB.node);
+											_this2.p('model.name').subscribe(_tooltipText2.text.bind(_tooltipText2));
+										}
+	
 										_this2.p('width').subscribe(function (width) {
 											rectangleB.attr({ width: width });
 											rectangleTL.attr({ width: width - CLOSED_CORNER_RADIUS });
@@ -17019,6 +17034,9 @@ return /******/ (function(modules) { // webpackBootstrap
 												ry: radius
 											});
 										});
+	
+										/* tooltip */
+	
 										return mainRectangleGroup;
 									};
 	
@@ -17287,7 +17305,6 @@ return /******/ (function(modules) { // webpackBootstrap
 										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
 											_loop(i);
 										}
-										console.log('New layer set!');
 									});
 	
 									// TODO: if a lyph has no axis, do draw an extra border-like
@@ -17313,36 +17330,49 @@ return /******/ (function(modules) { // webpackBootstrap
 										});
 									});
 	
+									if (!this.glyphPosition) {
+										// TODO: this is a hack; do actual auto-layout
+										this.glyphPosition = 3;
+										this.newGlyphPosition = function () {
+											_this2.glyphPosition += 25;
+											return _this2.glyphPosition;
+										};
+										this.newFarGlyphPosition = function () {
+											_this2.glyphPosition += 45;
+											return _this2.glyphPosition;
+										};
+									}
+	
 									this.syncModelWithArtefact('ContainsNode', _NodeGlyph2.default, this.inside.jq.children('.nodes'), function (_ref28) {
 										var model = _ref28.model;
 										var width = _ref28.width;
 										var height = _ref28.height;
 										return new _NodeGlyph2.default({
 											model: model,
-											x: width - 13, // TODO: pick unique new position and size (auto-layout)
-											y: height - 13 - _this2.axisThickness
+											x: _this2.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
-									this.syncModelWithArtefact('HasMeasurable', _MeasurableGlyph2.default, this.inside.jq.children('.measurables'), function (_ref29) {
+									this.syncModelWithArtefact('ContainsMaterial', _MaterialGlyph2.default, this.inside.jq.children('.materials'), function (_ref29) {
 										var model = _ref29.model;
 										var width = _ref29.width;
 										var height = _ref29.height;
-										return new _MeasurableGlyph2.default({
+										return new _MaterialGlyph2.default({
 											model: model,
-											x: width / 2, // TODO: pick unique new position and size (auto-layout)
-											y: height - 16 - _this2.axisThickness
+											x: _this2.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
-									this.syncModelWithArtefact('ContainsMaterial', _MaterialGlyph2.default, this.inside.jq.children('.materials'), function (_ref30) {
+									this.syncModelWithArtefact('HasMeasurable', _MeasurableGlyph2.default, this.inside.jq.children('.measurables'), function (_ref30) {
 										var model = _ref30.model;
 										var width = _ref30.width;
 										var height = _ref30.height;
-										return new _MaterialGlyph2.default({
+										return new _MeasurableGlyph2.default({
 											model: model,
-											x: width / 2, // TODO: pick unique new position and size (auto-layout)
-											y: height - 16 - _this2.axisThickness
+											x: _this2.newFarGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
+											y: height - 20 - _this2.axisThickness
 										});
 									});
 	
@@ -17565,7 +17595,7 @@ return /******/ (function(modules) { // webpackBootstrap
 										})();
 									}
 	
-								case 44:
+								case 45:
 								case 'end':
 									return _context22.stop();
 							}
@@ -58695,7 +58725,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 				reassessHoveredArtefact(draggedArtefact.parent);
 	
-				var M = root.inside.getTransformToElement(draggedArtefact.element); //.translate(offset.left, offset.top);
+				var M = root.element.getTransformToElement(draggedArtefact.element); //.translate(offset.left, offset.top);
 	
 	
 				/* move while dragging */
@@ -63269,135 +63299,255 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var classes = window.module.classes;
 	
-	////////////////////////////////////////////////////////////////////////////////
-	
-	
-	var apicalBag = classes.Lyph.new({
-		name: 'Apical Bag',
-		layers: [classes.Lyph.new({ name: 'Cytosol' }, { createRadialBorders: true }), classes.Lyph.new({ name: 'Membrane' }, { createRadialBorders: true })]
-	}, { createAxis: true, createRadialBorders: true });
-	
-	var basolateralBag = classes.Lyph.new({
-		name: 'Basolateral Bag',
-		layers: [classes.Lyph.new({ name: 'Cytosol' }, { createRadialBorders: true }), classes.Lyph.new({
-			name: 'Membrane',
-			measurables: [classes.Measurable.new({
-				name: "concentration of water in blood",
-				quality: 'concentration'
-			})]
-		}, { createRadialBorders: true })]
-	}, { createAxis: true, createRadialBorders: true });
-	
-	var node1 = classes.Node.new();
-	var node2 = classes.Node.new();
-	
-	var material1 = classes.Material.new({
-		name: 'Water'
-	});
-	
-	var coalescenceScenario = classes.CoalescenceScenario.new({
-		name: 'My Coalescence',
-		lyphs: [apicalBag, basolateralBag]
-	});
-	
-	var measurable1 = classes.Measurable.new({
-		name: "concentration of water in blood",
-		quality: 'concentration'
-	});
-	
-	var measurable2 = classes.Measurable.new({
-		name: "concentration of other stuff in blood",
-		quality: 'concentration'
-	});
-	
-	var causality = classes.Causality.new({
-		cause: measurable1,
-		effect: measurable2
-	});
+	var C = window.module.classes;
 	
 	////////////////////////////////////////////////////////////////////////////////
 	
+	var AXIS = { createAxis: true, createRadialBorders: true };
+	var NO_AXIS = { createRadialBorders: true };
+	
+	var sodium = C.Material.Type.new({
+		name: "Sodium",
+		definition: C.Material.new({
+			name: "Sodium"
+		})
+	});
+	var water = C.Material.Type.new({
+		name: "Water",
+		definition: C.Material.new({
+			name: "Water"
+		})
+	});
+	
+	// TODO: had to cheat (make 2 instances of the shared layer)
+	//     : because left-border/right-border cross over in coalescence
+	var sharedLayer = C.Lyph.new({
+		name: "Basement Membrane"
+	}, NO_AXIS);
+	
+	var urinaryPFTU = void 0,
+	    bloodPFTU = void 0;
+	var coalescence1 = C.CoalescenceScenario.new({
+		name: "PCT coalescence",
+		lyphs: [urinaryPFTU = C.Lyph.new({
+			name: "Urinary pFTU",
+			layers: [C.Lyph.new({
+				name: "Urine",
+				materials: [sodium, water],
+				measurables: [C.Measurable.new({ name: "Concentration of Sodium in Urine" })]
+			}, NO_AXIS), C.Lyph.new({ name: "Epithelium" }, NO_AXIS), sharedLayer]
+		}, AXIS), bloodPFTU = C.Lyph.new({
+			name: "Blood pFTU",
+			layers: [C.Lyph.new({
+				name: "Blood",
+				materials: [sodium, water],
+				measurables: [C.Measurable.new({ name: "Concentration of Sodium in Blood" })]
+			}, NO_AXIS), C.Lyph.new({ name: "Endothelium" }, NO_AXIS), sharedLayer]
+		}, AXIS)]
+	});
+	
+	var cytosolLayer = function cytosolLayer() {
+		return C.Lyph.new({
+			name: "Cytosol",
+			materials: [sodium, water],
+			measurables: [C.Measurable.new({ name: "Concentration of Sodium in Cytosol" })]
+		}, NO_AXIS);
+	};
+	var plasmaMembraneLayer = function plasmaMembraneLayer() {
+		return C.Lyph.new({ name: "Plasma Membrane" }, NO_AXIS);
+	};
+	var redBloodCell = C.Lyph.new({
+		name: "Red Blood Cell",
+		layers: [cytosolLayer(), plasmaMembraneLayer()]
+	}, AXIS);
+	var apicalRegionOfEpithelialCell = C.Lyph.new({
+		name: "Apical region of Epithelial Cell",
+		layers: [cytosolLayer(), plasmaMembraneLayer()]
+	}, AXIS);
+	var basolateralRegionOfEpithelialCell = C.Lyph.new({
+		name: "Basolateral region of Epithelial Cell",
+		layers: [cytosolLayer(), plasmaMembraneLayer()]
+	}, AXIS);
+	
+	var wallLayer = function wallLayer() {
+		return C.Lyph.new({ name: "Cytosol", materials: [sodium, water] }, NO_AXIS);
+	};
+	var lumenLayer = function lumenLayer() {
+		return C.Lyph.new({ name: "Plasma Membrane" }, NO_AXIS);
+	};
+	var G = C.Lyph.new({
+		name: "V-Type, Extracellular",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	var H = C.Lyph.new({
+		name: "V-Type, Transmembrane",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	var I = C.Lyph.new({
+		name: "V-Type, Intracellular",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	var L = C.Lyph.new({
+		name: "NBC, Extracellular",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	var K = C.Lyph.new({
+		name: "NBC, Transmembrane",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	var J = C.Lyph.new({
+		name: "NBC, Intracellular",
+		layers: [wallLayer(), lumenLayer()]
+	}, AXIS);
+	
+	var rateMeasurable = C.Measurable.new({ name: "Sodium flux" });
+	//A measureable for rate Sodium diffusive flow Cytosol layer of Basolateral region of Epithelial Cell {7b}.
+	
+	///////////////////////////////////////////////////////////////////////////////
 	
 	var root = new _Canvas2.default({ element: (0, _jquery2.default)('#svg') });
 	
-	new _LyphRectangle2.default({
-		parent: root,
-		model: apicalBag,
-		x: 100,
-		y: 100,
-		width: 150,
-		height: 150,
-		rotation: 45
-	});
-	
-	new _LyphRectangle2.default({
-		parent: root,
-		model: basolateralBag,
-		x: 300,
-		y: 200,
-		width: 150,
-		height: 150
-	});
-	
 	new _CoalescenceScenarioRectangle2.default({
 		parent: root,
-		model: coalescenceScenario,
-		x: 600,
-		y: 300,
+		model: coalescence1,
+		x: 140,
+		y: -60,
 		width: 200,
-		height: 300,
+		height: 400,
 		rotation: 90
 	});
 	
-	var nodeg1 = new _NodeGlyph2.default({
+	var xShift = 280;
+	var x = 470 - xShift;
+	function nextX() {
+		x += xShift;
+		return x;
+	}
+	// let yShift = 280;
+	// let y = 470 - xShift;
+	// function nextY() {
+	// 	y += yShift;
+	// 	return y;
+	// }
+	
+	new _LyphRectangle2.default({
 		parent: root,
-		x: 300,
+		model: urinaryPFTU,
+		x: nextX(),
 		y: 20,
-		model: node1
+		width: 200,
+		height: 220
 	});
 	
-	var nodeg2 = new _NodeGlyph2.default({
+	new _LyphRectangle2.default({
 		parent: root,
-		x: 400,
-		y: 100,
-		model: node2
+		model: bloodPFTU,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
 	});
 	
-	var processEdge = new _ProcessLine2.default({
+	new _LyphRectangle2.default({
 		parent: root,
-		source: nodeg1,
-		target: nodeg2
+		model: redBloodCell,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
 	});
 	
-	var materialg1 = new _MaterialGlyph2.default({
+	new _LyphRectangle2.default({
 		parent: root,
-		x: 400,
-		y: 150,
-		model: material1
+		model: apicalRegionOfEpithelialCell,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
 	});
 	
-	var measurableg1 = new _MeasurableGlyph2.default({
-		model: measurable1,
+	new _LyphRectangle2.default({
 		parent: root,
-		x: 40,
-		y: 300
+		model: basolateralRegionOfEpithelialCell,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
 	});
 	
-	var measurableg2 = new _MeasurableGlyph2.default({
-		model: measurable2,
+	new _LyphRectangle2.default({
 		parent: root,
-		x: 60,
-		y: 350
+		model: G,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
 	});
 	
-	var causalityArrow = new _CausalityArrow2.default({
-		cause: measurableg1,
-		effect: measurableg2,
+	new _LyphRectangle2.default({
 		parent: root,
-		model: causality
+		model: H,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
+	});
+	
+	new _LyphRectangle2.default({
+		parent: root,
+		model: I,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
+	});
+	
+	new _LyphRectangle2.default({
+		parent: root,
+		model: J,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
+	});
+	
+	new _LyphRectangle2.default({
+		parent: root,
+		model: K,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
+	});
+	
+	new _LyphRectangle2.default({
+		parent: root,
+		model: L,
+		x: nextX(),
+		y: 20,
+		width: 200,
+		height: 220
+	});
+	
+	new _MeasurableGlyph2.default({
+		parent: root,
+		model: rateMeasurable,
+		x: nextX(),
+		y: 20
 	});
 	
 	////////////////////////////////////////////////////////////////////////////////
+	
+	// layer thickness still the same
+	// no uniprot ids,
+	// no visible names for layers
+	// no good placement of auto-generated floating things
+	// no co-highlighting of related materials
+	// no rate-measurable placement option
+	// shared layer crosses border natures
+	
+	
+	// TODO: tooltip info based on selected entity, not simple mouse-hover
 	
 	
 	root.elementCreated.then(function () {
@@ -63435,6 +63585,161 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	/* initiate element creation */
 	root.element;
+	
+	//
+	// let apicalBag = classes.Lyph.new({
+	// 	name: 'Apical Bag',
+	// 	layers: [
+	// 		classes.Lyph.new(
+	// 	    	{ name: 'Cytosol' },
+	// 		    { createRadialBorders: true }),
+	// 		classes.Lyph.new(
+	// 			{ name: 'Membrane' },
+	// 			{ createRadialBorders: true })
+	// 	]
+	// }, { createAxis: true, createRadialBorders: true });
+	//
+	//
+	// let basolateralBag = classes.Lyph.new({
+	// 	name: 'Basolateral Bag',
+	// 	layers: [
+	// 		classes.Lyph.new(
+	// 	    	{ name: 'Cytosol' },
+	// 		    { createRadialBorders: true }),
+	// 		classes.Lyph.new({
+	// 			name: 'Membrane',
+	// 			measurables: [
+	// 				classes.Measurable.new({
+	// 					name:    "concentration of water in blood",
+	// 					quality: 'concentration'
+	// 				})
+	// 			]
+	// 		}, { createRadialBorders: true })
+	// 	]
+	// }, { createAxis: true, createRadialBorders: true });
+	//
+	// let node1 = classes.Node.new();
+	// let node2 = classes.Node.new();
+	//
+	// let material1 = classes.Material.new({
+	// 	name: 'Water'
+	// });
+	//
+	// let coalescenceScenario = classes.CoalescenceScenario.new({
+	// 	name: 'My Coalescence',
+	// 	lyphs: [
+	// 		apicalBag,
+	// 	    basolateralBag
+	// 	]
+	// });
+	//
+	//
+	// let measurable1 = classes.Measurable.new({
+	// 	name:    "concentration of water in blood",
+	// 	quality: 'concentration'
+	// });
+	//
+	// let measurable2 = classes.Measurable.new({
+	// 	name:    "concentration of other stuff in blood",
+	// 	quality: 'concentration'
+	// });
+	//
+	// let causality = classes.Causality.new({
+	// 	cause: measurable1,
+	// 	effect: measurable2
+	// });
+	//
+	// ////////////////////////////////////////////////////////////////////////////////
+	//
+	//
+	// let root = new Canvas({ element: $('#svg') });
+	//
+	//
+	// new LyphRectangle({
+	// 	parent:  root,
+	// 	model:   apicalBag,
+	// 	x:       100,
+	// 	y:       100,
+	// 	width:   150,
+	// 	height:  150,
+	// 	rotation: 45
+	// });
+	//
+	//
+	// new LyphRectangle({
+	// 	parent: root,
+	// 	model:  basolateralBag,
+	// 	x:      300,
+	// 	y:      200,
+	// 	width:  150,
+	// 	height: 150
+	// });
+	//
+	//
+	// new CoalescenceScenarioRectangle({
+	// 	parent: root,
+	// 	model: coalescenceScenario,
+	// 	x: 600,
+	// 	y: 300,
+	// 	width: 200,
+	// 	height: 300,
+	// 	rotation: 90
+	// });
+	//
+	//
+	// let nodeg1 = new NodeGlyph({
+	// 	parent: root,
+	// 	x: 300,
+	// 	y: 20,
+	// 	model: node1
+	// });
+	//
+	//
+	// let nodeg2 = new NodeGlyph({
+	// 	parent: root,
+	// 	x: 400,
+	// 	y: 100,
+	// 	model: node2
+	// });
+	//
+	//
+	// let processEdge = new ProcessLine({
+	// 	parent: root,
+	// 	source: nodeg1,
+	// 	target: nodeg2
+	// });
+	//
+	//
+	// let materialg1 = new MaterialGlyph({
+	// 	parent: root,
+	// 	x: 400,
+	// 	y: 150,
+	// 	model: material1
+	// });
+	//
+	// let measurableg1 = new MeasurableGlyph({
+	// 	model: measurable1,
+	// 	parent: root,
+	// 	x: 40,
+	// 	y: 300
+	// });
+	//
+	// let measurableg2 = new MeasurableGlyph({
+	// 	model: measurable2,
+	// 	parent: root,
+	// 	x: 60,
+	// 	y: 350
+	// });
+	//
+	// let causalityArrow = new CausalityArrow({
+	// 	cause: measurableg1,
+	// 	effect: measurableg2,
+	// 	parent: root,
+	// 	model: causality
+	// });
+	//
+	//
+	//
 
 /***/ },
 /* 624 */
