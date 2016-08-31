@@ -1,5 +1,5 @@
 import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
+import Snap from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';
@@ -26,8 +26,6 @@ import uniqueId from 'lodash/uniqueId';
 
 import {combineLatest} from 'rxjs/observable/combineLatest';
 import {of} from 'rxjs/observable/of';
-
-// import {map} from '../util/bound-hybrid-functions';
 
 import {merge} from 'rxjs/observable/merge';
 import {range} from 'rxjs/observable/range';
@@ -156,41 +154,12 @@ export default class LyphRectangle extends Transformable {
 			(hideOuterLayer ? (height - this.axisThickness) / layers.size : 0))
 			::subscribe_( this.pSubject('hiddenOuterLayerLength'), v=>v() );
 		
-		
-		
-		
-		// if (this.model.axis) {
-		// 	this.p('parent').subscribe((v) => {
-		// 		console.log(this.model.name, '(1: parent                             )', v);
-		// 	});
-		// 	this.p('parent?.bottomBorder').subscribe((v) => {
-		// 		console.log(this.model.name, '(2: parent?.bottomBorder               )', v);
-		// 	});
-		// 	this.p('parent?.bottomBorder?.isInnerBorder').subscribe((v) => {
-		// 		console.log(this.model.name, '(3: parent?.bottomBorder?.isInnerBorder)', v);
-		// 	});
-		// 	this.p('showAxis').subscribe((v) => {
-		// 		console.log(this.model.name, '(4: showAxis                           )', v, '---', this.bottomBorder, this.model.axis);
-		// 	});
-		// 	this.p('bottomBorder').subscribe((v) => {
-		// 		console.log(this.model.name, '(5: bottomBorder                       )', v, '---', this.showAxis, this.model.axis);
-		// 	});
-		// }
-		
-		
 		/* maintain inner-border-ness of our bottom border */
 		// TODO: check (also?) whether there is an axis in the model (currently not working?)
 		this.p(['parent?.bottomBorder?.isInnerBorder', 'showAxis', 'bottomBorder'])
 		    .subscribe(([pi, a, bottomBorder]) => {
-		    	if (bottomBorder) {
-				    // console.log('(bottom-inner)', pi || a, !!this.model.axis); // TODO
-		    		bottomBorder.isInnerBorder = pi || a;
-			    }
+		    	if (bottomBorder) { bottomBorder.isInnerBorder = pi || a }
 		    });
-		
-		// this.p('parent?.bottomBorder?.isInnerBorder')::scan((a, v) => [...a, v], []).subscribe(v => {
-		// 	console.log(this.model.name, v);
-		// });
 		
 		/* create a random color (one per layer, stored in the model) */
 		if (!this.model[$$backgroundColor]) {
@@ -477,7 +446,6 @@ export default class LyphRectangle extends Transformable {
 				'rightBorder.model.nature',
 			    'topBorder.isInnerBorder'
 			]).subscribe(([lNature, rNature, isInner]) => {
-				console.log('(isInner)', isInner); // TODO
 				cornerTL.attr({ visibility: (isInner || lNature === 'open') ? 'hidden' : 'visible' });
 				cornerTR.attr({ visibility: (isInner || rNature === 'open') ? 'hidden' : 'visible' });
 			});
@@ -494,14 +462,14 @@ export default class LyphRectangle extends Transformable {
 					this.leftBorder = borderLine;
 					borderLine.resizes = { left: true };
 					borderLine.x = 0;
-					this.p(['leftCornerRadius', 'hiddenOuterLayerLength', 'spillunder'], (cr, hol, su) => (cr + hol - su))
+					this.p(['leftCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
 						::subscribe_( borderLine.p('y1'), v=>v() );
 					removed.subscribe(() => { this.leftBorder = null });
 				} else if (!this.rightBorder) {
 					this.rightBorder = borderLine;
 					borderLine.resizes = { right: true };
 					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
-					this.p(['rightCornerRadius', 'hiddenOuterLayerLength', 'spillunder'], (cr, hol, su) => (cr + hol - su))
+					this.p(['rightCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
 						::subscribe_( borderLine.p('y1'), v=>v() );
 					removed.subscribe(() => { this.rightBorder = null });
 				} else {

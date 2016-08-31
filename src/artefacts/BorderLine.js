@@ -1,5 +1,4 @@
 import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';
@@ -108,7 +107,6 @@ export default class BorderLine extends Transformable {
 			
 			let line = mainShapeGroup.line().attr({
 				strokeWidth   : '2px',
-				stroke        : 'black',
 				shapeRendering: 'crispEdges',
 				pointerEvents : 'none',
 				strokeLinecap : 'square'
@@ -122,7 +120,7 @@ export default class BorderLine extends Transformable {
 			
 			/* manifest nature in the DOM */
 			this.model.p('nature')
-				::map(n => ({ strokeDasharray: n === 'open' ? '5, 5' : 'none' }))
+				::map(n => ({ stroke: n === 'open' ? '#aaaaa' : 'black' }))
 				.subscribe( ::line.attr );
 			
 			// this.findAncestor(a => a.free).inside.jq
@@ -252,7 +250,7 @@ export default class BorderLine extends Transformable {
 		this.freeFloatingStuff.e('add')
 		    .subscribe((artefact) => {
 			    /* event when removed */
-			    const removed = artefact.p('parent')::filter(p=>p!==this)::log('(removed)');
+			    const removed = artefact.p('parent')::filter(p=>p!==this);
 		    	/* put into the dom */
 				parentElement.append(artefact.element);
 			    /* move when the border moves */

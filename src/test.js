@@ -14,6 +14,7 @@ import {filter} from 'rxjs/operator/filter';
 import {take} from 'rxjs/operator/take';
 import {switchMap} from 'rxjs/operator/switchMap';
 import {bufferCount} from 'rxjs/operator/bufferCount';
+import {map} from 'rxjs/operator/map';
 
 import DragDropTool from './tools/DragDropTool';
 import ResizeTool   from './tools/ResizeTool';
@@ -106,25 +107,25 @@ let causality = classes.Causality.new({
 let root = new Canvas({ element: $('#svg') });
 
 
-// new LyphRectangle({
-// 	parent:  root,
-// 	model:   apicalBag,
-// 	x:       100,
-// 	y:       100,
-// 	width:   150,
-// 	height:  150,
-// 	rotation: 45
-// });
-//
-//
-// new LyphRectangle({
-// 	parent: root,
-// 	model:  basolateralBag,
-// 	x:      300,
-// 	y:      200,
-// 	width:  150,
-// 	height: 150
-// });
+new LyphRectangle({
+	parent:  root,
+	model:   apicalBag,
+	x:       100,
+	y:       100,
+	width:   150,
+	height:  150,
+	rotation: 45
+});
+
+
+new LyphRectangle({
+	parent: root,
+	model:  basolateralBag,
+	x:      300,
+	y:      200,
+	width:  150,
+	height: 150
+});
 
 
 new CoalescenceScenarioRectangle({
@@ -138,56 +139,56 @@ new CoalescenceScenarioRectangle({
 });
 
 
-// let nodeg1 = new NodeGlyph({
-// 	parent: root,
-// 	x: 300,
-// 	y: 20,
-// 	model: node1
-// });
-//
-//
-// let nodeg2 = new NodeGlyph({
-// 	parent: root,
-// 	x: 400,
-// 	y: 100,
-// 	model: node2
-// });
+let nodeg1 = new NodeGlyph({
+	parent: root,
+	x: 300,
+	y: 20,
+	model: node1
+});
 
 
-// let processEdge = new ProcessLine({
-// 	parent: root,
-// 	source: nodeg1,
-// 	target: nodeg2
-// });
-//
-//
-// let materialg1 = new MaterialGlyph({
-// 	parent: root,
-// 	x: 400,
-// 	y: 150,
-// 	model: material1
-// });
-//
-// let measurableg1 = new MeasurableGlyph({
-// 	model: measurable1,
-// 	parent: root,
-// 	x: 40,
-// 	y: 300
-// });
-//
-// let measurableg2 = new MeasurableGlyph({
-// 	model: measurable2,
-// 	parent: root,
-// 	x: 60,
-// 	y: 350
-// });
-//
-// let causalityArrow = new CausalityArrow({
-// 	cause: measurableg1,
-// 	effect: measurableg2,
-// 	parent: root,
-// 	model: causality
-// });
+let nodeg2 = new NodeGlyph({
+	parent: root,
+	x: 400,
+	y: 100,
+	model: node2
+});
+
+
+let processEdge = new ProcessLine({
+	parent: root,
+	source: nodeg1,
+	target: nodeg2
+});
+
+
+let materialg1 = new MaterialGlyph({
+	parent: root,
+	x: 400,
+	y: 150,
+	model: material1
+});
+
+let measurableg1 = new MeasurableGlyph({
+	model: measurable1,
+	parent: root,
+	x: 40,
+	y: 300
+});
+
+let measurableg2 = new MeasurableGlyph({
+	model: measurable2,
+	parent: root,
+	x: 60,
+	y: 350
+});
+
+let causalityArrow = new CausalityArrow({
+	cause: measurableg1,
+	effect: measurableg2,
+	parent: root,
+	model: causality
+});
 
 
 
@@ -219,11 +220,9 @@ root.elementCreated.then(() => {
 		checkbox.prop('checked', false);
 	});
 	
-
 	/* print zoom-level */
-	root.context.p(
-		['zoomExponent', 'zoomFactor'],
-		(zExp, zFact) => `Zoom: ${zExp} (${Math.round(zFact*100)}%)`
+	root.context.p('zoomFactor')
+		::map((zFact) => `Zoom: ${Math.round(zFact*100)}%`
 	).subscribe(::($('#info > span').text));
 });
 

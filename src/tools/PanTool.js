@@ -1,63 +1,81 @@
-import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
-import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
 import {fromEvent} from 'rxjs/observable/fromEvent';
+import {of} from 'rxjs/observable/of';
+import {combineLatest} from 'rxjs/observable/combineLatest';
 import {switchMap} from 'rxjs/operator/switchMap';
 import {filter} from 'rxjs/operator/filter';
-import {map} from 'rxjs/operator/map';
-import {scan} from 'rxjs/operator/scan';
 import {takeUntil} from 'rxjs/operator/takeUntil';
 import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
 import {take} from 'rxjs/operator/take';
+import {map} from 'rxjs/operator/map';
+import {concat} from 'rxjs/operator/concat';
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
+import isFunction from 'lodash-bound/isFunction';
+import defaults from 'lodash-bound/defaults';
 
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
-import {xy_add} from "../util/misc";
-import {subscribe_} from "../util/rxjs";
+import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
+import {shiftedMatrixMovementFor} from "../util/rxjs";
+import {POINT} from "../util/svg";
+import {svgPageCoordinates} from "../util/rxjs";
+import {never} from "rxjs/observable/never";
+import {ignoreElements} from "rxjs/operator/ignoreElements";
+import {skipUntil} from "rxjs/operator/skipUntil";
+import {delay} from "rxjs/operator/delay";
+import {skip} from "rxjs/operator/skip";
+import {setCTM} from "../util/svg";
+import {subscribe_} from "../util/rxjs";
 
-
-const $$panTools = Symbol('$$panTools');
-const $$xy_initialPan  = Symbol('$$xy_initialPan');
 
 export default class PanTool extends Tool {
 	
 	constructor(context) {
-		super(context, { events: [] });
+		super(context, { events: ['mousedown'] });
 		
-		let {root} = context;
+		const {root} = context;
 		
-		if (!context[$$panTools]) {
-			
-			context[$$panTools] = true;
-			
-			context.newProperty('pan', { initial: { x: 0, y: 0 } });
-			
-			/* manifest pan on the canvas */
-			context.p('pan').subscribe(({x, y}) => { root.element.svg.panTo(x, y) });
-			
-		}
+		// const mousedown = this.rootE('mousedown');
+		const mousemove = this.windowE('mousemove');
+		const mouseup   = this.windowE('mouseup');
 		
-		/* relevant mouse-event streams */
-		const mousedown = this.rootE  ('mousedown')::filter(() => this.active);
-		const mousemove = this.windowE('mousemove')::filter(() => this.active);
-		const mouseup   = this.windowE('mouseup'  )::filter(() => this.active);
+		// context.registerCursor((handleArtifact) => {
+		// 	if (!handleArtifact.draggable) { return false }
+		// 	let isDragging    = handleArtifact.p('dragging')::filter(d=>d);
+		// 	let isNotDragging = handleArtifact.p('dragging')::filter(d=>!d);
+		// 	let isSelected    = handleArtifact.p('selected')::filter(s=>s);
+		// 	let isNotSelected = handleArtifact.p('selected')::filter(s=>!s);
+		// 	let GRAB     = '-webkit-grab -moz-grab grab';
+		// 	let GRABBING = '-webkit-grabbing -moz-grabbing grabbing';
+		// 	return of(GRAB)::concat(isDragging
+		// 		// ::takeUntil( combineLatest(isNotDragging::skip(1), isNotSelected::skip(1)::delay(100), (nd,ns)=>nd&&ns)::filter(v=>v) )
+		// 		::switchMap(() => of(GRABBING)
+		// 			::concat(never()::takeUntil(isNotDragging))
+		// 			::concat(of(GRAB)))
+		// 	);
+		// });
 		
-		/* maintaining pan */
-		const canvasDrag = mousedown
-			::filter(withoutMod('alt', 'ctrl', 'meta'))
+		this.e('mousedown')
+			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
-			::withLatestFrom(context.p('pan'))
-			::switchMap(() => mousemove::takeUntil(mouseup), ([d, i], m) => ({
-				x: i.x + m.pageX - d.pageX,
-				y: i.y + m.pageY - d.pageY
-			}))
-			::subscribe_( context.p('pan') , n=>n() );
+			::withLatestFrom(context.p('selected'))
+			::filter(([,handleArtifact]) => handleArtifact === root)
+			.subscribe(([down]) => {
+				const initialTransformation = root.element.getTransformToElement(root.inside);//.translate(offset.left, offset.top);
+				of(down)::concat(mousemove::takeUntil(mouseup))
+					::map(svgPageCoordinates)
+					::map(xy => xy.matrixTransform(initialTransformation))
+					::shiftedMatrixMovementFor(context.p('canvasCTM'))
+					::subscribe_( context.p('canvasCTM') );
+			});
 		
 	}
 	
+	
+	
 }
+

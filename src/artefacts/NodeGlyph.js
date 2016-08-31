@@ -1,5 +1,4 @@
 import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';

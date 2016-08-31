@@ -1,15 +1,4 @@
-import $    from '../libs/jquery.js';
 import Snap from 'snapsvg-cjs';
-import 'snap.svg.zpd';
-
-// let paper = Snap('#svg');
-
-// $(paper.node).css({
-// 	display: 'none'
-// });
-
-export function gElement(paper) {
-	return paper.g();
-}
+import 'snap.svg.zpd'; // TODO: Why is it still important that this is imported?
 
 export default Snap;

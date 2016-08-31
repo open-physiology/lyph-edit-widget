@@ -1,5 +1,5 @@
 import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
+import Snap from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';
@@ -40,6 +40,7 @@ import NodeGlyph from "./NodeGlyph";
 import MeasurableGlyph from "./MeasurableGlyph";
 import MaterialGlyph from "./MaterialGlyph";
 import CausalityArrow from "./CausalityArrow";
+import {setCTM, ID_MATRIX} from "../util/svg";
 
 const $$context = Symbol('$$context');
 const $$existingSVG = Symbol('$$existingSVG');
@@ -48,6 +49,9 @@ const $$existingArtefactsToUse = Symbol('$$existingArtefactsToUse');
 
 
 export default class Canvas extends SvgEntity {
+	
+	freeFloatingEntities = new ObservableSet();
+	draggedEntities      = new ObservableSet();
 	
 	constructor(options = {}) {
 		super(options);
@@ -73,14 +77,8 @@ export default class Canvas extends SvgEntity {
 	}
 	
 	createElement() {
-		window.E  = ""; // <-- ugly hack to fix snap.svg.zpd bug
 		let viewport = Snap((this[$$existingSVG] || $(`<svg>`))[0]);
-		viewport.zpd({
-			pan:  false,
-			zoom: false,
-			drag: false
-		});
-		let canvas = viewport.select('g[id^="snapsvg-zpd-"]');
+		let canvas = viewport.g();
 		
 		canvas.g().addClass('free-floating-entities');
 		canvas.g().addClass('processes');
@@ -102,7 +100,6 @@ export default class Canvas extends SvgEntity {
 			} else if ([ProcessLine, CausalityArrow].includes(droppedEntity.constructor)) {
 				this.inside.jq.children('.processes').append(droppedEntity.element);
 			}
-			
 		});
 	}
 	
@@ -113,7 +110,7 @@ export default class Canvas extends SvgEntity {
 			draggable: true,
 			resizable: true
 		});
-		this.inside.jq.children('.lyphs').append(droppedEntity.element);
+		this.inside.jq.children('.free-floating-entities').append(droppedEntity.element);
 	}
 	
 }

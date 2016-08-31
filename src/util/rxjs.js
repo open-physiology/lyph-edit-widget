@@ -14,20 +14,22 @@ import {concat} from 'rxjs/operator/concat';
 import {delayWhen} from 'rxjs/operator/delayWhen';
 
 import isUndefined from 'lodash-bound/isUndefined';
+import isFunction from 'lodash-bound/isFunction';
 import {createSVGPoint} from "./svg";
+import {tY} from "./svg";
+import {tX} from "./svg";
 
 export function subscribe_(subject, pipeFn = n=>n()) {
-	const handler = (key) => ({
-		[key]: (v) => pipeFn((toDebug) => {
-			if (!toDebug::isUndefined()) { debugger }
-			return subject[key](v);
-		})
-	});
-	return this.subscribe({
-		...handler('next'    ),
-		...handler('complete'),
-		...handler('error'   )
-	});
+	const handler = (key) => ((v) => pipeFn((toDebug) => {
+		if (!toDebug::isUndefined()) { debugger }
+		return subject[key](v);
+	}));
+	// const handler = (key) => ::subject[key];
+	return this.subscribe(
+		handler('next'    )
+		// handler('error'   ), // TODO: fix weirdness when these
+		// handler('complete')  //     : are uncommented
+	);
 }
 
 export function shiftedMovementFor(obj_xy) {
@@ -43,14 +45,37 @@ export function shiftedMovementFor(obj_xy) {
 	);
 }
 
-export function shiftedMatrixMovementFor(obj_m) {
+export function shiftedMatrixCoordinatesFor(obj_m) {
 	return combineLatest(
 		this::take(1), obj_m::take(1),
 		(ref, obj) => obj.translate(-ref.x, -ref.y)
 	)::switchMap(
 		() => this,
+		(delta, next) => {
+			let m = delta.translate(next.x, next.y);
+			return { x: m[tX], y: m[tY] };
+		}
+	);
+}
+
+export function shiftedMatrixMovementFor(obj_m) {
+	return combineLatest(
+		this, obj_m,
+		(ref, obj) => obj.translate(-ref.x, -ref.y)
+	)::take(1)::switchMap(
+		() => this,
 		(delta, next) => delta.translate(next.x, next.y)
 	);
+}
+
+export function shiftedMMovementFor(obj) {
+	return this
+		::map(ref => obj.translate(-ref.x, -ref.y))
+		::take(1)
+		::switchMap(
+			() => this,
+			(delta, next) => delta.translate(next.x, next.y)
+		);
 }
 
 export function log(...args) {

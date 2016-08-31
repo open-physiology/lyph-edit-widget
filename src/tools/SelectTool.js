@@ -37,6 +37,7 @@ import {withMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {withoutMod} from "../util/misc";
 import {which} from "../util/misc";
+import {log} from '../util/rxjs';
 
 
 import indent from 'indent-string';
@@ -128,7 +129,6 @@ export default class SelectTool extends Tool {
 				}
 			}, root)
 			::distinctUntilChanged()
-			// .do((v)=>{ console.log('(top)', v.model && v.model.name) })
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
 				.do(stopPropagation)

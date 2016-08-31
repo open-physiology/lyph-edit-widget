@@ -14,6 +14,8 @@ import assert from 'power-assert';
 
 import {args, humanMsg} from './misc';
 
+import { $$rxSubscriber } from 'rxjs/symbol/rxSubscriber';
+
 import {Subject}              from 'rxjs/Subject';
 import {BehaviorSubject}      from 'rxjs/BehaviorSubject';
 import {of}                   from 'rxjs/observable/of';
@@ -187,7 +189,6 @@ export default class ValueTracker {
 		} else if (name) {
 			let head = name, sep, tail;
 			const match = name.match(/^(.+?)(\??\.)(.+)$/);
-			// console.log('(p-regex)', name, match); // TODO: remove
 			if (match) {
 				[,head,sep,tail] = match;
 				let loose = (sep === '?.');

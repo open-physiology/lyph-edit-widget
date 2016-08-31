@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import {args} from './misc';
 import {assign} from 'bound-native-methods';
+import pick from 'lodash-bound/pick';
 
 export const M11 = 'a';
 export const M12 = 'c';
@@ -33,23 +34,17 @@ export function setCTM(matrix) {
 	       .initialize(createSVGTransformFromMatrix(matrix));
 }
 
-export class Point {
-	
-	svg = refSVG.createSVGPoint();
-	
+export class SVGPoint {
 	constructor(x, y) {
-		this.svg::assign({x, y});
+		let result = refSVG.createSVGPoint();
+		result::assign({x, y});
+		return result;
 	}
-	
-	get x() { return this.svg.x }
-	get y() { return this.svg.y }
-	
-	matrixTransform(m) {
-		return new Point(this.svg.matrixTransform(m));
-	}
-	
-	@args('n?n?o?') init(x, y, point = {x, y}) {
-		this.svg::assign(point);
-	}
-	
+}
+
+export function scaleFromPoint(factor, point) {
+	return this
+		.translate(point.x, point.y)
+		.scale(factor)
+		.translate(-point.x, -point.y);
 }

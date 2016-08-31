@@ -23,7 +23,7 @@ import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {POINT} from "../util/svg";
+import {ID_MATRIX} from "../util/svg";
 import {svgPageCoordinates, log} from "../util/rxjs";
 import {combineLatest} from "rxjs/observable/combineLatest";
 import LyphRectangle from "../artefacts/LyphRectangle";
@@ -65,18 +65,15 @@ export default class DrawingTool extends Tool {
 				if (!classes.Lyph.hasInstance(model))                                                   { return }
 				if (!(selectedArtefact instanceof Canvas || selectedArtefact instanceof LyphRectangle)) { return }
 
-				const startMatrix = root.element.getTransformToElement(selectedArtefact.element);
+				const M = root.inside.getTransformToElement(selectedArtefact.element);
 				
-				let startXY = svgPageCoordinates(down).matrixTransform(startMatrix);
-				let offset = root.element.jq.offset();
-				startXY.x = startXY.x + offset.left;
-				startXY.y = startXY.y + offset.top;
+				let pointA = down.point.matrixTransform(M);
 				
 				let artefact = new LyphRectangle({
 					model: model,
 					parent: selectedArtefact,
-					x:        startXY.x,
-					y:        startXY.y,
+					x:        pointA.x,
+					y:        pointA.y,
 					width:    10,    // TODO: use minimal width/height
 					height:   10,    //
 					dragging: true   // TODO: 'resizing' or 'creating'
@@ -84,11 +81,13 @@ export default class DrawingTool extends Tool {
 				
 				/* move while dragging */
 				of(down)::concat(mousemove::takeUntil(mouseup))
-					::map(svgPageCoordinates)
-					::map(xy => xy.matrixTransform(startMatrix))
-					.subscribe(({x, y}) => {
-						artefact.width  = x - startXY.x;
-						artefact.height = y - startXY.y;
+					// ::map(svgPageCoordinates)
+					::map(xy => xy.point.matrixTransform(M))
+					.subscribe(({x: xb, y: yb}) => {
+						let {x: xa, y: ya} = pointA;
+						artefact.width  = Math.abs(xa - xb);
+						artefact.height = Math.abs(ya - yb);
+						artefact.transformation = ID_MATRIX.translate(Math.min(xa, xb), Math.min(ya, yb));
 					});
 
 				/* stop dragging and drop */

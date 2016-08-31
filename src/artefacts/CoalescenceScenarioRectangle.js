@@ -1,5 +1,5 @@
 import $          from '../libs/jquery.js';
-import Snap, {gElement} from '../libs/snap.svg';
+import Snap from '../libs/snap.svg';
 
 import pick     from 'lodash-bound/pick';
 import defaults from 'lodash-bound/defaults';
@@ -61,6 +61,7 @@ import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
 import LyphRectangle from "./LyphRectangle";
 import {startWith} from "rxjs/operator/startWith";
+import {setCTM} from "../util/svg";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -94,10 +95,28 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		this.setFromObject(options, [
 			'width',
 			'height'
-		], { showAxis: true, draggable: true });
+		], { showAxis: true, draggable: true, free: true });
 		
 		this[$$toBeRecycled] = new WeakMap();
 		
+		
+		/* create the border artifacts */
+		this.radialBorders.add(new BorderLine({
+			parent : this,
+			model  : window.module.classes.Border.new()
+		}));
+		this.radialBorders.add(new BorderLine({
+			parent : this,
+			model  : window.module.classes.Border.new()
+		}));
+		this.longitudinalBorders.add(new BorderLine({
+			parent : this,
+			model  : window.module.classes.Border.new()
+		}));
+		this.longitudinalBorders.add(new BorderLine({
+			parent : this,
+			model  : window.module.classes.Border.new()
+		}));
 		// /* create the border artifacts */
 		// for (let setKey of ['radialBorders', 'longitudinalBorders']) {
 		// 	this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
@@ -225,7 +244,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			});
 		}
 		
-		{
+		{ // TODO: do borders properly; this was hacked together quickly
 			const borderGroup = this.inside.jq.children('.borders');
 			
 			this.leftBorder  = null;
@@ -351,6 +370,92 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			// TODO
 			
 		}
+		
+		
+		{
+			const borderGroup = this.inside.jq.children('.borders');
+			this.leftBorder  = null;
+			this.rightBorder = null;
+			this.radialBorders.e('add').subscribe((borderLine) => {
+				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
+				borderGroup.append(borderLine.element);
+				removed.subscribe(() => { borderLine.element.remove() });
+				this.p(['height', 'spillunder'], _add)
+					::subscribe_( borderLine.p('y2') , n=>n() );
+				if (!this.leftBorder) {
+					this.leftBorder = borderLine;
+					borderLine.resizes = { left: true };
+					borderLine.x = 0;
+					this.p(['leftCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
+						::subscribe_( borderLine.p('y1'), v=>v() );
+					removed.subscribe(() => { this.leftBorder = null });
+				} else if (!this.rightBorder) {
+					this.rightBorder = borderLine;
+					borderLine.resizes = { right: true };
+					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
+					this.p(['rightCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
+						::subscribe_( borderLine.p('y1'), v=>v() );
+					removed.subscribe(() => { this.rightBorder = null });
+				} else {
+					throw new Error('Trying to add a third radial border.');
+				}
+			});
+			this.topBorder    = null;
+			this.bottomBorder = null; // also axis
+			this.longitudinalBorders.e('add').subscribe((borderLine) => {
+				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
+				borderGroup.append(borderLine.element);
+				removed.subscribe(() => { borderLine.element.remove() });
+				
+				this.p('leftCornerRadius')::subscribe_( borderLine.p('x1'), v=>v() );
+				
+				this.p(['rightCornerRadius', 'width'], (rcr, w) => w-rcr)
+					::subscribe_( borderLine.p('x2') , v=>v() );
+				if (!this.topBorder) {
+					this.topBorder = borderLine;
+					borderLine.resizes = { top: true };
+					this.p('hiddenOuterLayerLength')::subscribe_( borderLine.p('y') , n=>n() );
+					removed.subscribe(() => { this.topBorder = null });
+				} else if (!this.bottomBorder) {
+					this.bottomBorder = borderLine;
+					borderLine.resizes = { bottom: true };
+					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
+					removed.subscribe(() => { this.bottomBorder = null });
+				}
+			});
+			
+			
+		}
+		
+		
+		
+		this.p(['normalLyph', 'rotatedLyph', 'sharedLayer']).subscribe(([normalLyph, rotatedLyph, sharedLayer]) => {
+			
+			for (let [source,  sBorder,      target,       tBorder     ] of [
+				[this,        'leftBorder' , normalLyph,  'leftBorder' ],
+			    [this,        'rightBorder', normalLyph,  'rightBorder'],
+			    [normalLyph,  'leftBorder' , this,        'leftBorder' ],
+			    [normalLyph,  'rightBorder', this,        'rightBorder'],
+				[this,        'leftBorder' , sharedLayer, 'leftBorder' ],
+			    [this,        'rightBorder', sharedLayer, 'rightBorder'],
+			    [sharedLayer, 'leftBorder' , this,        'leftBorder' ],
+			    [sharedLayer, 'rightBorder', this,        'rightBorder'],
+				[this,        'leftBorder' , rotatedLyph, 'rightBorder'],
+			    [this,        'rightBorder', rotatedLyph, 'leftBorder' ],
+			    [rotatedLyph, 'leftBorder' , this,        'rightBorder'],
+			    [rotatedLyph, 'rightBorder', this,        'leftBorder' ]
+			]) {
+				source.p(`${sBorder}.model.nature`)
+					// ::takeUntil(removed) // TODO: do this
+					::withLatestFrom(target.p(`${tBorder}.model`))
+					.subscribe(([nature, borderModel]) => {
+						borderModel.nature = nature;
+					});
+			}
+			
+		});
+		
+		
 		
 		// /* shared layer */
 		// {

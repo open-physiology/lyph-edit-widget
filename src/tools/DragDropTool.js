@@ -28,6 +28,8 @@ import {ignoreElements} from "rxjs/operator/ignoreElements";
 import {skipUntil} from "rxjs/operator/skipUntil";
 import {delay} from "rxjs/operator/delay";
 import {skip} from "rxjs/operator/skip";
+import {subscribe_} from "../util/rxjs";
+import {shiftedMMovementFor} from "../util/rxjs";
 
 
 export default class DragDropTool extends Tool {
@@ -37,8 +39,13 @@ export default class DragDropTool extends Tool {
 		
 		const {root} = context;
 		
-		const mousemove = this.windowE('mousemove', false);
-		const mouseup   = this.windowE('mouseup', false  );
+		const mousemove = fromEvent($(window), 'mousemove');
+		const mouseup   = this.windowE('mouseup');
+		
+				
+		// mousemove.subscribe((v) => {
+		// 	console.log('                                   ----------', v);
+		// });
 		
 		// context.registerCursor((handleArtifact) => {
 		// 	if (!handleArtifact.draggable) { return false }
@@ -56,7 +63,7 @@ export default class DragDropTool extends Tool {
 		// 	);
 		// });
 		
-		this.e('mousedown', false)
+		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			.do(stopPropagation)
 			::withLatestFrom(context.p('selected'))
@@ -64,10 +71,10 @@ export default class DragDropTool extends Tool {
 			::filter(([,handleArtifact]) => handleArtifact.draggable)
 			.subscribe(([down, draggedArtefact]) => {
 				
-				function reassessMouseHover(a) {
+				function reassessHoveredArtefact(a) {
 					if (!a){ return }
 					a.element.jq.mouseleave();
-					reassessMouseHover(a.parent);
+					reassessHoveredArtefact(a.parent);
 					if (a.element.jq.is(':hover')) {
 						a.element.jq.mouseenter();
 					}
@@ -78,22 +85,24 @@ export default class DragDropTool extends Tool {
 				for (let a of draggedArtefact.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
-				reassessMouseHover(draggedArtefact.parent);
+				reassessHoveredArtefact(draggedArtefact.parent);
 				
 				
-				// let offset = root.element.jq.offset();
-				const startMatrix = root.element.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
+				const M = root.inside.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
 				
 				
 				/* move while dragging */
-				of(down)::concat(mousemove::takeUntil(mouseup))
-					// ::map(::this.xy_page_to_viewport) // not needed, because we're interested in the delta
+				of(down)::concat(mousemove)
+					::takeUntil(mouseup)
 					::map(svgPageCoordinates)
-					::map(xy => xy.matrixTransform(startMatrix))
-					::shiftedMatrixMovementFor(draggedArtefact.p('transformation'))
-					.subscribe((m) => {
-						draggedArtefact.transformation = m;
-					});
+					::map(xy => xy.matrixTransform(M))
+					::shiftedMMovementFor(draggedArtefact.transformation)
+					// .subscribe(
+					// 	::(draggedArtefact.p('transformation')).next,
+					// 	::(draggedArtefact.p('transformation')).error,
+					// 	::(draggedArtefact.p('transformation')).complete
+					// );
+					::subscribe_( draggedArtefact.p('transformation'), v=>v() );
 				
 				/* stop dragging and drop */
 				let initial_dragged_transformation = draggedArtefact.transformation;
