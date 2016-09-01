@@ -10,6 +10,12 @@ export const M22 = 'd';
 export const tX  = 'e';
 export const tY  = 'f';
 
+export function createMatrix(a, b, c, d, e, f) {
+	let result = refSVG.createSVGMatrix();
+	result::assign({a, b, c, d, e, f});
+	return result;
+}
+
 export const refSVG = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 export const ID_MATRIX = refSVG.createSVGMatrix();
 export const createSVGTransformFromMatrix = ::refSVG.createSVGTransformFromMatrix;

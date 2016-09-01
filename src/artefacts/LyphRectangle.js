@@ -64,6 +64,8 @@ import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
 import {setCTM} from "../util/svg";
 import {_isNonNegative} from "../util/misc";
 import {scan} from "rxjs/operator/scan";
+import {tX} from "../util/svg";
+import {tY} from "../util/svg";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -233,6 +235,7 @@ export default class LyphRectangle extends Transformable {
 			{
 				let tooltipText = $.svg(`<title></title>`).appendTo(rectangleB.node);
 				this.p('model.name').subscribe( ::tooltipText.text );
+				// this.p(['transformation', 'width', 'height'])::map(([t, w, h])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f}), ${w}x${h}`).subscribe( ::tooltipText.text );
 			}
 			
 			this.p('width').subscribe((width)  => {
@@ -419,7 +422,7 @@ export default class LyphRectangle extends Transformable {
 		);
 		
 		if (!this.glyphPosition) { // TODO: this is a hack; do actual auto-layout
-			this.glyphPosition = 3;
+			this.glyphPosition = 2;
 			this.newGlyphPosition = () => {
 				this.glyphPosition += 25;
 				return this.glyphPosition;
@@ -437,7 +440,7 @@ export default class LyphRectangle extends Transformable {
 			({model, width, height}) => new NodeGlyph({
 				model,
 				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
-				y: height - 20 - this.axisThickness
+				y: height - 26 - this.axisThickness
 			})
 		);
 		
@@ -448,7 +451,7 @@ export default class LyphRectangle extends Transformable {
 			({model, width, height}) => new MaterialGlyph({
 				model,
 				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
-				y: height - 20 - this.axisThickness
+				y: height - 26 - this.axisThickness
 			})
 		);
 		
@@ -459,7 +462,7 @@ export default class LyphRectangle extends Transformable {
 			({model, width, height}) => new MeasurableGlyph({
 				model,
 				x: this.newFarGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
-				y: height - 20 - this.axisThickness
+				y: height - 26 - this.axisThickness
 			})
 		);
 		

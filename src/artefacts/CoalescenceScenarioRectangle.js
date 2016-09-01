@@ -99,6 +99,14 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		
 		this[$$toBeRecycled] = new WeakMap();
 		
+		//
+		//
+		//
+		// this.p(['width', 'height', 'transformation']).subscribe(::console.log);
+		//
+		//
+		
+		
 		
 		/* create the border artifacts */
 		this.radialBorders.add(new BorderLine({

@@ -68,6 +68,12 @@ export default class NodeGlyph extends Transformable {
 				cy         : 0
 			});
 			
+			// { // TODO: remove
+			// 	let tooltipText = $.svg(`<title></title>`).appendTo(circle.node);
+			// 	// this.p('model.name').subscribe( ::tooltipText.text );
+			// 	this.p(['transformation'])::map(([t])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f})`).subscribe( ::tooltipText.text );
+			// }
+			
 			this.p('parent')
 				::map(p => p instanceof BorderLine ? 6 : 8)
 				::map(r => ({ r }))
