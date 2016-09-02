@@ -143,48 +143,48 @@ let basolateralRegionOfEpithelialCell = C.Lyph.new({
 }, AXIS)::bagR();
 
 
-let wallLayer  = () => C.Lyph.new({ name: "Wall", materials: [sodium, water] }, NO_AXIS);
+let wallLayer  = () => C.Lyph.new({ name: "Wall"  }, NO_AXIS);
 let lumenLayer = () => C.Lyph.new({ name: "Lumen" }, NO_AXIS);
 let Gmodel = C.Lyph.new({
 	name: "V-Type, Extracellular (UniProt ID: P15313)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 let Hmodel = C.Lyph.new({
 	name: "V-Type, Transmembrane (UniProt ID: P15313)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 let Imodel = C.Lyph.new({
 	name: "V-Type, Intracellular (UniProt ID: P15313)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 let Lmodel = C.Lyph.new({
 	name: "NBC, Extracellular (UniProt ID: Q9Y6R1)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 let Kmodel = C.Lyph.new({
 	name: "NBC, Transmembrane (UniProt ID: Q9Y6R1)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 let Jmodel = C.Lyph.new({
 	name: "NBC, Intracellular (UniProt ID: Q9Y6R1)",
 	layers: [
+		lumenLayer()::tube(),
 		wallLayer() ::tube(),
-		lumenLayer()::tube()
 	]
 }, AXIS)::tube();
 
@@ -380,19 +380,23 @@ let getArguments = searchArgs();
 if (getArguments.has('assemble')) {
 	setTimeout(() => {
 		
-		
 		console.info('Assembling parts...');
 		
+		/* remove coalescence components */
 		ABC.element.jq.detach();
 		CDE.element.jq.detach();
 		
+		/* position coalescence scenario */
 		ABCDE.width  = 700;
 		ABCDE.height = 3000 + ABCDE.normalLyph.axisThickness + ABCDE.rotatedLyph.axisThickness;
 		ABCDE.transformation = createMatrix(0, 1, -1, 0, 3066, 39);
 		
+		/* get references to the layers of the coalescence */
 		let layersABC = [...ABCDE.normalLyph .layers];
 		let layersEDC = [...ABCDE.rotatedLyph.layers];
+		let C = ABCDE.sharedLayer;
 		
+		/* set up left bag of composed cyst */
 		O.parent = layersABC[1];
 		O.element.jq.appendTo(layersABC[1].element.jq.children('.parts'));
 		O.width  = 240;
@@ -402,9 +406,8 @@ if (getArguments.has('assemble')) {
 		OLayers[0].width -= 60;
 		OLayers[0].transformation = OLayers[0].transformation.translate(60, 0);
 		OLayers[1].bottomBorder.x1 += 60;
-		// OLayers[0].leftCornerRadius = 75;
-		
-		
+				
+		/* set up right bag of composed cyst */
 		N.parent = layersABC[1];
 		N.element.jq.appendTo(layersABC[1].element.jq.children('.parts'));
 		N.width  = 240;
@@ -414,7 +417,7 @@ if (getArguments.has('assemble')) {
 		NLayers[0].width -= 60;
 		NLayers[1].bottomBorder.x2 -= 60;
 
-		
+		/* set up inner tubes */
 		G.parent = layersABC[1];
 		G.element.jq.appendTo(layersABC[1].element.jq.children('.parts'));
 		G.width  = 60;
@@ -447,38 +450,41 @@ if (getArguments.has('assemble')) {
 		L.height = 100;
 		L.transformation = createMatrix(0, -1, 1, 0, 460, 60);
 		
+		/* set up red blood cell to look like a material of the blood layer */
 		redBloodCellR.parent = layersEDC[0];
 		redBloodCellR.element.jq.appendTo(layersEDC[0].element.jq.children('.materials'));
 		redBloodCellR.width  = 200;
 		redBloodCellR.height = 220;
 		redBloodCellR.transformation = createMatrix(0, 0.5, -0.5, 0, 145, 460);
 		
-		let sLayer = ABCDE.sharedLayer;
-		
-		function placeNode(i, parent, m) {
+		/* set up the process nodes */
+		let i = 0;
+		function placeNode(parent, m) {
 			nodeGs[i].parent = parent;
 			nodeGs[i].element.jq.appendTo(parent.element.jq.children('.nodes'));
 			nodeGs[i].transformation = createMatrix(...m);
+			i++;
 		}
-		placeNode( 0, layersABC[0], [0, -1, 1, 0, 0,   300]);
-		placeNode( 1, layersABC[0], [0, -1, 1, 0, 700, 300]);
-		placeNode( 2, layersABC[0], [0, -1, 1, 0, 525, 300]);
-		placeNode( 3, layersABC[0], [0, -1, 1, 0, 525,   0]);
-		placeNode( 4, G,            [1,  0, 0, 1,   0,  65]);
-		placeNode( 5, H,            [1,  0, 0, 1,   0,  65]);
-		placeNode( 6, I,            [1,  0, 0, 1,   0,  65]);
-		  
-		placeNode( 7, NLayers[0],   [1,  0, 0, 1,   0, 172.5]);
-		  
-		placeNode( 8, J,            [1,  0, 0, 1,   0,  65]);
-		placeNode( 9, K,            [1,  0, 0, 1,   0,  65]);
-		placeNode(10, L,            [1,  0, 0, 1,   0,  65]);
-		placeNode(11, sLayer      , [0, -1, 1, 0, 525, 300]);
-		placeNode(12, layersEDC[1], [0, -1, 1, 0, 175,   0]);
-		placeNode(13, layersEDC[0], [0, -1, 1, 0, 175,   0]);
-		placeNode(14, layersEDC[0], [0, -1, 1, 0, 175, 300]);
-		placeNode(15, layersEDC[0], [0, -1, 1, 0, 700, 300]);
-		placeNode(16, layersEDC[0], [0, -1, 1, 0, 0  , 300]);
+		placeNode( layersABC[0], [0, -1, 1, 0, 0,   300]   );
+		placeNode( layersABC[0], [0, -1, 1, 0, 700, 300]   );
+		placeNode( layersABC[0], [0, -1, 1, 0, 525, 300]   );
+		// placeNode( layersABC[0], [0, -1, 1, 0, 525,   0]   );
+		placeNode( G,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( H,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( I,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( I,            [1,  0, 0, 1,  60,  65]   );
+		////
+		placeNode( NLayers[0],   [1,  0, 0, 1,   0, 172.5] );
+		////
+		placeNode( J,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( K,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( L,            [1,  0, 0, 1,   0,  65]   );
+		placeNode( L           , [1,  0, 0, 1,  60,  65]   );
+		placeNode( layersEDC[1], [0, -1, 1, 0, 175,   0]   );
+		placeNode( layersEDC[0], [0, -1, 1, 0, 175,   0]   );
+		placeNode( layersEDC[0], [0, -1, 1, 0, 175, 300]   );
+		placeNode( layersEDC[0], [0, -1, 1, 0, 700, 300]   );
+		placeNode( layersEDC[0], [0, -1, 1, 0, 0  , 300]   );
 		
 		rateMeasurableGlyph.parent = NLayers[0];
 		rateMeasurableGlyph.element.jq.appendTo(NLayers[0].element.jq.children('.foreground'));
