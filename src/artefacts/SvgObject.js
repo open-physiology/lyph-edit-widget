@@ -4,6 +4,9 @@ import pick from 'lodash-bound/pick';
 import keys from 'lodash-bound/keys';
 import defaults from 'lodash-bound/defaults';
 import isFunction from 'lodash-bound/isFunction';
+import isUndefined from 'lodash-bound/isUndefined';
+
+import {values, defineProperty} from 'bound-native-methods';
 
 import _isNumber from 'lodash/isNumber';
 import _isBoolean from 'lodash/isBoolean';
@@ -27,7 +30,8 @@ const $$creatingElement = Symbol('$$creatingElement');
 const $$create          = Symbol('$$create');
 const $$creation        = Symbol('$$creation');
 const $$elementCreated  = Symbol('$$elementCreated');
-
+const $$placeholder     = Symbol('$$placeholder');
+const $$partKeys        = Symbol('$$partKeys');
 
 
 window[$$elementCtrl] = new WeakMap();
@@ -53,45 +57,51 @@ export default class SvgObject extends ValueTracker {
 			'selected',
 			'dragging'
 		]);
-		this[$$elementCreated] = defer();
 	}
-	
-	get elementCreated() { return this[$$elementCreated].promise.then(() => this.element) }
-	get insideCreated()  { return this[$$elementCreated].promise.then(() => this.inside ) }
-	get handleCreated()  { return this[$$elementCreated].promise.then(() => this.handle ) }
 	
 	[$$create]() {
 		if (!this[$$creation]) {
-			assert(!this[$$creatingElement], humanMsg`
-				This element is already being created. Do not
-				use 'this.element' during the creation process.
-			`);
+			const CYCLE_MSG = humanMsg`
+				This element is in the process of being created.
+			`;
+			assert(!this[$$creatingElement], CYCLE_MSG);
 			this[$$creatingElement] = true;
 			
-			this[$$creation] = this.createElement();
-			
-			let el = this[$$creation].element;
-			el::defaults({ jq: $(el), svg: Snap(el) });
-			if (!this[$$creation].inside) {
-				this[$$creation].inside = this[$$creation].element;
-			} else {
-				let el = this[$$creation].inside;
-				el::defaults({ jq: $(el), svg: Snap(el) });
-			}
-			if (!this[$$creation].handle) {
-				this[$$creation].handle = this[$$creation].element;
-			} else {
-				let el = this[$$creation].handle;
-				el::defaults({ jq: $(el), svg: Snap(el) });
+			/* prepare environment for during element creation */
+			this[$$elementCreated] = defer();
+			this[$$creation] = {};
+			for (let [key] of this.constructor.getPartDescriptions()) {
+				this[$$creation][key] = {
+					promise: this[$$elementCreated].promise.then(() => this[$$creation][key]),
+					get jq()  { assert(false, CYCLE_MSG) },
+					get svg() { assert(false, CYCLE_MSG) }
+				};
 			}
 			
-			this[$$creation].inside.svg.g().addClass('foreground');
+			/* create element */
+			let createdElement = this.createElement();
+			
+			/* prepare all (sub)element references */
+			for (let [key, def] of this.constructor.getPartDescriptions()) {
+				let el = this[$$creation][key] = createdElement[key] || this::def();
+				el::defaults({
+					jq:      $(el),
+					svg:     Snap(el),
+					promise: this[$$elementCreated].promise.then(() => el)
+				});
+				if (el) { el.svg.addClass(key) }
+			}
+			
+			/* annotate the main element as being controlled by this object */
 			$(this[$$creation].element).attr('controller', ''+this); // for css-selectors
 			window[$$elementCtrl].set(this[$$creation].element, this);
 			
+			/* stop creating; resolve promise */
 			this[$$creatingElement] = false;
 			this[$$elementCreated].resolve(this[$$creation].element);
 
+			/* run afterCreateElement method, which can be overridden */
+			// TODO: replace these with references to the promise
 			if (this.afterCreateElement::isFunction()) {
 				this.afterCreateElement();
 			}
@@ -101,7 +111,7 @@ export default class SvgObject extends ValueTracker {
 	
 	async afterCreateElement() {
 		/* wait until next tick */
-		await this.elementCreated;
+		await this.element.promise;
 		
 		/* manage 'dragging' property */
 		this.p(['hidden', 'dragging']).subscribe(([hidden, dragging]) => {
@@ -114,10 +124,6 @@ export default class SvgObject extends ValueTracker {
 		});
 	}
 	
-	get element() { return this[$$create]().element }
-	get inside () { return this[$$create]().inside  }
-	get handle () { return this[$$create]().handle  }
-	
 	@args('oa?o?') setFromObject(obj, picked = [], defaultValues = {}) {
 		let keyVals = obj
 			::pick([...picked, ...defaultValues::keys()])
@@ -129,4 +135,30 @@ export default class SvgObject extends ValueTracker {
 		this.element.parentElement.appendChild(this.element);
 	}
 	
+	static definePartGetter(key, def = ()=>{}) {
+		this.prototype::defineProperty(key, {
+			get() { return this[$$create]()[key] }
+		});
+		if (!this[$$partKeys]) { this[$$partKeys] = new Map() }
+		this[$$partKeys].set(key, def);
+	}
+	
+	static getPartDescriptions() {
+		let result = new Map();
+		for (let cls = this; cls !== SvgObject.__proto__; cls = cls.__proto__) {
+			for (let [key, def] of cls[$$partKeys] || []) {
+				result.set(key, def);
+			}
+		}
+		return result;
+	}
+	
 }
+
+/* prepare element getters */
+for (let [key, def] of [
+	['element',    function () { assert(false)                               }],
+	['inside',     function () { return this[$$creation].element             }],
+	['handle',     function () { return this[$$creation].element             }],
+	['foreground', function () { return this[$$creation].inside.svg.g().node }]
+]) { SvgObject.definePartGetter(key, def) }

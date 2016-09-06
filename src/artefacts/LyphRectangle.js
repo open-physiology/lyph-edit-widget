@@ -179,15 +179,18 @@ export default class LyphRectangle extends Transformable {
 		group.g().addClass('materials');
 		group.g().addClass('parts');
 		group.g().addClass('layers');
-		group.g().addClass('segments'); // TODO: segments
-		this._axis = group.g().addClass('axis'); // TODO: general place to store these for reference
+		group.g().addClass('segments');
+		let axis = group.g().addClass('axis');
 		group.g().addClass('borders');
 		group.g().addClass('corners');
 		group.g().addClass('nodes');
 		group.g().addClass('measurables');
 		
 		/* return representation(s) of element */
-		return { element: group.node };
+		return {
+			element: group.node,
+			axis:    axis .node
+		};
 	}
 	
 	[$$recycle](model) {
@@ -558,7 +561,7 @@ export default class LyphRectangle extends Transformable {
 		
 		
 		if (this.showAxis) {
-			const axisGroup = this._axis.attr({
+			const axisGroup = this.axis.svg.attr({
 				pointerEvents: 'none'
 			});
 			
@@ -691,3 +694,6 @@ export default class LyphRectangle extends Transformable {
 	}
 	
 }
+
+/* prepare element getters */
+LyphRectangle.definePartGetter('axis');

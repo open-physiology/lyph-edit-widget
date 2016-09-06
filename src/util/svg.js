@@ -37,7 +37,7 @@ export function setCTM(matrix) {
 		$(this).attr('transform', '');
 	}
 	this.transform.baseVal
-	       .initialize(createSVGTransformFromMatrix(matrix));
+       .initialize(createSVGTransformFromMatrix(matrix));
 }
 
 export class SVGPoint {

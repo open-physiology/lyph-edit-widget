@@ -85,7 +85,7 @@ export default class CornerHandle extends SvgEntity {
 				});
 			});
 			
-			(await this.parent.insideCreated).jq
+			this.parent.inside.jq
 			    .children('.corners')
 			    .append(hitBoxGroup.node);
 			

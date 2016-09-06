@@ -502,14 +502,6 @@ if (getArguments.has('assemble')) {
 ////////////////////////////////////////////////////////////////////////////////
 
 
-//----- DONE -----
-// no uniprot ids,
-// pre-configure border natures
-
-
-//----- TO DO -----
-// pre-build diagram as separate version
-
 //----- OPTIONAL -----
 // no rate-measurable placement option
 // layer thickness still the same
@@ -520,8 +512,7 @@ if (getArguments.has('assemble')) {
 
 // TODO: tooltip info based on selected entity, not simple mouse-hover
 
-
-root.elementCreated.then(() => {
+root.element.promise.then(() => {
 	/* initialize tools */
 	new SelectTool                   (root.context);
 	new DragDropTool                 (root.context);
@@ -534,7 +525,8 @@ root.elementCreated.then(() => {
 	/* testing the drawing tool */
 	let checkbox = $('#controls input[type="checkbox"]');
 	checkbox.change(function ({currentTarget}) {
-		drawingTool.model = $(currentTarget).prop('checked')
+		drawingTool.model =
+			$(currentTarget).prop('checked')
 			? classes.Lyph.new({
 				name: 'New Lyph'
 			  }, { createRadialBorders: true, createAxis: true })
@@ -549,12 +541,6 @@ root.elementCreated.then(() => {
 		::map((zFact) => `Zoom: ${Math.round(zFact*100)}%`
 	).subscribe(::($('#info > span').text));
 });
-
-/* initiate element creation */
-root.element;
-
-
-
 
 
 

@@ -200,7 +200,7 @@ export default class BorderLine extends Transformable {
 				}
 			});
 			
-			(await this.parent.insideCreated).jq
+			this.parent.inside.jq
 			    .children('.borders')
 			    .append(this.handle);
 		}
