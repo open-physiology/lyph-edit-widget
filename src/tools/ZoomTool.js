@@ -16,6 +16,7 @@ import {stopPropagation} from "../util/misc";
 import {subscribe_, log} from "../util/rxjs";
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import {scaleFromPoint} from "../util/svg";
+import {tap} from "../util/rxjs";
 
 
 const $$zoomTools = Symbol('$$zoomTools');
@@ -38,7 +39,7 @@ export default class ZoomTool extends Tool {
 		
 		const zooming = mousewheel
 			::filter(withoutMod('alt', 'ctrl', 'meta'))
-			.do(stopPropagation);
+			::tap(stopPropagation);
 		
 		/* maintain the current zoom-factor on the side (it doesn't actually influence zoom) */
 		zooming

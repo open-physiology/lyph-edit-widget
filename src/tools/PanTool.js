@@ -30,6 +30,7 @@ import {delay} from "rxjs/operator/delay";
 import {skip} from "rxjs/operator/skip";
 import {setCTM} from "../util/svg";
 import {subscribe_} from "../util/rxjs";
+import {tap} from "../util/rxjs";
 
 
 export default class PanTool extends Tool {
@@ -61,7 +62,7 @@ export default class PanTool extends Tool {
 		
 		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			.do(stopPropagation)
+			::tap(stopPropagation)
 			::withLatestFrom(context.p('selected'))
 			::filter(([,handleArtifact]) => handleArtifact === root)
 			.subscribe(([down]) => {

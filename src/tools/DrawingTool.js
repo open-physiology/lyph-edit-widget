@@ -29,6 +29,7 @@ import {combineLatest} from "rxjs/observable/combineLatest";
 import LyphRectangle from "../artefacts/LyphRectangle";
 import {merge} from "rxjs/observable/merge";
 import Canvas from "../artefacts/Canvas";
+import {tap} from "../util/rxjs";
 
 const classes = window.module.classes;
 
@@ -51,12 +52,9 @@ export default class DrawingTool extends Tool {
 		const mousemove = this.windowE('mousemove')::filter(() => this.active);
 		const mouseup   = this.windowE('mouseup'  )::filter(() => this.active);
 		
-		merge(
-			this.e('mousedown'),
-			this.rootE('mousedown')
-		)
+		merge( this.e('mousedown'), this.rootE('mousedown') )
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			.do(stopPropagation)
+			::tap(stopPropagation)
 			::withLatestFrom(context.p('selected'), this.p('model'))
 			::afterMatching(mousemove::take(4), mouseup)
 			.subscribe(([down, selectedArtefact, model]) => {

@@ -66,6 +66,7 @@ import {_isNonNegative} from "../util/misc";
 import {scan} from "rxjs/operator/scan";
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
+import {tap} from "../util/rxjs";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -88,8 +89,6 @@ export default class LyphRectangle extends Transformable {
 	@property({ isValid: _isNonNegative, initial: 0, readonly: true }) hiddenOuterLayerLength;
 	
 	@flag(false) hideOuterLayer;
-	
-	@flag(false) isLayer;
 	
 	@flag(false) showAxis;
 	
@@ -128,8 +127,8 @@ export default class LyphRectangle extends Transformable {
 		/* create the border artifacts */
 		for (let setKey of ['radialBorders', 'longitudinalBorders']) {
 			this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
-				parent : this,
-				model  : border
+				parent: this,
+				model:  border
 			}))::subscribe_( this[setKey].e('add') , n=>n() );
 		}
 		
@@ -343,10 +342,7 @@ export default class LyphRectangle extends Transformable {
 					});
 			}
 			
-			layer.isLayer = true;
-			
 			removed.subscribe(() => {
-				layer.isLayer = false;
 				if (layer.element.jq.parent()[0] === this.inside.jq.children('.layers')[0]) {
 					layer.element.jq.remove();
 				}
@@ -413,7 +409,6 @@ export default class LyphRectangle extends Transformable {
 		this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
 		this.syncModelWithArtefact(
 			'HasPart',
-			LyphRectangle,
 			this.inside.jq.children('.parts'),
 			({model, width, height}) => new LyphRectangle({
 				model,
@@ -438,7 +433,6 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'ContainsNode',
-			NodeGlyph,
 			this.inside.jq.children('.nodes'),
 			({model, width, height}) => new NodeGlyph({
 				model,
@@ -449,7 +443,6 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'ContainsMaterial',
-			MaterialGlyph,
 			this.inside.jq.children('.materials'),
 			({model, width, height}) => new MaterialGlyph({
 				model,
@@ -460,7 +453,6 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'HasMeasurable',
-			MeasurableGlyph,
 			this.inside.jq.children('.measurables'),
 			({model, width, height}) => new MeasurableGlyph({
 				model,
@@ -604,9 +596,9 @@ export default class LyphRectangle extends Transformable {
 			});
 			
 			this.p('width').subscribe((width) => {
-				clipPath.attr({ width: width - 2*at });
-				labelText.attr({ x: width/2 });
-				plusText.attr({ x: width - at/2 });
+				clipPath .attr({ width: width - 2*at });
+				labelText.attr({ x: width/2          });
+				plusText .attr({ x: width - at/2     });
 			});
 			
 			this.p('height').subscribe((height) => {
@@ -620,7 +612,7 @@ export default class LyphRectangle extends Transformable {
 	}
 	
 	
-	syncModelWithArtefact(relationship, cls, parentElement, createNewArtefact) {
+	syncModelWithArtefact(relationship, parentElement, createNewArtefact) {
 		/* new free-floating thing in the model --> new artifact */
 		this.model[`-->${relationship}`].e('add')
 			::filter(c => c.class === relationship)
@@ -629,7 +621,7 @@ export default class LyphRectangle extends Transformable {
 			::map(([model, width, height]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, width, height }))
-			.do((artefact) => { artefact.free = true })
+			::tap((artefact) => { artefact.free = true })
 			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')
@@ -677,14 +669,13 @@ export default class LyphRectangle extends Transformable {
 					[2]: droppedEntity.model,
 					relativePosition: newPosition
 				});
-				// this.layers.add(droppedEntity, { force: true });
 			} else {
 				return false;
 			}
-			// TODO: dropped on border (also put code in border class)
 		}
 	}
 	
+	//noinspection JSCheckFunctionSignatures
 	p(...args) {
 		switch (args[0]) {
 			case 'layers': return this.layers.p('value');

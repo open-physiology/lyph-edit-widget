@@ -56,6 +56,7 @@ import {from} from "rxjs/observable/from";
 import {Observable} from "rxjs/Observable";
 import {exhaustMap} from "rxjs/operator/exhaustMap";
 import MaterialGlyph from "../artefacts/MaterialGlyph";
+import {tap} from "../util/rxjs";
 
 
 const $$selectTools = Symbol('$$selectTools');
@@ -131,7 +132,7 @@ export default class SelectTool extends Tool {
 			::distinctUntilChanged()
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
-				.do(stopPropagation)
+				::tap(stopPropagation)
 				::map(e=>e.deltaY)
 				::scan((s, d) => {
 					let next = s[d>0 ? 'parent' : $$child];

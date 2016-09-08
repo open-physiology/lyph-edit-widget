@@ -18,6 +18,7 @@ import isFunction from 'lodash-bound/isFunction';
 import {createSVGPoint} from "./svg";
 import {tY} from "./svg";
 import {tX} from "./svg";
+import {Observable} from "rxjs/Observable";
 
 export function subscribe_(subject, pipeFn = n=>n()) {
 	const handler = (key) => ((v) => pipeFn((toDebug) => {
@@ -79,18 +80,22 @@ export function shiftedMMovementFor(obj) {
 }
 
 export function log(...args) {
-	return this.do((value) => {
+	return this::tap((value) => {
 		console.log(...args, value);
 	});
 }
 
 export function afterMatching(other, cancel = never()) {
 	return this::switchMap(orig => of(orig)
-		::delayWhen(()=>other::ignoreElements())
-		::takeUntil(cancel));
+		::delayWhen( other::ignoreElements )
+		::takeUntil( cancel                )
+	);
 }
 
 export function svgPageCoordinates({pageX = 0, pageY = 0, x = pageX, y = pageY}) {
 	return createSVGPoint(x, y);
 }
 
+export const tap = Observable.prototype.do;
+
+export const subscribe = Observable.prototype.subscribe;

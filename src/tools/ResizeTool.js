@@ -25,6 +25,7 @@ import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {ID_MATRIX, M11, M12, M21, M22} from "../util/svg";
 import CornerHandle from "../artefacts/CornerHandle";
+import {tap} from "../util/rxjs";
 
 
 const $$xy_controller = Symbol('$$xy_controller');
@@ -69,7 +70,7 @@ export default class ResizeTool extends Tool {
 		/* allow resizing */
 		this.e('mousedown', false)
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			.do(stopPropagation)
+			::tap(stopPropagation)
 			::withLatestFrom(context.p('selected'))
 			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)

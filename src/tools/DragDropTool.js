@@ -30,6 +30,7 @@ import {delay} from "rxjs/operator/delay";
 import {skip} from "rxjs/operator/skip";
 import {subscribe_} from "../util/rxjs";
 import {shiftedMMovementFor} from "../util/rxjs";
+import {tap} from "../util/rxjs";
 
 
 export default class DragDropTool extends Tool {
@@ -65,7 +66,7 @@ export default class DragDropTool extends Tool {
 		
 		this.e('mousedown')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			.do(stopPropagation)
+			::tap(stopPropagation)
 			::withLatestFrom(context.p('selected'))
 			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,handleArtifact]) => handleArtifact.draggable)

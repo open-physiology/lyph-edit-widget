@@ -35,6 +35,7 @@ import {ID_MATRIX} from '../util/svg';
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import Transformable from "./Transformable";
 import {takeUntil} from "rxjs/operator/takeUntil";
+import {tap} from "../util/rxjs";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 const $$toBeRecycled    = Symbol('$$toBeRecycled');
@@ -244,7 +245,7 @@ export default class BorderLine extends Transformable {
 			::map(([model, x1, x2, y1, y2]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, x1, x2, y1, y2 }))
-			.do((artefact) => { artefact.free = true })
+			::tap((artefact) => { artefact.free = true })
 			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')

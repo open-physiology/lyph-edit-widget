@@ -19,6 +19,7 @@ import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor} from "../util/rxjs";
 import BorderLine from "../artefacts/BorderLine";
+import {tap} from "../util/rxjs";
 
 
 export default class BorderToggleTool extends Tool {
@@ -37,7 +38,7 @@ export default class BorderToggleTool extends Tool {
 				return event;
 			})
 			::filter(({artefact}) => artefact instanceof BorderLine)
-			.do(stopPropagation)
+			::tap(stopPropagation)
 			.subscribe(({artefact: borderLine}) => {
 				if (Array.isArray(borderLine.model.nature) || borderLine.model.nature === 'closed') {
 					borderLine.model.nature = 'open';
