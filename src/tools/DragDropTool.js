@@ -40,7 +40,7 @@ export default class DragDropTool extends Tool {
 		
 		const {root} = context;
 		
-		const mousemove = fromEvent($(window), 'mousemove');
+		const mousemove = this.windowE('mousemove');
 		const mouseup   = this.windowE('mouseup');
 		
 				
@@ -70,7 +70,7 @@ export default class DragDropTool extends Tool {
 			::withLatestFrom(context.p('selected'))
 			::afterMatching(mousemove::take(4), mouseup)
 			::filter(([,handleArtifact]) => handleArtifact.draggable)
-			.subscribe(([down, draggedArtefact]) => {
+			.subscribe(([down, selectedArtefactA]) => {
 				
 				function reassessHoveredArtefact(a) {
 					if (!a){ return }
@@ -82,50 +82,45 @@ export default class DragDropTool extends Tool {
 				}
 								
 				/* start dragging */
-				draggedArtefact.dragging = true;
-				for (let a of draggedArtefact.traverse('post')) {
+				selectedArtefactA.dragging = true;
+				for (let a of selectedArtefactA.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
-				reassessHoveredArtefact(draggedArtefact.parent);
+				reassessHoveredArtefact(selectedArtefactA.parent);
 				
 				
-				const M = root.element.getTransformToElement(draggedArtefact.element);//.translate(offset.left, offset.top);
+				const M = root.element.getTransformToElement(selectedArtefactA.element);//.translate(offset.left, offset.top);
 				
 				
 				/* move while dragging */
 				of(down)::concat(mousemove)
 					::takeUntil(mouseup)
-					::map(svgPageCoordinates)
+					::map(svgPageCoordinates) // TODO: use event.point
 					::map(xy => xy.matrixTransform(M))
-					::shiftedMMovementFor(draggedArtefact.transformation)
-					// .subscribe(
-					// 	::(draggedArtefact.p('transformation')).next,
-					// 	::(draggedArtefact.p('transformation')).error,
-					// 	::(draggedArtefact.p('transformation')).complete
-					// );
-					::subscribe_( draggedArtefact.p('transformation'), v=>v() );
+					::shiftedMMovementFor(selectedArtefactA.transformation)
+					::subscribe_( selectedArtefactA.p('transformation'), v=>v() );
 				
 				/* stop dragging and drop */
-				let initial_dragged_transformation = draggedArtefact.transformation;
-				let initial_dragged_parent         = draggedArtefact.parent;
+				let initial_dragged_transformation = selectedArtefactA.transformation;
+				let initial_dragged_parent         = selectedArtefactA.parent;
 				mouseup::withLatestFrom(context.p('selected'))::take(1)
 					.subscribe(([up, recipient]) => {
-						
 						/* either drop it on the recipient */
 						let success = false;
 						if (recipient && recipient.drop::isFunction()) {
-							success = recipient.drop(draggedArtefact, recipient) !== false;
+							success = recipient.drop(selectedArtefactA, recipient) !== false;
 						}
+						
 						/* or revert to previous state if recipient rejects it */
 						if (!success) {
-							draggedArtefact::assign({
+							selectedArtefactA::assign({
 								transformation: initial_dragged_transformation,
 								parent: initial_dragged_parent
 							});
 						}
 						
 						/* stop dragging */
-						draggedArtefact.dragging = false;
+						selectedArtefactA.dragging = false;
 				    });
 				
 			});

@@ -1,8 +1,5 @@
 import LyphRectangle from './artefacts/LyphRectangle';
 import './model'; // sets a global (for now)
-
-const classes = window.module.classes;
-
 import ValueTracker from './util/ValueTracker';
 import {ID_MATRIX} from './util/svg';
 
@@ -490,9 +487,6 @@ if (getArguments.has('assemble')) {
 		rateMeasurableGlyph.element.jq.appendTo(NLayers[0].element.jq.children('.foreground'));
 		rateMeasurableGlyph.transformation = createMatrix(1, 0, 0, 1, 60, 172.5);
 		
-		
-		
-		
 	});
 }
 
@@ -523,18 +517,60 @@ root.element.promise.then(() => {
 	let drawingTool = new DrawingTool(root.context);
 	
 	/* testing the drawing tool */
-	let checkbox = $('#controls input[type="checkbox"]');
-	checkbox.change(function ({currentTarget}) {
-		drawingTool.model =
-			$(currentTarget).prop('checked')
-			? classes.Lyph.new({
-				name: 'New Lyph'
-			  }, { createRadialBorders: true, createAxis: true })
-			: null;
-	});
-	drawingTool.p('active')::filter(v=>!v).subscribe(() => {
-		checkbox.prop('checked', false);
-	});
+	for (let [label, newModel, matchesModel] of [
+		[ "Lyph", () => C.Lyph   .new({}, AXIS), ::C.Lyph.hasInstance ],
+	    [ "Node", () => C.Node   .new({}),       ::C.Node.hasInstance ],
+        [ "Process", () => C.Process.new({
+            source: C.Node.new(),
+            target: C.Node.new()
+        }), m => C.Process.hasInstance(m) && !m.conveyingLyph],
+        [ "Conveyed Process", () => C.Process.new({
+            conveyingLyph: [C.Lyph.new({ name: "Conveying Lyph" }, AXIS)],
+            source: C.Node.new(),
+            target: C.Node.new()
+        }), m => C.Process.hasInstance(m) && m.conveyingLyph],
+		[ "Coalescence Scenario", () => C.CoalescenceScenario.new({
+			lyphs: [
+				urinaryPFTU = C.Lyph.new({
+					name: "Urinary pFTU",
+					layers: [
+						C.Lyph.new({
+							name:      "Urine",
+							measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Urine" }) ]
+						}, NO_AXIS)::tube(),
+						C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
+						sharedLayer
+					]
+				}, AXIS)::tube(),
+				bloodPFTU = C.Lyph.new({
+					name: "Blood pFTU",
+					layers: [
+						C.Lyph.new({
+							name:      "Blood",
+							measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Blood" }) ]
+						}, NO_AXIS)::tube(),
+						C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
+						sharedLayer
+					]
+				}, AXIS)::tube()
+			]
+		}), ::C.CoalescenceScenario.hasInstance]
+	]) {
+		const checkbox = $(`
+			<label title="New ${label}">
+				<input type="checkbox"> New ${label}
+			</label>
+		`).appendTo('#controls').children('input');
+		checkbox.change(({currentTarget}) => {
+			drawingTool.model = $(currentTarget).prop('checked')
+				? newModel()
+				: null;
+			drawingTool.model.name = label;
+		});
+		drawingTool.p('model')
+			::filter(m => !matchesModel(m))
+			.subscribe(() => { checkbox.prop('checked', false) });
+	}
 	
 	/* print zoom-level */
 	root.context.p('zoomFactor')

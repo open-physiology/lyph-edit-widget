@@ -7,18 +7,25 @@ import {take} from 'rxjs/operator/take';
 import {map} from 'rxjs/operator/map';
 import {never} from 'rxjs/observable/never';
 
-import pick from 'lodash-bound/pick';
 import {afterMatching, log} from "../util/rxjs";
 import {stopPropagation} from "../util/misc";
 import {withoutMod} from "../util/misc";
 import {createSVGPoint, ID_MATRIX} from "../util/svg";
 import {$$elementCtrl} from "../symbols";
 import {switchMap} from "rxjs/operator/switchMap";
-import {merge} from "rxjs/operator/merge";
+import {of} from "rxjs/observable/of";
 import {setCTM} from "../util/svg";
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import {subscribe_} from "../util/rxjs";
 import {SVGPoint} from "../util/svg";
+import {tap} from "../util/rxjs";
+import {takeUntil} from "rxjs/operator/takeUntil";
+import {concat} from "rxjs/operator/concat";
+
+import {assign} from 'bound-native-methods';
+
+import {merge} from "rxjs/observable/merge";
+
 
 const $$root          = Symbol('$$root');
 const $$domEvents     = Symbol('$$domEvents');
@@ -65,19 +72,27 @@ export default class Tool extends ValueTracker {
 		if (!context[$$domEvents]) {
 			context[$$domEvents] = {};
 		}
+		
 		for (let e of events) {
-			if (!context[$$domEvents][e]) {
-				context[$$domEvents][e] = fromEventPattern(
-					(handler) => { root.element.jq.on (e, '[controller]', handler) },
-					(handler) => { root.element.jq.off(e, '[controller]', handler) }
-				)::merge(fromEventPattern(
-					(handler) => { root.element.jq.on (e, handler) },
-					(handler) => { root.element.jq.off(e, handler) }
-				))::enrichMouseEvent(context)
-			}
+			this.registerArtefactEvent(e);
 		}
 		
 		context[this.constructor.name] = this;
+	}
+	
+	registerArtefactEvent(e) {
+		if (!this.context[$$domEvents][e]) {
+			this.context[$$domEvents][e] = merge(
+				fromEventPattern(
+					(handler) => { this.context.root.element.jq.on (e, '[controller]', handler) },
+					(handler) => { this.context.root.element.jq.off(e, '[controller]', handler) }
+				),
+				fromEventPattern(
+					(handler) => { this.context.root.element.jq.on (e, handler) },
+					(handler) => { this.context.root.element.jq.off(e, handler) }
+				)
+			)::enrichMouseEvent(this.context);
+		}
 	}
 	
 	rootE  (event) { return fromEvent(this.context.root.element.jq, event)::enrichMouseEvent(this.context) }
@@ -87,5 +102,48 @@ export default class Tool extends ValueTracker {
 		return this.p('active')
 			::switchMap(a => a ? this.context[$$domEvents][event] : never());
 	}
+	
+	trackMouseDownMoveUp({ threshold = false } = {}) {
+		this.registerArtefactEvent('mousedown');
+		const mousemove = this.windowE('mousemove');
+		const mouseup   = this.windowE('mouseup'  );
+		this.e('mousedown')
+			::filter(withoutMod('ctrl', 'shift', 'meta'))
+			::tap(stopPropagation)
+			::withLatestFrom(this.context.p('selected'))
+			::(threshold ? afterMatching : function(){return this})(mousemove::take(threshold), mouseup)
+			.subscribe(([down, selectedArtefactA]) => {
+				const M = this.context.root.inside.getTransformToElement(selectedArtefactA.inside);
+				
+				const data = {
+					pointA: down.point.matrixTransform(M),
+					selectedArtefactA,
+					down
+				};
+				
+				const {
+					onMouseDown = ()=>{},
+					onMouseMove = ()=>{},
+					onMouseUp   = ()=>{}
+				} = (::this.getMouseDownMoveUpProcedure || (()=>{}))(data) || {};
+				
+				/* mouse down */
+				this::onMouseDown(data);
+				
+				/* mouse move */
+				of(down)::concat(mousemove)
+					::takeUntil(mouseup)
+					::map(xy => xy.point.matrixTransform(M))
+					::withLatestFrom(this.context.p('selected'))
+					.subscribe(([pointB, selectedArtefactB]) => {
+						data::assign({ pointB, selectedArtefactB });
+						this::onMouseMove(data);
+					});
+				
+				/* mouse up */
+				mouseup::take(1).subscribe(() => { this::onMouseUp(data) });
+			});
+	}
+	
 }
 

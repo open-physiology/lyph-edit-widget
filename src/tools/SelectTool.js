@@ -112,7 +112,7 @@ export default class SelectTool extends Tool {
 					case 'mouseleave': onMouseleave(controller); break;
 				}
 				while (top !== root && !top[$$onStack]) { top = top.parent   }
-				while (top[$$child])    { top = top[$$child] }
+				while (top[$$child])                    { top = top[$$child] }
 				return top;
 				function onMouseenter(ctrlr) {
 					ctrlr[$$onStack] = true;
@@ -130,6 +130,7 @@ export default class SelectTool extends Tool {
 				}
 			}, root)
 			::distinctUntilChanged()
+			// ::log('(selected)')
 			::switchMap((top) => mousewheel
 				::filter(withMod('alt'))
 				::tap(stopPropagation)
