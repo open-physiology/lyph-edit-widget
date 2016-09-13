@@ -31,6 +31,19 @@ import {skip} from "rxjs/operator/skip";
 import {subscribe_} from "../util/rxjs";
 import {shiftedMMovementFor} from "../util/rxjs";
 import {tap} from "../util/rxjs";
+import {mapTo} from "rxjs/operator/mapTo";
+import Machine from "../util/Machine";
+import {emitWhenComplete} from "../util/rxjs";
+
+
+function reassessHoveredArtefact(a) {
+	if (!a){ return }
+	a.element.jq.mouseleave();
+	reassessHoveredArtefact(a.parent);
+	if (a.element.jq.is(':hover')) {
+		a.element.jq.mouseenter();
+	}
+}
 
 
 export default class DragDropTool extends Tool {
@@ -43,10 +56,6 @@ export default class DragDropTool extends Tool {
 		const mousemove = this.windowE('mousemove');
 		const mouseup   = this.windowE('mouseup');
 		
-				
-		// mousemove.subscribe((v) => {
-		// 	console.log('                                   ----------', v);
-		// });
 		
 		// context.registerCursor((handleArtifact) => {
 		// 	if (!handleArtifact.draggable) { return false }
@@ -64,66 +73,71 @@ export default class DragDropTool extends Tool {
 		// 	);
 		// });
 		
-		this.e('mousedown')
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			::tap(stopPropagation)
-			::withLatestFrom(context.p('selected'))
-			::afterMatching(mousemove::take(4), mouseup)
-			::filter(([,handleArtifact]) => handleArtifact.draggable)
-			.subscribe(([down, selectedArtefactA]) => {
-				
-				function reassessHoveredArtefact(a) {
-					if (!a){ return }
-					a.element.jq.mouseleave();
-					reassessHoveredArtefact(a.parent);
-					if (a.element.jq.is(':hover')) {
-						a.element.jq.mouseenter();
-					}
-				}
-								
+		
+		context.stateMachine.extend(({ enterState, subscribe }) => ({
+			'IDLE': () => this.e('mousedown')
+				::filter(withoutMod('ctrl', 'shift', 'meta'))
+				::tap(stopPropagation)
+				::withLatestFrom(context.p('selected'))
+				::filter(([,handleArtifact]) => handleArtifact.draggable)
+				::map(([downEvent, movingArtefact]) => ({downEvent, movingArtefact}))
+		        ::enterState('INSIDE_MOVE_THRESHOLD'),
+			'INSIDE_MOVE_THRESHOLD': ({downEvent, movingArtefact}) => [
+				mousemove
+					::take(4)
+					::ignoreElements()
+					::emitWhenComplete({downEvent, movingArtefact})
+					::enterState('MOVING'),
+			    mouseup
+				    ::enterState('IDLE')
+				// TODO: go IDLE on pressing escape
+			],
+			'MOVING': ({downEvent, movingArtefact}) =>  {
 				/* start dragging */
-				selectedArtefactA.dragging = true;
-				for (let a of selectedArtefactA.traverse('post')) {
+				movingArtefact.dragging = true;
+				for (let a of movingArtefact.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
-				reassessHoveredArtefact(selectedArtefactA.parent);
+				reassessHoveredArtefact(movingArtefact.parent);
 				
-				
-				const M = root.element.getTransformToElement(selectedArtefactA.element);//.translate(offset.left, offset.top);
-				
+				/* matrix: canvas --> moving artefact */
+				const m = root.inside.getTransformToElement(movingArtefact.element);
 				
 				/* move while dragging */
-				of(down)::concat(mousemove)
-					::takeUntil(mouseup)
-					::map(svgPageCoordinates) // TODO: use event.point
-					::map(xy => xy.matrixTransform(M))
-					::shiftedMMovementFor(selectedArtefactA.transformation)
-					::subscribe_( selectedArtefactA.p('transformation'), v=>v() );
+				of(downEvent)::concat(mousemove)
+					::map(event => event.point.matrixTransform(m))
+					::shiftedMMovementFor(movingArtefact.transformation)
+					::subscribe( movingArtefact.p('transformation') );
 				
 				/* stop dragging and drop */
-				let initial_dragged_transformation = selectedArtefactA.transformation;
-				let initial_dragged_parent         = selectedArtefactA.parent;
-				mouseup::withLatestFrom(context.p('selected'))::take(1)
-					.subscribe(([up, recipient]) => {
+				let initial_dragged_transformation = movingArtefact.transformation;
+				let initial_dragged_parent         = movingArtefact.parent;
+				mouseup
+					::withLatestFrom(context.p('selected'))
+					::tap(([up, recipient]) => {
 						/* either drop it on the recipient */
 						let success = false;
 						if (recipient && recipient.drop::isFunction()) {
-							success = recipient.drop(selectedArtefactA, recipient) !== false;
+							success = recipient.drop(movingArtefact, recipient) !== false;
 						}
 						
 						/* or revert to previous state if recipient rejects it */
 						if (!success) {
-							selectedArtefactA::assign({
+							movingArtefact::assign({
 								transformation: initial_dragged_transformation,
 								parent: initial_dragged_parent
 							});
 						}
 						
 						/* stop dragging */
-						selectedArtefactA.dragging = false;
-				    });
-				
-			});
+						movingArtefact.dragging = false;
+				    })
+					::enterState('IDLE');
+			}
+		}));
+		
+		
+		
 		
 	}
 	

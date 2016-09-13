@@ -12,6 +12,10 @@ import isFunction  from 'lodash-bound/isFunction';
 import isSet       from 'lodash-bound/isSet';
 import isWeakSet   from 'lodash-bound/isWeakSet';
 import entries     from 'lodash-bound/entries';
+import defaults    from 'lodash-bound/defaults';
+
+import $    from '../libs/jquery';
+import Snap from '../libs/snap.svg';
 
 import rearg from 'rearg';
 
@@ -159,3 +163,11 @@ export const xy_add = (a, b) => ({
 
 export const _isNonNegative = (v) =>
 	(_isFinite(v) && v >= 0);
+
+export function enrichDOM() {
+	this::defaults({
+		jq:  $(this),
+		svg: Snap(this)
+	});
+	return this;
+}

@@ -128,48 +128,48 @@ export default class BorderLine extends Transformable {
 			//     .children('.foreground')
 			//     .append(lineGroup.node);
 		}
-		{
-			let highlightBorderGroup = group.g().attr({
-				pointerEvents : 'none'
-			});
-
-			highlightBorderGroup.rect().attr({
-				stroke:      'black',
-				strokeWidth: '3px'
-			});
-			highlightBorderGroup.rect().attr({
-				stroke:      'white',
-				strokeWidth: '1px'
-			});
-			let rects = highlightBorderGroup.selectAll('rect').attr({
-				fill:            'none',
-				shapeRendering:  'crispEdges',
-				pointerEvents :  'none',
-				strokeDasharray: '8, 5', // 13
-				strokeDashoffset: 0
-			});
-			interval(1000/60)
-				::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
-				.subscribe( ::rects.attr );
-
-			this.p(['selected', 'dragging'], (selected, dragging) => ({
-				visibility: (selected && !dragging) ? 'visible' : 'hidden'
-			})).subscribe( ::highlightBorderGroup.attr );
-
-			this.p(['x1', 'x2', 'y1', 'y2'], (x1, x2, y1, y2) => ({
-				x:      Math.min(x1, x2) - 4,
-				y:      Math.min(y1, y2) - 4,
-				width:  Math.abs(x1-x2) + 8,
-				height: Math.abs(y1-y2) + 8
-			})).subscribe( ::rects.attr );
-
-			// this.findAncestor(a => a.free).inside.jq
-			//     .children('.foreground')
-			//     .append(highlightBorderGroup.node);
-			// $('#foreground').append(result.node);
-			
-			// TODO: put this in SelectTool.js; Why wasn't this easy??
-		}
+		// {
+		// 	let highlightBorderGroup = group.g().attr({
+		// 		pointerEvents : 'none'
+		// 	});
+		//
+		// 	highlightBorderGroup.rect().attr({
+		// 		stroke:      'black',
+		// 		strokeWidth: '3px'
+		// 	});
+		// 	highlightBorderGroup.rect().attr({
+		// 		stroke:      'white',
+		// 		strokeWidth: '1px'
+		// 	});
+		// 	let rects = highlightBorderGroup.selectAll('rect').attr({
+		// 		fill:            'none',
+		// 		shapeRendering:  'crispEdges',
+		// 		pointerEvents :  'none',
+		// 		strokeDasharray: '8, 5', // 13
+		// 		strokeDashoffset: 0
+		// 	});
+		// 	interval(1000/60)
+		// 		::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
+		// 		.subscribe( ::rects.attr );
+		//
+		// 	this.p(['selected', 'dragging'], (selected, dragging) => ({
+		// 		visibility: (selected && !dragging) ? 'visible' : 'hidden'
+		// 	})).subscribe( ::highlightBorderGroup.attr );
+		//
+		// 	this.p(['x1', 'x2', 'y1', 'y2'], (x1, x2, y1, y2) => ({
+		// 		x:      Math.min(x1, x2) - 4,
+		// 		y:      Math.min(y1, y2) - 4,
+		// 		width:  Math.abs(x1-x2) + 8,
+		// 		height: Math.abs(y1-y2) + 8
+		// 	})).subscribe( ::rects.attr );
+		//
+		// 	// this.findAncestor(a => a.free).inside.jq
+		// 	//     .children('.foreground')
+		// 	//     .append(highlightBorderGroup.node);
+		// 	// $('#foreground').append(result.node);
+		//
+		// 	// TODO: put this in SelectTool.js; Why wasn't this easy??
+		// }
 		{
 			let hitBoxGroup = this.handle.svg;
 			

@@ -26,6 +26,8 @@ import {tY} from "../util/svg";
 import {ID_MATRIX, M11, M12, M21, M22} from "../util/svg";
 import CornerHandle from "../artefacts/CornerHandle";
 import {tap} from "../util/rxjs";
+import {ignoreElements} from "rxjs/operator/ignoreElements";
+import {emitWhenComplete} from "../util/rxjs";
 
 
 const $$xy_controller = Symbol('$$xy_controller');
@@ -49,8 +51,8 @@ export default class ResizeTool extends Tool {
 			if (!handleArtifact.parent.free)                                      { return false }
 			let s = handleArtifact.resizes;
 			let angle = 0;
-			// if (s.top)    { angle = 0 }
-			// if (s.bottom) { angle = 0 }
+			// if (s.top)             { angle = 0   }
+			// if (s.bottom)          { angle = 0   }
 			if (s.right)              { angle =  90 }
 			if (s.left)               { angle =  90 }
 			if (s.top    && s.left )  { angle = 135 }
@@ -67,61 +69,73 @@ export default class ResizeTool extends Tool {
 			][Math.floor((angle + 180/8) % 180 / (180/4)) % 4];
 		});
 		
-		/* allow resizing */
-		this.e('mousedown', false)
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			::tap(stopPropagation)
-			::withLatestFrom(context.p('selected'))
-			::afterMatching(mousemove::take(4), mouseup)
-			::filter(([,handleArtifact]) => handleArtifact instanceof BorderLine || handleArtifact instanceof CornerHandle)
-			::filter(([,handleArtifact]) => handleArtifact.parent.free)
-			// ::filter(([,handleArtifact]) => handleArtifact.activeHandle)
-            .subscribe(([down, handleArtifact]) => {
-            	
-            	/* start resizing */
-            	const resizedArtifact    = handleArtifact.parent;
-	            resizedArtifact.dragging = true; // TODO: use 'resizing' instead of 'dragging'?
-	            
-	            /* record start dimensions */
-	            const start              = resizedArtifact::pick('transformation', 'width', 'height');
-	            const rootToHandleMatrix = root.element.getTransformToElement(handleArtifact.element);
-	            let offset = root.element.jq.offset();
-	            let handleStart        = handleArtifact::pick('x', 'y');
-	            handleStart = { x: handleStart.x + offset.left, y: handleStart.y + offset.top };
-	            
-	            /* resize while dragging */
-	            of(down)::concat(mousemove::takeUntil(mouseup))
-		            ::map(svgPageCoordinates)
-		            ::map(xy => xy.matrixTransform(rootToHandleMatrix))
-		            .subscribe(({x, y}) => {
-			            let width  = start.width;
-			            let height = start.height;
-			            let transformation = start.transformation;
-			            if (handleArtifact.resizes.left) {
-				            transformation = transformation.translate(x - handleStart.x, 0);
-				            width -= x - handleStart.x;
-			            } else if (handleArtifact.resizes.right) {
-			            	width += x - handleStart.x;
-			            }
-			            if (handleArtifact.resizes.top) {
-				            transformation = transformation.translate(0, y - handleStart.y);
-				            height -= y - handleStart.y;
-			            } else if (handleArtifact.resizes.bottom) {
-			            	height += y - handleStart.y;
-			            }
-			            resizedArtifact::assign({
-				            transformation,
-				            width, height
-			            });
-		            });
-	            
-	            /* stop resizing */
-	            mouseup::take(1).subscribe(() => {
-		            resizedArtifact.dragging = false;
-	            });
-            });
-		
-		
+		context.stateMachine.extend(({ enterState, subscribe }) => ({
+			'IDLE': () => this.e('mousedown')
+				::filter(withoutMod('ctrl', 'shift', 'meta'))
+				::tap(stopPropagation)
+				::withLatestFrom(context.p('selected'))
+				::filter(([,handleArtefact]) => handleArtefact instanceof BorderLine || handleArtefact instanceof CornerHandle)
+				::filter(([,handleArtefact]) => handleArtefact.parent.free)
+				::map(([downEvent, handleArtefact]) => ({
+					downEvent:        downEvent,
+					resizingArtefact: handleArtefact.parent,
+					directions:       handleArtefact.resizes
+				}))
+		        ::enterState('INSIDE_RESIZE_THRESHOLD'),
+			'INSIDE_RESIZE_THRESHOLD': ({downEvent, resizingArtefact, directions}) => [
+				mousemove
+					::take(4)
+					::ignoreElements()
+					::emitWhenComplete({ downEvent, resizingArtefact, directions })
+					::enterState('RESIZING_RECTANGLE'),
+			    mouseup
+				    ::enterState('IDLE')
+			    // TODO: go IDLE on pressing escape
+			],
+			'RESIZING_RECTANGLE': ({downEvent, resizingArtefact, directions}) => {
+				/* start resizing */
+				resizingArtefact.dragging = true; // TODO: use 'resizing' instead of 'dragging'?
+				
+				/* canvas --> resizing artefact */
+				const rootToHandleMatrix = root.inside.getTransformToElement(resizingArtefact.element);
+				
+				/* record start dimensions */
+				const artefactStart = resizingArtefact::pick('transformation', 'width', 'height');
+				const mouseStart    = downEvent.point.matrixTransform(rootToHandleMatrix);
+				
+				/* resize while dragging */
+				of(downEvent)::concat(mousemove)
+					::map(event => event.point.matrixTransform(rootToHandleMatrix))
+					::subscribe((mouseCurrent) => {
+						let width          = artefactStart.width;
+						let height         = artefactStart.height;
+						let transformation = artefactStart.transformation;
+						let xDiff = mouseCurrent.x - mouseStart.x;
+						let yDiff = mouseCurrent.y - mouseStart.y;
+						if (directions.left) {
+							transformation = transformation.translate(xDiff, 0);
+							width -= xDiff;
+						} else if (directions.right) {
+							width += xDiff;
+						}
+						if (directions.top) {
+							transformation = transformation.translate(0, yDiff);
+							height -= yDiff;
+						} else if (directions.bottom) {
+							height += yDiff;
+						}
+						resizingArtefact::assign({
+							transformation,
+							width, height
+						});
+					});
+				
+				/* stop resizing */
+				mouseup
+					::tap(() => { resizingArtefact.dragging = false })
+					::enterState('IDLE');
+			}
+		}));
 	}
 	
 	

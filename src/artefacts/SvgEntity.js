@@ -61,10 +61,24 @@ export default class SvgEntity extends SvgObject {
 		
 	}
 	
-	findAncestor(other) {
+	isRoot() { return this.root === this }
+	
+	closestAncestor(other) {
 		let pred = other::isFunction() ? other : (o => o === other);
 		if (pred(this)) { return this }
-		return this.parent && this.parent.findAncestor(pred);
+		return this.parent && this.parent.closestAncestor(pred);
+	}
+	
+	*traverseAncestors(order = 'pre') {
+		if (order === 'pre') {
+			yield this;
+		}
+		if (this.parent) {
+			yield* this.parent.traverseAncestors();
+		}
+		if (order !== 'pre') {
+			yield this;
+		}
 	}
 	
 	*traverse(order = 'pre') {
@@ -81,7 +95,10 @@ export default class SvgEntity extends SvgObject {
 	
 }
 
-
+export function closestCommonAncestor(a, b) {
+	let aAncestors = new Set(a.traverseAncestors());
+	return b.closestAncestor( ::aAncestors.has );
+}
 
 
 

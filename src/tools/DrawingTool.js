@@ -16,6 +16,8 @@ import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
 import isFunction from 'lodash-bound/isFunction';
 import defaults from 'lodash-bound/defaults';
+import find from 'lodash-bound/find';
+
 
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
@@ -34,6 +36,12 @@ import NodeGlyph from "../artefacts/NodeGlyph";
 import BorderLine from "../artefacts/BorderLine";
 import ProcessLine from "../artefacts/ProcessLine";
 import CoalescenceScenarioRectangle from "../artefacts/CoalescenceScenarioRectangle";
+import {tX} from "../util/svg";
+import {tY} from "../util/svg";
+import {enrichDOM} from "../util/misc";
+import {setCTM} from "../util/svg";
+import {rotateFromVector} from "../util/svg";
+import {closestCommonAncestor} from "../artefacts/SvgEntity";
 
 const C = window.module.classes;
 
@@ -45,198 +53,258 @@ export default class DrawingTool extends Tool {
 	constructor(context) {
 		super(context, { events: ['mousedown'] });
 		
+		const {root} = context;
+		
+		const mousemove = this.windowE('mousemove', false);
+		const mouseup   = this.windowE('mouseup',   false);
+		
 		this.p('model')::map(c=>!!c).subscribe( this.p('active') );
 		this.p('active')::filter(a=>!a)::map(c=>null).subscribe( this.p('model') );
 		
 		this.p('active')::map(a=>!a).subscribe( context.PanTool     .p('active') );
 		this.p('active')::map(a=>!a).subscribe( context.DragDropTool.p('active') );
 		this.p('active')::map(a=>!a).subscribe( context.ResizeTool  .p('active') );
+		// TODO: remove the 'active' property from tools, now that we have state machines
 		
-		this.trackMouseDownMoveUp();
-	}
-	
-	getMouseDownMoveUpProcedure(data) {
-		if (C.Lyph               .hasInstance(this.model)) { return this.drawLyphRectangle               (data) }
-		if (C.Node               .hasInstance(this.model)) { return this.drawNodeGlyph                   (data) }
-		if (C.Process            .hasInstance(this.model)) { return this.drawProcessLine                 (data) }
-		if (C.CoalescenceScenario.hasInstance(this.model)) { return this.drawCoalescenceScenarioRectangle(data) }
+		/* preparing to draw a given model */
+		const branches = new Set();
+		context.stateMachine.extend(({enterState, subscribe}) => ({
+			'IDLE'                 : () => {
+				this.model = null;
+				this.p('model')
+					::filter(m => !!m)
+					::map(model => ({ model }))
+					::enterState('READY_TO_DRAW_MODEL');
+			},
+			'READY_TO_DRAW_MODEL'  : ({ model }) => [
+				this.e('mousedown')
+					::filter(withoutMod('ctrl', 'shift', 'meta'))
+					::tap(stopPropagation)
+					::withLatestFrom(context.p('selected'))
+					::map(([downEvent, parentArtefact]) => ({
+					downEvent     : downEvent,
+					parentArtefact: parentArtefact,
+					model         : model
+				}))
+					::enterState('STARTED_DRAWING_MODEL'),
+				this.p('model')
+					::filter(m => m && m !== model)
+					::map(model => ({ model }))
+					::enterState('READY_TO_DRAW_MODEL'),
+				this.p('model')
+					::filter(m => !m)
+					::enterState('IDLE')
+			],
+			'STARTED_DRAWING_MODEL': ({ downEvent, parentArtefact, model }) => {
+				const modelIs  = (classes) => classes.some(cls => cls.hasInstance(model));
+				const parentIs = (classes) => classes.some(cls => parentArtefact instanceof cls);
+				const [,,nextState] = [...branches]::find(([mCls, pCls]) => modelIs(mCls) && parentIs(pCls));
+				enterState(nextState, { downEvent, parentArtefact, model });
+			}
+		}));
 		
-		// TODO
+		/* drawing a lyph rectangle */
+		branches.add([[C.Lyph], [Canvas, LyphRectangle], 'DRAWING_LYPH_RECTANGLE']);
+		context.stateMachine.extend(({enterState, subscribe}) => ({
+			'DRAWING_LYPH_RECTANGLE': ({downEvent, parentArtefact, model}) => {
+				const m = root.inside.getTransformToElement(parentArtefact.inside);
+				const p = downEvent.point.matrixTransform(m);
+				const newArtefact = new LyphRectangle({
+					model   : model,
+					parent  : parentArtefact, // TODO: specific types of parentage (layer, part, segment, ...) so that the 'drop' code below is not needed
+					x       : p.x,
+					y       : p.y,
+					width   : 1, // TODO: use minimal width/height
+					height  : 1
+				});
+				if (parentArtefact.drop::isFunction()) {
+					parentArtefact.drop(newArtefact);
+				}
+				enterState('RESIZING_RECTANGLE', {
+					downEvent:        downEvent,
+					resizingArtefact: newArtefact,
+					directions:     { right: true, bottom: true }
+				});
+			}
+		}));
 		
-	}
-	
-	drawLyphRectangle({selectedArtefactA}) {
-		if (!(selectedArtefactA instanceof Canvas ||
-		      selectedArtefactA instanceof LyphRectangle)) { return }
-		let model = this.model;
-		return {
-			onMouseDown(data) {
-				const {pointA} = data;
-				data.newArtefact = new LyphRectangle({
+		/* drawing a coalescence scenario rectangle */
+		branches.add([[C.CoalescenceScenario], [Canvas, LyphRectangle], 'DRAWING_COALESCENCE_RECTANGLE']);
+		context.stateMachine.extend(({enterState, subscribe}) => ({
+			'DRAWING_COALESCENCE_RECTANGLE': ({downEvent, parentArtefact, model}) => {
+				const m = root.inside.getTransformToElement(parentArtefact.inside);
+				const p = downEvent.point.matrixTransform(m);
+				const newArtefact = new CoalescenceScenarioRectangle({
 					model   : model,
-					parent  : selectedArtefactA, // TODO: specific types of parentage (layer, part, segment, ...) so that the 'drop' code below is not needed
-					x       : pointA.x,
-					y       : pointA.y,
-					width   : 10,  // TODO: use minimal width/height
-					height  : 10,
-					dragging: true // TODO: 'resizing' or 'creating'
+					parent  : parentArtefact,
+					x       : p.x,
+					y       : p.y,
+					width   : 1,
+					height  : 1
 				});
-				if (selectedArtefactA.drop::isFunction()) {
-					selectedArtefactA.drop(data.newArtefact);
+				if (parentArtefact.drop::isFunction()) {
+					parentArtefact.drop(newArtefact);
 				}
-				data.newArtefact.dragging = true;
-			},
-			onMouseMove({newArtefact, pointA: a, pointB: b}) {
-				newArtefact.width          = Math.abs(a.x - b.x);
-				newArtefact.height         = Math.abs(a.y - b.y);
-				newArtefact.transformation = ID_MATRIX.translate(Math.min(a.x, b.x), Math.min(a.y, b.y));
-			},
-			onMouseUp({newArtefact}) {
-				this.active          = false;
-				newArtefact.dragging = false; // TODO: 'resizing' or 'creating'
+				enterState('RESIZING_RECTANGLE', {
+					downEvent:        downEvent,
+					resizingArtefact: newArtefact,
+					directions:     { right: true, bottom: true }
+				});
 			}
-		};
-	}
-	
-	drawCoalescenceScenarioRectangle({selectedArtefactA}) {
-		if (!(selectedArtefactA instanceof Canvas)) { return }
-		let model = this.model;
-		return {
-			onMouseDown(data) {
-				const {pointA} = data;
-				data.newArtefact = new CoalescenceScenarioRectangle({
+		}));
+		
+		/* drawing a node glyph */
+		branches.add([[C.Node], [Canvas, LyphRectangle, BorderLine], 'DRAWING_NODE_GLYPH']);
+		context.stateMachine.extend(({enterState, subscribe}) => ({
+			'DRAWING_NODE_GLYPH': ({downEvent, parentArtefact, model}) => {
+				const m = root.inside.getTransformToElement(parentArtefact.inside);
+				const p = downEvent.point.matrixTransform(m);
+				let newArtefact = new NodeGlyph({
 					model   : model,
-					parent  : selectedArtefactA,
-					x       : pointA.x,
-					y       : pointA.y,
-					width   : 10,  // TODO: use minimal width/height
-					height  : 10,
-					rotation: 90,
-					dragging: true // TODO: 'resizing' or 'creating'
+					parent  : parentArtefact,
+					x       : p.x,
+					y       : p.y
 				});
-				if (selectedArtefactA.drop::isFunction()) {
-					selectedArtefactA.drop(data.newArtefact);
+				if (parentArtefact.drop::isFunction()) {
+					parentArtefact.drop(newArtefact);
 				}
-				data.newArtefact.dragging = true;
-			},
-			onMouseMove({newArtefact, pointA: a, pointB: b}) {
-				newArtefact.width          = Math.abs(a.x - b.x);
-				newArtefact.height         = Math.abs(a.y - b.y);
-				newArtefact.transformation = ID_MATRIX.translate(Math.min(a.x, b.x), Math.min(a.y, b.y));
-			},
-			onMouseUp({newArtefact}) {
-				this.active          = false;
-				newArtefact.dragging = false; // TODO: 'resizing' or 'creating'
+				enterState('MOVING', {
+					downEvent:      downEvent,
+					movingArtefact: newArtefact
+				});
 			}
-		};
-	}
-	
-	drawNodeGlyph({selectedArtefactA}) {
-		if (!(selectedArtefactA instanceof Canvas        ||
-		      selectedArtefactA instanceof LyphRectangle ||
-              selectedArtefactA instanceof BorderLine    )) { return }
-		// TODO: ^ use a more general way to specify and check these
-		let model = this.model;
-		return {
-			onMouseDown(data) {
-				const {pointA} = data;
-				data.newArtefact = new NodeGlyph({
-					model   : model,
-					parent  : selectedArtefactA,
-					x       : pointA.x,
-					y       : pointA.y,
-					dragging: true // TODO: 'resizing' or 'creating'
-				});
-				data.newArtefact.dragging = true;
-			},
-			onMouseMove({newArtefact, pointB: b}) {
-				newArtefact.transformation = ID_MATRIX.translate(b.x, b.y);
-			},
-			onMouseUp({selectedArtefactB, newArtefact}) {
-				if (selectedArtefactB.drop::isFunction()) {
-					selectedArtefactB.drop(newArtefact);
-				}
-				this.active          = false;
-				newArtefact.dragging = false; // TODO: 'resizing' or 'creating'
-			}
-		};
-	}
-	
-	drawProcessLine({selectedArtefactA}) {
-		if (!(selectedArtefactA instanceof Canvas        ||
-		      selectedArtefactA instanceof LyphRectangle ||
-              selectedArtefactA instanceof BorderLine    )) { return }
-		let model = this.model;
-		return {
-			onMouseDown(data) {
-				const {pointA} = data;
-				data.newSourceNode = new NodeGlyph({
-					model   : model.source,
-					parent  : selectedArtefactA,
-					x       : pointA.x,
-					y       : pointA.y,
-					dragging: false
-				});
-				if (selectedArtefactA.drop::isFunction()) {
-					selectedArtefactA.drop(data.newSourceNode);
-				}
-				data.newTargetNode = new NodeGlyph({
-					model   : model.target,
-					parent  : selectedArtefactA,
-					x       : pointA.x,
-					y       : pointA.y,
-					dragging: true
-				});
-				data.newProcessLine = new ProcessLine({
-					model   : model,
-					parent  : this.context.root,
-					source  : data.newSourceNode,
-					target  : data.newTargetNode,
-					dragging: true
-				});
-				data.newTargetNode .dragging = true;
-				data.newProcessLine.dragging = true;
-				console.log(model); // TODO
-				if (model.conveyingLyph && C.Lyph.hasInstance([...model.conveyingLyph][0])) {
-					data.newConveyingLyph = new LyphRectangle({
-						model   : [...model.conveyingLyph][0],
-						parent  : this.context.root,
-						width   : 100,
-						height  : 60, // TODO: adaptive height
-						dragging: true
+		}));
+		
+		/* drawing a process */
+		branches.add([[C.Process], [Canvas, LyphRectangle, BorderLine, NodeGlyph], 'DRAWING_PROCESS_LINE_SOURCE']);
+		context.stateMachine.extend(({enterState, subscribe}) => ({
+			'DRAWING_PROCESS_LINE_SOURCE': ({downEvent, parentArtefact, model}) => {
+				/* either create or use existing source node */
+				let sourceNodeArtefact, x1, y1;
+				if (parentArtefact instanceof NodeGlyph) {
+					sourceNodeArtefact = parentArtefact;
+					model.source = parentArtefact.model;
+					x1 = sourceNodeArtefact.canvasTransformation[tX];
+					y1 = sourceNodeArtefact.canvasTransformation[tY];
+				} else {
+					const m = root.inside.getTransformToElement(parentArtefact.inside);
+					const p = downEvent.point.matrixTransform(m);
+					x1 = p.x;
+					y1 = p.y;
+					sourceNodeArtefact = new NodeGlyph({
+						model   : model.source || (model.source = C.Node.new()),
+						parent  : parentArtefact,
+						x       : x1,
+						y       : y1
 					});
+					if (parentArtefact.drop::isFunction()) {
+						parentArtefact.drop(sourceNodeArtefact);
+					}
 				}
-			},
-			onMouseMove({newTargetNode, newConveyingLyph, pointA: a, pointB: b}) {
-				newTargetNode.transformation = ID_MATRIX.translate(b.x, b.y);
-				if (newConveyingLyph && (b.x-a.x) !== 0 && (b.y-a.y) !== 0) {
-					// default orientation: a ---> b
-					newConveyingLyph.width = Math.sqrt(Math.pow(Math.abs(b.x-a.x), 2) + Math.pow(Math.abs(b.y-a.y), 2)) - 40;
-					let w = newConveyingLyph.width;
-					let h = newConveyingLyph.height;
-					newConveyingLyph.transformation = ID_MATRIX
-						.translate(
-							(a.x + b.x) / 2,
-							(a.y + b.y) / 2
-						)
-						.rotateFromVector(b.x-a.x, b.y-a.y)
-						.translate(-w/2, -h/2);
-				}
-			},
-			onMouseUp({selectedArtefactB, newTargetNode, newProcessLine}) {
-				if (selectedArtefactB.drop::isFunction()) {
-					selectedArtefactB.drop(newTargetNode);
-				}
-				this.active             = false;
-				newTargetNode.dragging  = false;
-				newProcessLine.dragging = false;
 				
-				// TODO: process and conveying lyph should get closest common parent of the two nodes
+				let rectIndicator;
+				if (model.conveyingLyph && C.Lyph.hasInstance([...model.conveyingLyph][0])) {
+					rectIndicator = root.foreground.svg.rect().attr({
+						strokeWidth:   '1px',
+						stroke:        'black',
+						fill:          'none',
+						pointerEvents: 'none',
+						height:         60
+					}).node::enrichDOM();
+				}
+				let lineIndicator = root.foreground.svg.line().attr({
+					strokeWidth:   '1px',
+					stroke:        'red',
+					pointerEvents: 'none',
+					strokeLinecap: 'round',
+					x1, y1
+				}).node::enrichDOM();
+				
+				enterState('DRAWING_PROCESS_LINE_TARGET', {
+					x1, y1,
+					downEvent:          downEvent,
+					sourceNodeArtefact: sourceNodeArtefact,
+					model:              model,
+					lineIndicator:      lineIndicator,
+					rectIndicator:      rectIndicator
+				});
+			},
+			'DRAWING_PROCESS_LINE_TARGET': ({x1, y1, downEvent, sourceNodeArtefact, model, lineIndicator, rectIndicator}) => {
+				/* move indicators while moving mouse */
+				let rectIndicatorTransformation;
+				of(downEvent)::concat(mousemove)
+					::map(event => event.point)
+					::subscribe(({x: x2, y: y2}) => {
+						lineIndicator.jq.attr({ x2, y2 });
+						if (rectIndicator) {
+							let w = Math.sqrt(Math.pow(Math.abs(x2-x1), 2) + Math.pow(Math.abs(y2-y1), 2)) - 40;
+							let h = rectIndicator.jq.attr('height');
+							rectIndicator.jq.attr('width', w);
+							rectIndicatorTransformation = ID_MATRIX
+								.translate        ( (x1+x2) / 2, (y1+y2) / 2  )
+								::rotateFromVector(  x2-x1,       y2-y1       )
+								.translate        ( -w/2,        -h/2         );
+							rectIndicator::setCTM(rectIndicatorTransformation);
+						}
+					});
+				
+				/* drop target node, create process and target node */
+				mouseup
+					::withLatestFrom(context.p('selected'))
+					::tap(([upEvent, parentArtefact]) => {
+						/* either create or use existing target node */
+						let targetNodeArtefact;
+						if (parentArtefact instanceof NodeGlyph) {
+							targetNodeArtefact = parentArtefact;
+							model.target = parentArtefact.model;
+						} else {
+							const m = root.inside.getTransformToElement(parentArtefact.inside);
+							const p = upEvent.point.matrixTransform(m);
+							targetNodeArtefact = new NodeGlyph({
+								model : model.target || (model.target = C.Node.new()),
+								parent: parentArtefact,
+								x     : p.x,
+								y     : p.y
+							});
+							if (parentArtefact.drop::isFunction()) {
+								parentArtefact.drop(targetNodeArtefact);
+							}
+						}
+						/* closest common ancestor */
+						let cca = closestCommonAncestor(sourceNodeArtefact, targetNodeArtefact);
+						/* create conveying lyph rectangle */
+						if (rectIndicator) {
+							rectIndicatorTransformation = root.inside.getTransformToElement(cca.inside)
+								.multiply(rectIndicatorTransformation);
+							let newConveyingLyph = new LyphRectangle({
+								model         : [...model.conveyingLyph][0],
+								parent        : cca,
+								width         : parseFloat(rectIndicator.jq.attr('width') ),
+								height        : parseFloat(rectIndicator.jq.attr('height')), // TODO: adaptive height
+								transformation: rectIndicatorTransformation
+							});
+							cca.drop(newConveyingLyph);
+							rectIndicator.jq.remove();
+						}
+						/* create the new process line */
+						new ProcessLine({
+							model : model,
+							parent: cca,
+							source: sourceNodeArtefact,
+							target: targetNodeArtefact
+						});
+						lineIndicator.jq.remove();
+						// TODO: automatically make a process-line a child of
+						//     : the the closest common ancestor of its nodes
+					})
+					::enterState('IDLE');
 			}
-		};
+		}));
+		
+		
+		
+		
 	}
-	
-	
 	
 	
 }

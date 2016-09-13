@@ -19,6 +19,7 @@ import {createSVGPoint} from "./svg";
 import {tY} from "./svg";
 import {tX} from "./svg";
 import {Observable} from "rxjs/Observable";
+import {AnimationFrame} from 'rxjs/util/AnimationFrame'
 
 export function subscribe_(subject, pipeFn = n=>n()) {
 	const handler = (key) => ((v) => pipeFn((toDebug) => {
@@ -85,6 +86,10 @@ export function log(...args) {
 	});
 }
 
+export function emitWhenComplete(value) {
+	return this::ignoreElements()::concat(of(value));
+}
+
 export function afterMatching(other, cancel = never()) {
 	return this::switchMap(orig => of(orig)
 		::delayWhen( other::ignoreElements )
@@ -99,3 +104,21 @@ export function svgPageCoordinates({pageX = 0, pageY = 0, x = pageX, y = pageY})
 export const tap = Observable.prototype.do;
 
 export const subscribe = Observable.prototype.subscribe;
+
+export const animationFrames = Observable.create((observer) => {
+	let requestId;
+	let callback = () => {
+        if (requestId !== undefined) {
+            requestId = AnimationFrame.requestAnimationFrame(callback);
+        }
+        observer.next();
+    };
+    requestId = AnimationFrame.requestAnimationFrame(callback);
+    return () => {
+        if (!requestId::isUndefined()) {
+            let r = requestId;
+            requestId = undefined;
+	        AnimationFrame.cancelAnimationFrame(r);
+        }
+    };
+});

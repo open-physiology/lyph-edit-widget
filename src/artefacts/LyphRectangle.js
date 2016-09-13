@@ -67,6 +67,8 @@ import {scan} from "rxjs/operator/scan";
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {tap} from "../util/rxjs";
+import {setVirtualParent} from "../util/svg";
+import ProcessLine from "./ProcessLine";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -82,8 +84,8 @@ export default class LyphRectangle extends Transformable {
 		
 	// && this.minWidth  <= v
 	// && this.minHeight <= v
-	@property({ isValid: _isNonNegative }) width;
-	@property({ isValid: _isNonNegative }) height;
+	@property({ isValid: _isNonNegative, initial: 0 }) width;
+	@property({ isValid: _isNonNegative, initial: 0 }) height;
 	@property({ isValid: _isNonNegative, initial: 0 }) spillover;
 	@property({ isValid: _isNonNegative, initial: 0 }) spillunder;
 	@property({ isValid: _isNonNegative, initial: 0, readonly: true }) hiddenOuterLayerLength;
@@ -138,7 +140,7 @@ export default class LyphRectangle extends Transformable {
 			'radialBorders',
 			'longitudinalBorders'
 		]) {
-			this[setKey].e('add')::subscribe_( this.children.e('add') , n=>n() );
+			this[setKey] .e('add')   ::subscribe_( this.children.e('add')   , n=>n() );
 			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
 		}
 		
@@ -183,12 +185,14 @@ export default class LyphRectangle extends Transformable {
 		group.g().addClass('borders');
 		group.g().addClass('corners');
 		group.g().addClass('nodes');
+		let processLines = group.g().addClass('processes');
 		group.g().addClass('measurables');
 		
 		/* return representation(s) of element */
 		return {
-			element: group.node,
-			axis:    axis .node
+			element:      group.node,
+			axis:         axis .node,
+			processLines: processLines.node
 		};
 	}
 	
@@ -267,8 +271,6 @@ export default class LyphRectangle extends Transformable {
 				});
 			});
 			
-			/* tooltip */
-			
 			return mainRectangleGroup;
 		};
 		
@@ -321,6 +323,11 @@ export default class LyphRectangle extends Transformable {
 			});
 			this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition')::takeUntil(removed));
 			this.layers.add(layerBox);
+		});
+		
+		/* new ProcessLine child --> house it */
+		this.children.e('add')::filter(c => c instanceof ProcessLine).subscribe((pl) => {
+			this.processLines.jq.append(pl.element);
 		});
 		
 		/* new layer artifact --> house svg element */
@@ -548,7 +555,6 @@ export default class LyphRectangle extends Transformable {
 					removed.subscribe(() => { this.bottomBorder = null });
 				}
 			});
-			
 		}
 		
 		
@@ -688,3 +694,4 @@ export default class LyphRectangle extends Transformable {
 
 /* prepare element getters */
 LyphRectangle.definePartGetter('axis');
+LyphRectangle.definePartGetter('processLines');

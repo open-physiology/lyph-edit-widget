@@ -4,6 +4,8 @@ import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {map} from "rxjs/operator/map";
 import {merge} from "rxjs/observable/merge";
+import {closestCommonAncestor} from "./SvgEntity";
+import {filter} from "rxjs/operator/filter";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -38,15 +40,23 @@ export default class ProcessLine extends SvgEntity {
 			strokeLinecap: 'round'
 		});
 		
+		this.p(['source.parent', 'target.parent'])
+			::filter(([sp, tp]) => !!sp && !!tp)
+			::map(([sp, tp]) => closestCommonAncestor(sp, tp))
+			.subscribe( this.p('parent') );
+		
 		merge(
-			this.p('source.canvasTransformation')::map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
-			this.p('target.canvasTransformation')::map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
+			this.p(['source.canvasTransformation', 'parent'])
+				::map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
+				::map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
+			this.p(['target.canvasTransformation', 'parent'])
+				::map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
+				::map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
 		).subscribe( ::line.attr );
 	}
 	
 	drop(droppedEntity) {
 		// TODO
 	}
-	
 	
 }

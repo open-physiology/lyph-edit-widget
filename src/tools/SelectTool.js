@@ -39,9 +39,9 @@ import {withoutMod} from "../util/misc";
 import {which} from "../util/misc";
 import {log} from '../util/rxjs';
 
+import {ID_MATRIX} from "../util/svg";
 
 import indent from 'indent-string';
-import {createSVGTransformFromMatrix} from "../util/svg";
 import LyphRectangle from "../artefacts/LyphRectangle";
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import {takeUntil} from "rxjs/operator/takeUntil";
@@ -57,6 +57,8 @@ import {Observable} from "rxjs/Observable";
 import {exhaustMap} from "rxjs/operator/exhaustMap";
 import MaterialGlyph from "../artefacts/MaterialGlyph";
 import {tap} from "../util/rxjs";
+import ProcessLine from "../artefacts/ProcessLine";
+import {rotateFromVector} from "../util/svg";
 
 
 const $$selectTools = Symbol('$$selectTools');
@@ -64,6 +66,7 @@ const $$child   = Symbol('$$child');
 const $$onStack = Symbol('$$onStack');
 const $$isRectangular = Symbol('$$isRectangular');
 const $$isPoint = Symbol('$$isPoint');
+const $$isLine  = Symbol('$$isLine');
 
 export default class SelectTool extends Tool {
 	
@@ -152,8 +155,9 @@ export default class SelectTool extends Tool {
 		
 		/* create visible select boxes */
 		this.createRectangularSelectBox();
-		this.createPointSelectBox();
-		
+		this.createCircleSelectBox();
+		// this.createLineSelectBox();
+		// TODO: fix and reintroduce createLineSelectBox
 		
 		// TODO: change cursor to be appropriate for
 		//     : manipulation on selected artefact
@@ -183,7 +187,7 @@ export default class SelectTool extends Tool {
 		});
 		let rects = rectangularSelectBox.selectAll('rect').attr({
 			fill:            'none',
-			shapeRendering:  'crispEdges',
+			shapeRendering:  'geometricPrecision',
 			pointerEvents :  'none',
 			strokeDashoffset: 0,
 			x: -4,
@@ -201,10 +205,6 @@ export default class SelectTool extends Tool {
 			box: rectangularSelectBox,
 			strokeDasharray: [14, 7]
 		};
-		// BorderLine.prototype[$$isRectangular] = {
-		// 	box: rectangularSelectBox,
-		// 	strokeDasharray: [4, 3]
-		// };
 		
 		/* visibility observable */
 		let rectangularBoxVisible = context.p(['selected', 'selected.dragging'])
@@ -232,7 +232,7 @@ export default class SelectTool extends Tool {
 		rectangularBoxVisible::switchMap(v => !v
 			? never()
 			: context.p(['selected.width', 'selected.height'])
-                ::map(([w, h]) => ({ width: w+7, height: h+7 }))
+                ::map(([w, h]) => ({ width: w+8, height: h+8 }))
 		).subscribe( ::rects.attr );
 		
 		/* positioning */
@@ -243,7 +243,7 @@ export default class SelectTool extends Tool {
 	}
 	
 	
-	createPointSelectBox() {
+	createCircleSelectBox() {
 		const context = this.context;
 		
 		if (context.pointSelectBox) { return }
@@ -320,5 +320,83 @@ export default class SelectTool extends Tool {
 			::map(s => s.element.getTransformToElement(context.root.inside).translate(s.x || 0, s.y || 0))
             .subscribe( pointBox.node::setCTM );
 	}
+	
+	
+	createLineSelectBox() {
+		const context = this.context;
+		
+		if (context.lineSelectBox) { return }
+		
+		let canvas = context.root.inside.svg;
+		
+		let lineSelectBox = context.lineSelectBox = canvas.g().addClass('line-select-box').attr({
+			pointerEvents: 'none'
+		});
+		
+		lineSelectBox.rect().attr({
+			stroke:      'black',
+			strokeWidth: '3px'
+		});
+		lineSelectBox.rect().attr({
+			stroke:      'white',
+			strokeWidth: '1px'
+		});
+		let rects = lineSelectBox.selectAll('rect').attr({
+			fill:            'none',
+			shapeRendering:  'geometricPrecision',
+			pointerEvents :  'none',
+			strokeDashoffset: 0
+		});
+		
+		/* which artefacts are rectangular? */
+		ProcessLine.prototype[$$isLine] = {
+			box: lineSelectBox,
+			strokeDasharray: [6, 2]
+		};
+		BorderLine.prototype[$$isLine] = {
+			box: lineSelectBox,
+			strokeDasharray: [3, 2]
+		};
+		
+		/* visibility observable */
+		let boxIsVisible = context.p(['selected', 'selected.dragging'])
+			::map(([selected, dragging]) =>
+				selected  &&
+				!dragging &&
+				selected[$$isLine]
+			);
+		
+		/* make (in)visible */
+		boxIsVisible.subscribe((v) => {
+			lineSelectBox.attr({
+				visibility: v ? 'visible' : 'hidden',
+				strokeDasharray: v && v.strokeDasharray.join(',')
+			});
+		});
+		
+		/* animate selection border */
+		boxIsVisible::switchMap(v => !v
+			? never()
+			: interval(1000/60)::map(n => ({ strokeDashoffset: -(n / 3 % v.strokeDasharray::sum()) }))
+		).subscribe( ::rects.attr );
+		
+		/* sizing */
+		boxIsVisible::switchMap(v => !v
+			? never()
+			: context.p(['selected.x1', 'selected.y1', 'selected.x2', 'selected.y2'])
+                ::map(([x1, y1, x2, y2]) => ({
+                	w: Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2)) + 8,
+					h: 8,
+					t: ID_MATRIX
+						.translate        ( (x1+x2)/2,          (y1+y2)/2          )
+						::rotateFromVector(  x2-x1,              y2-y1             )
+						.translate        ( -Math.abs(x1-x2)/2, -Math.abs(y1-y2)/2 )
+                }))
+		).subscribe(({w, h, t}) => {
+			rects.attr({ width: w, height: h });
+			lineSelectBox.node::setCTM(t);
+		});
+	}
+	
 	
 }

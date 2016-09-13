@@ -25,25 +25,33 @@ import {concat} from "rxjs/operator/concat";
 import {assign} from 'bound-native-methods';
 
 import {merge} from "rxjs/observable/merge";
+import {sample} from "rxjs/operator/sample";
+import {animationFrames} from "../util/rxjs";
+import Machine from "../util/Machine";
 
 
-const $$root          = Symbol('$$root');
-const $$domEvents     = Symbol('$$domEvents');
-const $$subscriptions = Symbol('$$subscriptions');
-const $$scratchSVGPoint = Symbol('$$scratchSVGPoint');
-
-const $$tools     = Symbol('$$tools');
-const $$toolTools = Symbol('$$toolTools');
+const $$root                 = Symbol('$$root');
+const $$domEvents            = Symbol('$$domEvents');
+const $$subscriptions        = Symbol('$$subscriptions');
+const $$scratchSVGPoint      = Symbol('$$scratchSVGPoint');
+const $$tools                = Symbol('$$tools');
+const $$toolTools            = Symbol('$$toolTools');
 const $$canvasTransformTools = Symbol('$$canvasTransformTools');
 
 
-function enrichMouseEvent(context) {
-	return this::withLatestFrom(context.p('canvasScreenCTM'), (event, canvasScreenCTM) => {
-		event.controller = window[$$elementCtrl].get(event.currentTarget);
-		event.point = new SVGPoint(event.pageX, event.pageY);
-		event.point = event.point.matrixTransform(canvasScreenCTM.inverse());
-		return event;
-	});
+function enrichMouseEvent(context, {sampleEvents = false} = {}) {
+	const optionallySample = sampleEvents
+		? function () { return this::sample(animationFrames) } // TODO: try 'audit' instead of 'sample'
+		: function () { return this };
+	// const optionallySample = function () { return this };
+	return this
+		::optionallySample()
+		::withLatestFrom(context.p('canvasScreenCTM'), (event, canvasScreenCTM) => {
+			event.controller = window[$$elementCtrl].get(event.currentTarget);
+			event.point = new SVGPoint(event.pageX, event.pageY)
+				.matrixTransform(canvasScreenCTM.inverse());
+			return event;
+		});
 }
 
 export default class Tool extends ValueTracker {
@@ -67,6 +75,7 @@ export default class Tool extends ValueTracker {
 			context.p('canvasCTM')
 				::map(() => root.inside.getScreenCTM())
 				::subscribe_( context.pSubject('canvasScreenCTM'), v=>v() );
+			context.stateMachine = new Machine('IDLE');
 		}
 		
 		if (!context[$$domEvents]) {
@@ -91,12 +100,12 @@ export default class Tool extends ValueTracker {
 					(handler) => { this.context.root.element.jq.on (e, handler) },
 					(handler) => { this.context.root.element.jq.off(e, handler) }
 				)
-			)::enrichMouseEvent(this.context);
+			)::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' });
 		}
 	}
 	
-	rootE  (event) { return fromEvent(this.context.root.element.jq, event)::enrichMouseEvent(this.context) }
-	windowE(event) { return fromEvent($(window), event)                   ::enrichMouseEvent(this.context) }
+	rootE  (e) { return fromEvent(this.context.root.element.jq, e)::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
+	windowE(e) { return fromEvent($(window), e)                   ::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
 	
 	e(event) {
 		return this.p('active')

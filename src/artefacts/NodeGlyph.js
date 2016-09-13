@@ -21,7 +21,7 @@ import {take} from 'rxjs/operator/take';
 import {switchMap} from 'rxjs/operator/switchMap';
 import {sampleTime} from 'rxjs/operator/sampleTime';
 
-import {ID_MATRIX} from "../util/svg";
+import {ID_MATRIX, refSnap} from "../util/svg";
 
 
 import chroma from '../libs/chroma.js';
@@ -35,6 +35,7 @@ import {subscribe_} from "../util/rxjs";
 import Transformable from "./Transformable";
 import BorderLine from "./BorderLine";
 import {setCTM} from "../util/svg";
+import {enrichDOM} from "../util/misc";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 
@@ -84,5 +85,15 @@ export default class NodeGlyph extends Transformable {
 	// drop(droppedEntity) {
 	// 	// TODO
 	// }
+	
+	static indicator(x = 0, y = 0) {
+		return refSnap.circle().attr({
+			strokeWidth: '1px',
+			stroke     : '#aa0000',
+			fill       : '#ff5555',
+			cx         : x,
+			cy         : y
+		}).node::enrichDOM();
+	}
 	
 }
