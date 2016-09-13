@@ -189,13 +189,13 @@ export default class DrawingTool extends Tool {
 				} else {
 					const m = root.inside.getTransformToElement(parentArtefact.inside);
 					const p = downEvent.point.matrixTransform(m);
-					x1 = p.x;
-					y1 = p.y;
+					x1 = downEvent.point.x;
+					y1 = downEvent.point.y;
 					sourceNodeArtefact = new NodeGlyph({
 						model   : model.source || (model.source = C.Node.new()),
 						parent  : parentArtefact,
-						x       : x1,
-						y       : y1
+						x       : p.x,
+						y       : p.y
 					});
 					if (parentArtefact.drop::isFunction()) {
 						parentArtefact.drop(sourceNodeArtefact);

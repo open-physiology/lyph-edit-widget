@@ -60300,13 +60300,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 							var m = root.inside.getTransformToElement(parentArtefact.inside);
 							var p = downEvent.point.matrixTransform(m);
-							x1 = p.x;
-							y1 = p.y;
+							x1 = downEvent.point.x;
+							y1 = downEvent.point.y;
 							sourceNodeArtefact = new _NodeGlyph2.default({
 								model: model.source || (model.source = C.Node.new()),
 								parent: parentArtefact,
-								x: x1,
-								y: y1
+								x: p.x,
+								y: p.y
 							});
 							if ((_context8 = parentArtefact.drop, _isFunction2.default).call(_context8)) {
 								parentArtefact.drop(sourceNodeArtefact);
@@ -60330,8 +60330,7 @@ return /******/ (function(modules) { // webpackBootstrap
 							stroke: 'red',
 							pointerEvents: 'none',
 							strokeLinecap: 'round',
-							x1: x1,
-							y1: y1
+							x1: x1, y1: y1
 						}).node, _misc.enrichDOM).call(_context10);
 	
 						enterState('DRAWING_PROCESS_LINE_TARGET', {
