@@ -291,18 +291,32 @@ export default class DrawingTool extends Tool {
 							
 							/* control lyph positioning by nodes */
 							combineLatest(
-								sourceNodeArtefact.p('transformation')::map( ::Vector2D.fromMatrixTranslation ),
-								targetNodeArtefact.p('transformation')::map( ::Vector2D.fromMatrixTranslation )
-							).subscribe(([{x: x1, y: y1}, {x: x2, y: y2}]) => {
-								let w = Math.sqrt(Math.pow(Math.abs(x2-x1), 2) + Math.pow(Math.abs(y2-y1), 2)) - 40;
+								sourceNodeArtefact.p('parent'),
+								targetNodeArtefact.p('parent')
+							)   ::filter(([sp, tp]) => !!sp && !!tp)
+								::map(([sp, tp]) => closestCommonAncestor(sp, tp))
+								.subscribe((cca) => {
+									// newConveyingLyph.parent = cca;
+									cca.drop(newConveyingLyph);
+								});
+							combineLatest(
+								sourceNodeArtefact.p('canvasTransformation')::map( (m) => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
+								targetNodeArtefact.p('canvasTransformation')::map( (m) => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
+								sourceNodeArtefact.p('parent'),
+								targetNodeArtefact.p('parent')
+							).subscribe(([s, t, sp, tp]) => {
+								let cca = closestCommonAncestor(sp, tp);
+								s = s.in(cca.inside);
+								t = t.in(cca.inside);
+								let w = Math.sqrt(Math.pow(Math.abs(t.x-s.x), 2) + Math.pow(Math.abs(t.y-s.y), 2)) - 40;
 								let h = newConveyingLyph.height;
 								// TODO: a quick fix follows to set a minimum size for the rectangle,
 								//     : but this should be based on the actual lyph rectangle that would be created.
 								newConveyingLyph.width = w;
 								newConveyingLyph.transformation = ID_MATRIX
-									.translate        ( (x1+x2) / 2, (y1+y2) / 2  )
-									::rotateFromVector(  x2-x1,       y2-y1       )
-									.translate        ( -w/2,        -h/2         );
+									.translate        ( ...s.plus (t).times(0.5).xy )
+									::rotateFromVector( ...t.minus(s).xy            )
+									.translate        ( -w/2, -h/2                  );
 							});
 							
 						}

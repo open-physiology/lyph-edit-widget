@@ -122,9 +122,9 @@ export class Vector2D {
 	get xy() { return [this.x, this.y] }
 	
 	plus(other) {
-		assert(!this.context || !other.context, humanMsg`
-			Cannot add two vectors that both have context.
-		`);
+		if (this.context && other.context) {
+			other = other.in(this.context);
+		}
 		return new Vector2D({
 			x:       this.x       +  other.x,
 			y:       this.y       +  other.y,

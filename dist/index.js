@@ -1409,8 +1409,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    _powerAssertRecorder = function () { function PowerAssertRecorder() { this.captured = []; } PowerAssertRecorder.prototype._capt = function _capt(value, espath) { this.captured.push({ value: value, espath: espath }); return value; }; PowerAssertRecorder.prototype._expr = function _expr(value, source) { return { powerAssertContext: { value: value, events: this.captured }, source: source }; }; return PowerAssertRecorder; }();
 	
 	var _templateObject = _taggedTemplateLiteral(['\n\t\t\tExpecting Point instance to have a context.\n\t\t'], ['\n\t\t\tExpecting Point instance to have a context.\n\t\t']),
-	    _templateObject2 = _taggedTemplateLiteral(['\n\t\t\tCannot add two vectors that both have context.\n\t\t'], ['\n\t\t\tCannot add two vectors that both have context.\n\t\t']),
-	    _templateObject3 = _taggedTemplateLiteral(['\n\t\t\tA context on the right side of \'Vector2D#minus\'\n\t\t\trequires a context on the left.\n\t\t'], ['\n\t\t\tA context on the right side of \'Vector2D#minus\'\n\t\t\trequires a context on the left.\n\t\t']);
+	    _templateObject2 = _taggedTemplateLiteral(['\n\t\t\tA context on the right side of \'Vector2D#minus\'\n\t\t\trequires a context on the left.\n\t\t'], ['\n\t\t\tA context on the right side of \'Vector2D#minus\'\n\t\t\trequires a context on the left.\n\t\t']);
 	
 	exports.createMatrix = createMatrix;
 	exports.createSVGPoint = createSVGPoint;
@@ -1584,16 +1583,9 @@ return /******/ (function(modules) { // webpackBootstrap
 		}, {
 			key: 'plus',
 			value: function plus(other) {
-				var _rec2 = new _powerAssertRecorder();
-	
-				(0, _powerAssert2.default)(_rec2._expr(_rec2._capt(_rec2._capt(!_rec2._capt(this.context, 'arguments/0/left/argument'), 'arguments/0/left') || _rec2._capt(!_rec2._capt(_rec2._capt(other, 'arguments/0/right/argument/object').context, 'arguments/0/right/argument'), 'arguments/0/right'), 'arguments/0'), {
-					content: 'assert(!this.context || !other.context, humanMsg`\n\t\t\tCannot add two vectors that both have context.\n\t\t`)',
-					filepath: 'src/util/svg.js',
-					line: 125,
-					ast: '{"type":"CallExpression","callee":{"type":"Identifier","name":"assert","range":[0,6]},"arguments":[{"type":"LogicalExpression","operator":"||","left":{"type":"UnaryExpression","operator":"!","argument":{"type":"MemberExpression","object":{"type":"ThisExpression","range":[8,12]},"property":{"type":"Identifier","name":"context","range":[13,20]},"computed":false,"range":[8,20]},"prefix":true,"range":[7,20]},"right":{"type":"UnaryExpression","operator":"!","argument":{"type":"MemberExpression","object":{"type":"Identifier","name":"other","range":[25,30]},"property":{"type":"Identifier","name":"context","range":[31,38]},"computed":false,"range":[25,38]},"prefix":true,"range":[24,38]},"range":[7,38]},{"type":"TaggedTemplateExpression","tag":{"type":"Identifier","name":"humanMsg","range":[40,48]},"quasi":{"type":"TemplateLiteral","quasis":[{"type":"TemplateElement","value":{"raw":"\\n\\t\\t\\tCannot add two vectors that both have context.\\n\\t\\t","cooked":"\\n\\t\\t\\tCannot add two vectors that both have context.\\n\\t\\t"},"tail":true,"range":[49,2]}],"expressions":[],"range":[48,3]},"range":[40,3]}],"range":[0,4]}',
-					tokens: '[{"type":{"label":"name"},"value":"assert","range":[0,6]},{"type":{"label":"("},"range":[6,7]},{"type":{"label":"prefix"},"value":"!","range":[7,8]},{"type":{"label":"this"},"value":"this","range":[8,12]},{"type":{"label":"."},"range":[12,13]},{"type":{"label":"name"},"value":"context","range":[13,20]},{"type":{"label":"||"},"value":"||","range":[21,23]},{"type":{"label":"prefix"},"value":"!","range":[24,25]},{"type":{"label":"name"},"value":"other","range":[25,30]},{"type":{"label":"."},"range":[30,31]},{"type":{"label":"name"},"value":"context","range":[31,38]},{"type":{"label":","},"range":[38,39]},{"type":{"label":"name"},"value":"humanMsg","range":[40,48]},{"type":{"label":"`"},"range":[48,49]},{"type":{"label":"template"},"value":"\\n\\t\\t\\tCannot add two vectors that both have context.\\n\\t\\t","range":[49,2]},{"type":{"label":"`"},"range":[2,3]},{"type":{"label":")"},"range":[3,4]}]',
-					visitorKeys: _powerAssertVisitorKeys
-				}), (0, _misc.humanMsg)(_templateObject2));
+				if (this.context && other.context) {
+					other = other.in(this.context);
+				}
 				return new Vector2D({
 					x: this.x + other.x,
 					y: this.y + other.y,
@@ -1603,16 +1595,16 @@ return /******/ (function(modules) { // webpackBootstrap
 		}, {
 			key: 'minus',
 			value: function minus(other) {
-				var _rec3 = new _powerAssertRecorder();
+				var _rec2 = new _powerAssertRecorder();
 	
-				(0, _powerAssert2.default)(_rec3._expr(_rec3._capt(_rec3._capt(this.context, 'arguments/0/left') || _rec3._capt(!_rec3._capt(_rec3._capt(other, 'arguments/0/right/argument/object').context, 'arguments/0/right/argument'), 'arguments/0/right'), 'arguments/0'), {
+				(0, _powerAssert2.default)(_rec2._expr(_rec2._capt(_rec2._capt(this.context, 'arguments/0/left') || _rec2._capt(!_rec2._capt(_rec2._capt(other, 'arguments/0/right/argument/object').context, 'arguments/0/right/argument'), 'arguments/0/right'), 'arguments/0'), {
 					content: 'assert(this.context || !other.context, humanMsg`\n\t\t\tA context on the right side of \'Vector2D#minus\'\n\t\t\trequires a context on the left.\n\t\t`)',
 					filepath: 'src/util/svg.js',
 					line: 136,
 					ast: '{"type":"CallExpression","callee":{"type":"Identifier","name":"assert","range":[0,6]},"arguments":[{"type":"LogicalExpression","operator":"||","left":{"type":"MemberExpression","object":{"type":"ThisExpression","range":[7,11]},"property":{"type":"Identifier","name":"context","range":[12,19]},"computed":false,"range":[7,19]},"right":{"type":"UnaryExpression","operator":"!","argument":{"type":"MemberExpression","object":{"type":"Identifier","name":"other","range":[24,29]},"property":{"type":"Identifier","name":"context","range":[30,37]},"computed":false,"range":[24,37]},"prefix":true,"range":[23,37]},"range":[7,37]},{"type":"TaggedTemplateExpression","tag":{"type":"Identifier","name":"humanMsg","range":[39,47]},"quasi":{"type":"TemplateLiteral","quasis":[{"type":"TemplateElement","value":{"raw":"\\n\\t\\t\\tA context on the right side of \'Vector2D#minus\'\\n\\t\\t\\trequires a context on the left.\\n\\t\\t","cooked":"\\n\\t\\t\\tA context on the right side of \'Vector2D#minus\'\\n\\t\\t\\trequires a context on the left.\\n\\t\\t"},"tail":true,"range":[48,2]}],"expressions":[],"range":[47,3]},"range":[39,3]}],"range":[0,4]}',
 					tokens: '[{"type":{"label":"name"},"value":"assert","range":[0,6]},{"type":{"label":"("},"range":[6,7]},{"type":{"label":"this"},"value":"this","range":[7,11]},{"type":{"label":"."},"range":[11,12]},{"type":{"label":"name"},"value":"context","range":[12,19]},{"type":{"label":"||"},"value":"||","range":[20,22]},{"type":{"label":"prefix"},"value":"!","range":[23,24]},{"type":{"label":"name"},"value":"other","range":[24,29]},{"type":{"label":"."},"range":[29,30]},{"type":{"label":"name"},"value":"context","range":[30,37]},{"type":{"label":","},"range":[37,38]},{"type":{"label":"name"},"value":"humanMsg","range":[39,47]},{"type":{"label":"`"},"range":[47,48]},{"type":{"label":"template"},"value":"\\n\\t\\t\\tA context on the right side of \'Vector2D#minus\'\\n\\t\\t\\trequires a context on the left.\\n\\t\\t","range":[48,2]},{"type":{"label":"`"},"range":[2,3]},{"type":{"label":")"},"range":[3,4]}]',
 					visitorKeys: _powerAssertVisitorKeys
-				}), (0, _misc.humanMsg)(_templateObject3));
+				}), (0, _misc.humanMsg)(_templateObject2));
 				if (other.context) {
 					other = other.in(this.context);
 				}
@@ -58959,24 +58951,45 @@ return /******/ (function(modules) { // webpackBootstrap
 									rectIndicator.jq.remove();
 	
 									/* control lyph positioning by nodes */
-									(0, _combineLatest.combineLatest)((_context14 = sourceNodeArtefact.p('transformation'), _map.map).call(_context14, _svg.Vector2D.fromMatrixTranslation.bind(_svg.Vector2D)), (_context14 = targetNodeArtefact.p('transformation'), _map.map).call(_context14, _svg.Vector2D.fromMatrixTranslation.bind(_svg.Vector2D))).subscribe(function (_ref22) {
-										var _context15;
-	
+									(_context14 = (_context14 = (0, _combineLatest.combineLatest)(sourceNodeArtefact.p('parent'), targetNodeArtefact.p('parent')), _filter.filter).call(_context14, function (_ref22) {
 										var _ref23 = _slicedToArray(_ref22, 2);
 	
-										var _ref23$ = _ref23[0];
-										var x1 = _ref23$.x;
-										var y1 = _ref23$.y;
-										var _ref23$2 = _ref23[1];
-										var x2 = _ref23$2.x;
-										var y2 = _ref23$2.y;
+										var sp = _ref23[0];
+										var tp = _ref23[1];
+										return !!sp && !!tp;
+									}), _map.map).call(_context14, function (_ref24) {
+										var _ref25 = _slicedToArray(_ref24, 2);
 	
-										var w = Math.sqrt(Math.pow(Math.abs(x2 - x1), 2) + Math.pow(Math.abs(y2 - y1), 2)) - 40;
+										var sp = _ref25[0];
+										var tp = _ref25[1];
+										return (0, _SvgEntity.closestCommonAncestor)(sp, tp);
+									}).subscribe(function (cca) {
+										// newConveyingLyph.parent = cca;
+										cca.drop(newConveyingLyph);
+									});
+									(0, _combineLatest.combineLatest)((_context14 = sourceNodeArtefact.p('canvasTransformation'), _map.map).call(_context14, function (m) {
+										return _svg.Vector2D.fromMatrixTranslation(m, context.root.inside);
+									}), (_context14 = targetNodeArtefact.p('canvasTransformation'), _map.map).call(_context14, function (m) {
+										return _svg.Vector2D.fromMatrixTranslation(m, context.root.inside);
+									}), sourceNodeArtefact.p('parent'), targetNodeArtefact.p('parent')).subscribe(function (_ref26) {
+										var _context15, _ref28;
+	
+										var _ref27 = _slicedToArray(_ref26, 4);
+	
+										var s = _ref27[0];
+										var t = _ref27[1];
+										var sp = _ref27[2];
+										var tp = _ref27[3];
+	
+										var cca = (0, _SvgEntity.closestCommonAncestor)(sp, tp);
+										s = s.in(cca.inside);
+										t = t.in(cca.inside);
+										var w = Math.sqrt(Math.pow(Math.abs(t.x - s.x), 2) + Math.pow(Math.abs(t.y - s.y), 2)) - 40;
 										var h = newConveyingLyph.height;
 										// TODO: a quick fix follows to set a minimum size for the rectangle,
 										//     : but this should be based on the actual lyph rectangle that would be created.
 										newConveyingLyph.width = w;
-										newConveyingLyph.transformation = (_context15 = _svg.ID_MATRIX.translate((x1 + x2) / 2, (y1 + y2) / 2), _svg.rotateFromVector).call(_context15, x2 - x1, y2 - y1).translate(-w / 2, -h / 2);
+										newConveyingLyph.transformation = (_ref28 = (_context15 = _svg.ID_MATRIX.translate.apply(_svg.ID_MATRIX, _toConsumableArray(s.plus(t).times(0.5).xy)), _svg.rotateFromVector)).call.apply(_ref28, [_context15].concat(_toConsumableArray(t.minus(s).xy))).translate(-w / 2, -h / 2);
 									});
 								})();
 							}
