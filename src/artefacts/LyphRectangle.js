@@ -84,8 +84,8 @@ export default class LyphRectangle extends Transformable {
 		
 	// && this.minWidth  <= v
 	// && this.minHeight <= v
-	@property({ isValid: _isNonNegative, initial: 0 }) width;
-	@property({ isValid: _isNonNegative, initial: 0 }) height;
+	@property({ isValid: _isNonNegative, initial: 0, transform(w) { return Math.max(w || 0, this.minWidth  || 0) } }) width;
+	@property({ isValid: _isNonNegative, initial: 0, transform(h) { return Math.max(h || 0, this.minHeight || 0) } }) height;
 	@property({ isValid: _isNonNegative, initial: 0 }) spillover;
 	@property({ isValid: _isNonNegative, initial: 0 }) spillunder;
 	@property({ isValid: _isNonNegative, initial: 0, readonly: true }) hiddenOuterLayerLength;
@@ -94,11 +94,11 @@ export default class LyphRectangle extends Transformable {
 	
 	@flag(false) showAxis;
 	
-	get axisThickness() { return this.model.axis && this.showAxis ? 14 : 0 }
+	get axisThickness() { return this.model && this.model.axis && this.showAxis ? 14 : 0 }
 	
-	// get minWidth()  { return 2 * ((this.axisThickness && this.showAxis) + 1) }
-	//
-	// get minHeight() { return (this.axisThickness && this.showAxis) + (this.model ? [...this.model.layers].length * 2 : 2) }
+	get minWidth()  { return 4 * CLOSED_CORNER_RADIUS }
+	
+	get minHeight() { return this.axisThickness + Math.max(2 * CLOSED_CORNER_RADIUS, this.model ? [...this.model.layers].length * 2 : 2) }
 	
 	segments            = new ObservableSet();
 	layers              = new ObservableSet();

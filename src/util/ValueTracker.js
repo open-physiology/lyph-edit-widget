@@ -12,6 +12,8 @@ import _isBoolean from 'lodash/isBoolean';
 
 import assert from 'power-assert';
 
+import {defineProperty} from 'bound-native-methods';
+
 import {args, humanMsg} from './misc';
 
 import { $$rxSubscriber } from 'rxjs/symbol/rxSubscriber';
@@ -104,6 +106,7 @@ export default class ValueTracker {
 	 * @public
 	 * @method
 	 * @param  {String}                   name            - the name of the new property
+	 * @param  {Boolean}            [decoratorUsed=false] - whether this property was created with a decorator (don't use this manually)
 	 * @param  {Boolean}                 [readonly=false] - whether the value can be manually set
 	 * @param  {function(*,*):Boolean}   [isEqual]        - a predicate function by which to test for duplicate values
 	 * @param  {function(*):Boolean}     [isValid]        - a predicate function to validate a given value
@@ -113,10 +116,11 @@ export default class ValueTracker {
 	 * @return {BehaviorSubject} - the property associated with the given name
 	 */
 	newProperty(name, {
-		readonly  = false,
-		isEqual   = (a,b) => (a===b),
-		isValid   = ()=>true,
-		transform = v=>v,
+		decoratorUsed = false,
+		readonly      = false,
+		isEqual       = (a,b) => (a===b),
+		isValid       = ()=>true,
+		transform     = v=>v,
 		initial
 	} = {}) {
 		this[$$initialize]();
@@ -150,6 +154,16 @@ export default class ValueTracker {
 		/* create event version of the property */
 		this[$$events][name] = subject.asObservable()
 			::skip(1); // skip 'current value' on subscribe
+		
+		/* if not yet done, create object property */
+		if (!decoratorUsed) {
+			this::defineProperty(name, {
+				get() { return this[$$currentValues][name] },
+				...(!readonly && {
+					set(value) { subject.next(value) }
+				})
+			});
+		}
 		
 		/* return property */
 		return this[$$settableProperties][name];
@@ -261,7 +275,7 @@ export default class ValueTracker {
 };
 
 export const property = (options = {}) => (target, key) => {
-	target::set(['constructor', $$properties, key], options);
+	target::set(['constructor', $$properties, key], { ...options, decoratorUsed: true });
 	return {
 		get() { return this[$$currentValues][key] },
 		...(!options.readonly && {

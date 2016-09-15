@@ -9,6 +9,10 @@ import {log} from './rxjs';
 import {filter} from "rxjs/operator/filter";
 import {map} from "rxjs/operator/map";
 
+import assert from 'power-assert';
+
+import {humanMsg} from './misc';
+
 export const M11 = 'a';
 export const M12 = 'c';
 export const M21 = 'b';
@@ -80,6 +84,85 @@ export class SVGPoint {
 		result::assign({x, y});
 		return result;
 	}
+}
+
+export class Vector2D {
+	
+	svgPoint;
+	context;
+	
+	constructor(other) {
+		if (other instanceof Vector2D) {
+			this.svgPoint = other.svgPoint;
+		} else {
+			this.svgPoint = refSVG.createSVGPoint();
+			this.svgPoint::assign(other::pick('x', 'y'));
+		}
+		this.context = other.context;
+	}
+	
+	static fromMatrixTranslation(m, context) {
+		return new Vector2D({ x: m[tX], y: m[tY], context });
+	}
+	
+	in(context) {
+		assert(this.context, humanMsg`
+			Expecting Point instance to have a context.
+		`);
+		context = context.context || context;
+		if (this.context === context) { return this }
+		return new Vector2D(
+			this.svgPoint.matrixTransform(this.context.getTransformToElement(context)),
+			context
+		);
+	}
+	
+	get x () { return this.svgPoint.x  }
+	get y () { return this.svgPoint.y  }
+	get xy() { return [this.x, this.y] }
+	
+	plus(other) {
+		assert(!this.context || !other.context, humanMsg`
+			Cannot add two vectors that both have context.
+		`);
+		return new Vector2D({
+			x:       this.x       +  other.x,
+			y:       this.y       +  other.y,
+			context: this.context || other.context
+		});
+	}
+	
+	minus(other) {
+		assert(this.context || !other.context, humanMsg`
+			A context on the right side of 'Vector2D#minus'
+			requires a context on the left.
+		`);
+		if (other.context) {
+			other = other.in(this.context);
+		}
+		return new Vector2D({
+			x:       this.x - other.x,
+			y:       this.y - other.y,
+			context: other.context ? null : this.context
+		});
+	}
+	
+	times(scalar) {
+		if (scalar === 1) { return this }
+		return new Vector2D({
+			x:       this.x * scalar,
+			y:       this.y * scalar,
+			context: this.context
+		});
+	}
+}
+
+export function pagePoint() {
+	return new Vector2D({
+		x:       this.pageX,
+		y:       this.pageY,
+		current: document
+	});
 }
 
 export function scaleFromPoint(factor, point) {

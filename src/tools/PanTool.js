@@ -31,6 +31,9 @@ import {skip} from "rxjs/operator/skip";
 import {setCTM} from "../util/svg";
 import {subscribe_} from "../util/rxjs";
 import {tap} from "../util/rxjs";
+import Canvas from "../artefacts/Canvas";
+import {Vector2D} from "../util/svg";
+import {pagePoint} from "../util/svg";
 
 
 export default class PanTool extends Tool {
@@ -38,9 +41,6 @@ export default class PanTool extends Tool {
 	constructor(context) {
 		super(context, { events: ['mousedown'] });
 		
-		const {root} = context;
-		
-		// const mousedown = this.rootE('mousedown');
 		const mousemove = this.windowE('mousemove');
 		const mouseup   = this.windowE('mouseup');
 		
@@ -60,19 +60,31 @@ export default class PanTool extends Tool {
 		// 	);
 		// });
 		
-		this.e('mousedown')
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			::tap(stopPropagation)
-			::withLatestFrom(context.p('selected'))
-			::filter(([,handleArtifact]) => handleArtifact === root)
-			.subscribe(([down]) => {
-				const initialTransformation = root.element.getTransformToElement(root.inside);//.translate(offset.left, offset.top);
-				of(down)::concat(mousemove::takeUntil(mouseup))
-					::map(svgPageCoordinates)
-					::map(xy => xy.matrixTransform(initialTransformation))
-					::shiftedMatrixMovementFor(context.p('canvasCTM'))
-					::subscribe_( context.p('canvasCTM') );
-			});
+		context.stateMachine.extend(({ enterState, subscribe }) => ({
+			'IDLE': () => this.e('mousedown')
+				::filter(withoutMod('ctrl', 'shift', 'meta'))
+				::tap(stopPropagation)
+				::withLatestFrom(context.p('selected'))
+				::filter(([,handleArtifact]) => handleArtifact instanceof Canvas)
+				::map(([downEvent]) => ({downEvent}))
+		        ::enterState('PANNING'),
+			'PANNING': ({downEvent}) =>  {
+				/* record start dimensions */
+				const transformationStart = context.canvasCTM;
+				// let mouseStart = downEvent::page();
+				
+				/* move while dragging */
+				of(downEvent)::concat(mousemove)
+					::map(event => event::pagePoint().minus(downEvent::pagePoint()))
+					::subscribe((diff) => {
+						context.canvasCTM = transformationStart
+							.translate(...diff.xy);
+					});
+				
+				/* stop panning */
+				mouseup::enterState('IDLE');
+			}
+		}));
 		
 	}
 	

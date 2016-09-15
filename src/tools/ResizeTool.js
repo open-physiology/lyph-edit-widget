@@ -19,7 +19,6 @@ import {stopPropagation} from "../util/misc";
 import BorderLine from "../artefacts/BorderLine";
 import {log} from '../util/rxjs';
 import {afterMatching} from "../util/rxjs";
-import {svgPageCoordinates} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
@@ -43,8 +42,8 @@ export default class ResizeTool extends Tool {
 		
 		const {root} = context;
 		
-		const mousemove = this.windowE('mousemove', false);
-		const mouseup   = this.windowE('mouseup',   false);
+		const mousemove = this.windowE('mousemove');
+		const mouseup   = this.windowE('mouseup');
 		
 		context.registerCursor((handleArtifact) => {
 			if (![BorderLine, CornerHandle].includes(handleArtifact.constructor)) { return false }
@@ -92,53 +91,45 @@ export default class ResizeTool extends Tool {
 				    ::enterState('IDLE')
 			    // TODO: go IDLE on pressing escape
 			],
-			'RESIZING_RECTANGLE': ({downEvent, resizingArtefact, directions}) => {
+			'RESIZING_RECTANGLE': ({downEvent, resizingArtefact, directions, mouseDownIsOrigin}) => {
 				/* start resizing */
 				resizingArtefact.dragging = true; // TODO: use 'resizing' instead of 'dragging'?
 				
-				/* canvas --> resizing artefact */
-				const rootToHandleMatrix = root.inside.getTransformToElement(resizingArtefact.element);
-				
 				/* record start dimensions */
 				const artefactStart = resizingArtefact::pick('transformation', 'width', 'height');
-				const mouseStart    = downEvent.point.matrixTransform(rootToHandleMatrix);
+				const mouseStart    = downEvent.point;
 				
 				/* resize while dragging */
-				of(downEvent)::concat(mousemove)
-					::map(event => event.point.matrixTransform(rootToHandleMatrix))
-					::subscribe((mouseCurrent) => {
-						let width          = artefactStart.width;
-						let height         = artefactStart.height;
-						let transformation = artefactStart.transformation;
-						let xDiff = mouseCurrent.x - mouseStart.x;
-						let yDiff = mouseCurrent.y - mouseStart.y;
-						if (directions.left) {
-							transformation = transformation.translate(xDiff, 0);
-							width -= xDiff;
-						} else if (directions.right) {
-							width += xDiff;
-						}
-						if (directions.top) {
-							transformation = transformation.translate(0, yDiff);
-							height -= yDiff;
-						} else if (directions.bottom) {
-							height += yDiff;
-						}
-						resizingArtefact::assign({
-							transformation,
-							width, height
+				// setTimeout(() => {
+					of(downEvent)::concat(mousemove)
+						::map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
+						::subscribe(({x: xDiff, y: yDiff}) => {
+							let width          = mouseDownIsOrigin ? 0 : artefactStart.width;
+							let height         = mouseDownIsOrigin ? 0 : artefactStart.height;
+							let transformation = artefactStart.transformation;
+							if (directions.left) {
+								transformation = transformation.translate(xDiff, 0);
+								width -= xDiff;
+							} else if (directions.right) {
+								width += xDiff;
+							}
+							if (directions.top) {
+								transformation = transformation.translate(0, yDiff);
+								height -= yDiff;
+							} else if (directions.bottom) {
+								height += yDiff;
+							}
+							width  = Math.max(width  || 0, resizingArtefact.minWidth  || 0);
+							height = Math.max(height || 0, resizingArtefact.minHeight || 0);
+							resizingArtefact::assign({ transformation, width, height });
 						});
-					});
 				
-				/* stop resizing */
-				mouseup
-					::tap(() => { resizingArtefact.dragging = false })
-					::enterState('IDLE');
+					/* stop resizing */
+					mouseup
+						::tap(() => { resizingArtefact.dragging = false })
+						::enterState('IDLE');
+				// });
 			}
 		}));
 	}
-	
-	
-	
 }
-

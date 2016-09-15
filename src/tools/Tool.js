@@ -17,7 +17,7 @@ import {of} from "rxjs/observable/of";
 import {setCTM} from "../util/svg";
 import {withLatestFrom} from "rxjs/operator/withLatestFrom";
 import {subscribe_} from "../util/rxjs";
-import {SVGPoint} from "../util/svg";
+import {SVGPoint, Vector2D} from "../util/svg";
 import {tap} from "../util/rxjs";
 import {takeUntil} from "rxjs/operator/takeUntil";
 import {concat} from "rxjs/operator/concat";
@@ -41,15 +41,18 @@ const $$canvasTransformTools = Symbol('$$canvasTransformTools');
 
 function enrichMouseEvent(context, {sampleEvents = false} = {}) {
 	const optionallySample = sampleEvents
-		? function () { return this::sample(animationFrames) } // TODO: try 'audit' instead of 'sample'
+		? function () { return this::sample(animationFrames) }
 		: function () { return this };
-	// const optionallySample = function () { return this };
 	return this
 		::optionallySample()
 		::withLatestFrom(context.p('canvasScreenCTM'), (event, canvasScreenCTM) => {
 			event.controller = window[$$elementCtrl].get(event.currentTarget);
-			event.point = new SVGPoint(event.pageX, event.pageY)
-				.matrixTransform(canvasScreenCTM.inverse());
+			let svgPoint = new SVGPoint(event.pageX, event.pageY).matrixTransform(canvasScreenCTM.inverse());
+			event.point = new Vector2D({
+				x:       svgPoint.x,
+				y:       svgPoint.y,
+				context: context.root.inside
+			});
 			return event;
 		});
 }
@@ -65,27 +68,22 @@ export default class Tool extends ValueTracker {
 		
 		this.context = context;
 		
-		const {root} = context;
-		
 		if (!context[$$canvasTransformTools]) {
 			context[$$canvasTransformTools] = true;
 			context.newProperty('canvasCTM', { initial: ID_MATRIX })
-				.subscribe( root.inside::setCTM );
-			context.newProperty('canvasScreenCTM', { readonly: true, initial: root.inside.getScreenCTM() });
+				.subscribe( context.root.inside::setCTM );
+			context.newProperty('canvasScreenCTM', { readonly: true, initial: context.root.inside.getScreenCTM() });
 			context.p('canvasCTM')
-				::map(() => root.inside.getScreenCTM())
+				::map(() => context.root.inside.getScreenCTM())
 				::subscribe_( context.pSubject('canvasScreenCTM'), v=>v() );
 			context.stateMachine = new Machine('IDLE');
 		}
-		
 		if (!context[$$domEvents]) {
 			context[$$domEvents] = {};
 		}
-		
 		for (let e of events) {
 			this.registerArtefactEvent(e);
 		}
-		
 		context[this.constructor.name] = this;
 	}
 	
@@ -111,48 +109,4 @@ export default class Tool extends ValueTracker {
 		return this.p('active')
 			::switchMap(a => a ? this.context[$$domEvents][event] : never());
 	}
-	
-	trackMouseDownMoveUp({ threshold = false } = {}) {
-		this.registerArtefactEvent('mousedown');
-		const mousemove = this.windowE('mousemove');
-		const mouseup   = this.windowE('mouseup'  );
-		this.e('mousedown')
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			::tap(stopPropagation)
-			::withLatestFrom(this.context.p('selected'))
-			::(threshold ? afterMatching : function(){return this})(mousemove::take(threshold), mouseup)
-			.subscribe(([down, selectedArtefactA]) => {
-				const M = this.context.root.inside.getTransformToElement(selectedArtefactA.inside);
-				
-				const data = {
-					pointA: down.point.matrixTransform(M),
-					selectedArtefactA,
-					down
-				};
-				
-				const {
-					onMouseDown = ()=>{},
-					onMouseMove = ()=>{},
-					onMouseUp   = ()=>{}
-				} = (::this.getMouseDownMoveUpProcedure || (()=>{}))(data) || {};
-				
-				/* mouse down */
-				this::onMouseDown(data);
-				
-				/* mouse move */
-				of(down)::concat(mousemove)
-					::takeUntil(mouseup)
-					::map(xy => xy.point.matrixTransform(M))
-					::withLatestFrom(this.context.p('selected'))
-					.subscribe(([pointB, selectedArtefactB]) => {
-						data::assign({ pointB, selectedArtefactB });
-						this::onMouseMove(data);
-					});
-				
-				/* mouse up */
-				mouseup::take(1).subscribe(() => { this::onMouseUp(data) });
-			});
-	}
-	
 }
-

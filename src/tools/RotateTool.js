@@ -16,7 +16,7 @@ import isFunction from 'lodash-bound/isFunction';
 import defaults from 'lodash-bound/defaults';
 
 import Tool from './Tool';
-import {withoutMod} from "../util/misc";
+import {withoutMod, withMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
@@ -29,26 +29,16 @@ import {delay} from "rxjs/operator/delay";
 import {skip} from "rxjs/operator/skip";
 import {subscribe_} from "../util/rxjs";
 import {shiftedMMovementFor} from "../util/rxjs";
-import {tap} from "../util/rxjs";
+import {emitWhenComplete, tap} from "../util/rxjs";
 import {mapTo} from "rxjs/operator/mapTo";
 import Machine from "../util/Machine";
-import {emitWhenComplete} from "../util/rxjs";
-import {tX} from "../util/svg";
-import {tY} from "../util/svg";
+import {rotateFromVector, tX, tY} from "../util/svg";
 import {Vector2D} from "../util/svg";
+import {M21} from "../util/svg";
+import {M22} from "../util/svg";
 
 
-function reassessHoveredArtefact(a) {
-	if (!a){ return }
-	a.element.jq.mouseleave();
-	reassessHoveredArtefact(a.parent);
-	if (a.element.jq.is(':hover')) {
-		a.element.jq.mouseenter();
-	}
-}
-
-
-export default class DragDropTool extends Tool {
+export default class RotateTool extends Tool {
 	
 	constructor(context) {
 		super(context, { events: ['mousedown', 'mouseenter'] });
@@ -78,67 +68,59 @@ export default class DragDropTool extends Tool {
 		
 		context.stateMachine.extend(({ enterState, subscribe }) => ({
 			'IDLE': () => this.e('mousedown')
-				::filter(withoutMod('ctrl', 'shift', 'meta'))
+				::filter(withMod('shift'))
 				::tap(stopPropagation)
 				::withLatestFrom(context.p('selected'))
-				::filter(([,handleArtifact]) => handleArtifact.draggable)
-				::map(([downEvent, movingArtefact]) => ({downEvent, movingArtefact}))
-		        ::enterState('INSIDE_MOVE_THRESHOLD'),
-			'INSIDE_MOVE_THRESHOLD': ({downEvent, movingArtefact}) => [
+				::filter(([,handleArtifact]) => handleArtifact.draggable && handleArtifact.free)
+				::map(([downEvent, rotatingArtefact]) => ({downEvent, rotatingArtefact}))
+		        ::enterState('INSIDE_ROTATE_THRESHOLD'),
+			'INSIDE_ROTATE_THRESHOLD': ({downEvent, rotatingArtefact}) => [
 				mousemove
 					::take(4)
 					::ignoreElements()
-					::emitWhenComplete({downEvent, movingArtefact})
-					::enterState('MOVING'),
+					::emitWhenComplete({downEvent, rotatingArtefact})
+					::enterState('ROTATING'),
 			    mouseup
 				    ::enterState('IDLE')
 				// TODO: go IDLE on pressing escape
 			],
-			'MOVING': ({downEvent, movingArtefact}) =>  {
-				/* start dragging */
-				movingArtefact.dragging = true;
-				for (let a of movingArtefact.traverse('post')) {
-					a.element.jq.mouseleave();
-				}
-				reassessHoveredArtefact(movingArtefact.parent);
+			'ROTATING': ({downEvent, rotatingArtefact}) =>  {
 				
-				/* record start dimensions */
-				const transformationStart = movingArtefact.transformation;
+				/* setup */
+				rotatingArtefact.dragging = true; // TODO: rename
 				
-				/* move while dragging */
+				/* pre-processing */
+				const {width, height, transformation} = rotatingArtefact::pick('transformation', 'width', 'height');
+				const startAngle = Math.atan2(transformation[M21], transformation[M22]) * 180 / Math.PI;
+				const nonRotatedMatrix = transformation
+					.translate(0.5*width, 0.5*height)
+					.rotate(-startAngle)
+					.translate(-0.5*width, -0.5*height);
+				const center = new Vector2D({
+					x: nonRotatedMatrix[tX] + width  / 2,
+					y: nonRotatedMatrix[tY] + height / 2
+				});
+				const startDiff  = downEvent.point.minus(center);
+				const mouseAngle = Math.atan2(startDiff.y, startDiff.x) * 180 / Math.PI;
+				
+				/* rotate while dragging */
 				of(downEvent)::concat(mousemove)
-					::map(event => event.point.in(movingArtefact.element).minus(downEvent.point.in(movingArtefact.element)))
-					::subscribe((translationDiff) => {
-						movingArtefact.transformation = transformationStart
-							.translate(...translationDiff.xy);
+					::map(event => event.point.minus(center))
+					::subscribe((currentDiff) => {
+						let angle = Math.atan2(currentDiff.y, currentDiff.x) / Math.PI * 180;
+						rotatingArtefact.transformation = transformation
+							.translate(0.5*width, 0.5*height)
+							.rotate(angle - mouseAngle)
+							.translate(-0.5*width, -0.5*height);
 					});
 				
-				/* stop dragging and drop */
-				let initial_dragged_transformation = movingArtefact.transformation;
-				let initial_dragged_parent         = movingArtefact.parent;
+				/* stop rotating on mouseup */
 				mouseup
-					::withLatestFrom(context.p('selected'))
-					::tap(([up, recipient]) => {
-						/* either drop it on the recipient */
-						let success = false;
-						if (recipient && recipient.drop::isFunction()) {
-							success = recipient.drop(movingArtefact, recipient) !== false;
-						}
-						
-						/* or revert to previous state if recipient rejects it */
-						if (!success) {
-							movingArtefact::assign({
-								transformation: initial_dragged_transformation,
-								parent: initial_dragged_parent
-							});
-						}
-						
-						/* stop dragging */
-						movingArtefact.dragging = false;
-				    })
+					::tap(() => { rotatingArtefact.dragging = false })
 					::enterState('IDLE');
 			}
 		}));
+		
 		
 		
 		

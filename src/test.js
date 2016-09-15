@@ -37,6 +37,7 @@ import MeasurableGlyph from "./artefacts/MeasurableGlyph";
 import CausalityArrow from "./artefacts/CausalityArrow";
 import searchArgs from "./util/searchArgs";
 import {createMatrix} from "./util/svg";
+import RotateTool from "./tools/RotateTool";
 
 let C = window.module.classes;
 
@@ -511,6 +512,7 @@ root.element.promise.then(() => {
 	new SelectTool                   (root.context);
 	new DragDropTool                 (root.context);
 	new ResizeTool                   (root.context);
+	new RotateTool                   (root.context);
 	new ZoomTool                     (root.context);
 	new PanTool                      (root.context);
 	new BorderToggleTool             (root.context);

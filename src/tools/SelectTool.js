@@ -207,17 +207,16 @@ export default class SelectTool extends Tool {
 		};
 		
 		/* visibility observable */
-		let rectangularBoxVisible = context.p(['selected', 'selected.dragging'])
-			::map(([selected, dragging]) =>
-				selected  &&
-				!dragging &&
-				selected[$$isRectangular]
-			);
+		let rectangularBoxVisible = context.p(['selected', 'selected.dragging'], (selected, dragging) =>
+			selected  &&
+			!dragging &&
+			selected[$$isRectangular]
+		);
 		
 		/* make (in)visible */
 		rectangularBoxVisible.subscribe((v) => {
 			rectangularSelectBox.attr({
-				visibility: v ? 'visible' : 'hidden',
+				visibility:      v ? 'visible' : 'hidden',
 				strokeDasharray: v && v.strokeDasharray.join(',')
 			});
 		});
@@ -229,10 +228,9 @@ export default class SelectTool extends Tool {
 		).subscribe( ::rects.attr );
 		
 		/* sizing */
-		rectangularBoxVisible::switchMap(v => !v
-			? never()
-			: context.p(['selected.width', 'selected.height'])
-                ::map(([w, h]) => ({ width: w+8, height: h+8 }))
+		context.p(
+			['selected.width', 'selected.height'],
+			(w, h) => ({ width: w+8, height: h+8 })
 		).subscribe( ::rects.attr );
 		
 		/* positioning */
@@ -252,7 +250,7 @@ export default class SelectTool extends Tool {
 		
 		let pointBox = context.pointSelectBox = canvas.g().addClass('point-select-box').attr({
 			pointerEvents: 'none',
-			transform: ''
+			transform:     ''
 		});
 		
 		pointBox.circle().attr({
