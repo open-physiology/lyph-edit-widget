@@ -107,11 +107,26 @@ export default class DrawingTool extends Tool {
 			},
 			'READY_TO_DRAW_MODEL'  : ({ model }) => {
 				if (C.OmegaTree.hasInstance(model) || C.Process.hasInstance(model)) { // TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-					updateTooltip(`${model.constructor.singular} (initial node)`, `click`);
+					updateTooltip(`${model.constructor.singular} (initial node)`, `
+						<ul style="margin: 0; padding: 0 0 0 17px;">
+							<li>click and hold the left mouse button</li>
+							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
+						</ul>
+					`);
 				} else if (C.Lyph.hasInstance(model) || C.CoalescenceScenario.hasInstance(model)) {
-					updateTooltip(model.constructor.singular, `click and drag down/right`);
+					updateTooltip(model.constructor.singular, `
+						<ul style="margin: 0; padding: 0 0 0 17px;">
+							<li>click and hold the left mouse-button and drag down/right</li>
+							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
+						</ul>
+					`);
 				} else {
-					updateTooltip(model.constructor.singular, `click`);
+					updateTooltip(model.constructor.singular, `
+						<ul style="margin: 0; padding: 0 0 0 17px;">
+							<li>click and hold the left mouse button</li>
+							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
+						</ul>
+					`);
 				}
 				this.e('mousedown')
 					::filter(withoutMod('ctrl', 'shift', 'meta'))
@@ -319,7 +334,12 @@ export default class DrawingTool extends Tool {
 				}]});
 			},
 			'READY_TO_DRAW_PROCESS_LINE_NODE': ({sourceNodeArtefact, model, tooltipText}) => {
-				updateTooltip(tooltipText || `process`, `click`);
+				updateTooltip(tooltipText || `process`, `
+					<ul style="margin: 0; padding: 0 0 0 17px;">
+						<li>click and hold the left mouse button</li>
+						<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
+					</ul>
+				`);
 				this.e('mousedown')
 					::filter(withoutMod('shift', 'meta')) // allowing ctrl to align with previous node
 					::tap(stopPropagation)
@@ -346,7 +366,7 @@ export default class DrawingTool extends Tool {
 				updateTooltip(tooltipText || `process`, `
 					<ul style="margin: 0; padding: 0 0 0 17px;">
 						<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions</li>
-						<li>release mouse-button when finished</li>
+						<li>release the mouse-button when finished</li>
 					</ul>
 				`);
 				/* either create or use existing target node */

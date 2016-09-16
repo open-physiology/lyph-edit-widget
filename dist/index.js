@@ -60673,11 +60673,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 						if (C.OmegaTree.hasInstance(model) || C.Process.hasInstance(model)) {
 							// TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-							updateTooltip(model.constructor.singular + ' (initial node)', 'click');
+							updateTooltip(model.constructor.singular + ' (initial node)', '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
 						} else if (C.Lyph.hasInstance(model) || C.CoalescenceScenario.hasInstance(model)) {
-							updateTooltip(model.constructor.singular, 'click and drag down/right');
+							updateTooltip(model.constructor.singular, '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse-button and drag down/right</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
 						} else {
-							updateTooltip(model.constructor.singular, 'click');
+							updateTooltip(model.constructor.singular, '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
 						}
 						(_context3 = (_context3 = (_context3 = (_context3 = (_context3 = _this.e('mousedown'), _filter.filter).call(_context3, (0, _misc.withoutMod)('ctrl', 'shift', 'meta')), // allowing ctrl to align with previous node
 						_rxjs.tap).call(_context3, _misc.stopPropagation), _withLatestFrom.withLatestFrom).call(_context3, context.p('selected')), _map.map).call(_context3, function (_ref3) {
@@ -60992,7 +60992,7 @@ return /******/ (function(modules) { // webpackBootstrap
 						var model = _ref24.model;
 						var tooltipText = _ref24.tooltipText;
 	
-						updateTooltip(tooltipText || 'process', 'click');
+						updateTooltip(tooltipText || 'process', '\n\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t</ul>\n\t\t\t\t');
 						(_context10 = (_context10 = (_context10 = (_context10 = (_context10 = _this.e('mousedown'), _filter.filter).call(_context10, (0, _misc.withoutMod)('shift', 'meta')), _rxjs.tap).call(_context10, _misc.stopPropagation), _withLatestFrom.withLatestFrom).call(_context10, context.p('selected')), _map.map).call(_context10, function (_ref25) {
 							var _ref26 = _slicedToArray(_ref25, 2);
 	
@@ -61022,7 +61022,7 @@ return /******/ (function(modules) { // webpackBootstrap
 						var sourceNodeArtefact = _ref27.sourceNodeArtefact;
 						var tooltipText = _ref27.tooltipText;
 	
-						updateTooltip(tooltipText || 'process', '\n\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions</li>\n\t\t\t\t\t\t<li>release mouse-button when finished</li>\n\t\t\t\t\t</ul>\n\t\t\t\t');
+						updateTooltip(tooltipText || 'process', '\n\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions</li>\n\t\t\t\t\t\t<li>release the mouse-button when finished</li>\n\t\t\t\t\t</ul>\n\t\t\t\t');
 						/* either create or use existing target node */
 						var newNodeArtefact = getOrCreateNodeGlyph(downEvent, parentArtefact, model, 'target');
 						/* create the new process line */
