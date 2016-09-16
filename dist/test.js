@@ -62207,7 +62207,12 @@ return /******/ (function(modules) { // webpackBootstrap
 				manual: true
 			});
 			function updateTooltip(title, extra) {
-				var content = '\n\t\t\t\t<b style="display: block; margin-bottom: 3px;">' + title + '</b>\n\t\t\t\t<i>' + extra + '</i>\n\t\t\t';
+				var content = '\n\t\t\t\t<b>' + title + '</b>\n\t\t\t';
+				if (extra && extra.length > 0) {
+					content += '\n\t\t\t\t\t<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">\n\t\t\t\t\t\t' + extra.map(function (e) {
+						return '<li>' + e + '</li>';
+					}).join('') + '\n\t\t\t\t\t</ul>\n\t\t\t\t';
+				}
 				(0, _jquery2.default)('body').data('powertip', content);
 				(0, _jquery2.default)('#powerTip').html(content);
 				_jquery2.default.powerTip.show((0, _jquery2.default)('body')[0]);
@@ -62241,11 +62246,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 						if (C.OmegaTree.hasInstance(model) || C.Process.hasInstance(model)) {
 							// TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-							updateTooltip(model.constructor.singular + ' (initial node)', '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
+							updateTooltip(model.constructor.singular + ' (initial node)', ['click and hold the left mouse button to create a new node', 'click on an existing node to start the ' + model.constructor.singular + ' there', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
 						} else if (C.Lyph.hasInstance(model) || C.CoalescenceScenario.hasInstance(model)) {
-							updateTooltip(model.constructor.singular, '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse-button and drag down/right</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
+							updateTooltip(model.constructor.singular, ['click and hold the left mouse-button and drag down/right', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
 						} else {
-							updateTooltip(model.constructor.singular, '\n\t\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t\t</ul>\n\t\t\t\t\t');
+							updateTooltip(model.constructor.singular, ['click and hold the left mouse button', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
 						}
 						(_context3 = (_context3 = (_context3 = (_context3 = (_context3 = _this.e('mousedown'), _filter.filter).call(_context3, (0, _misc.withoutMod)('ctrl', 'shift', 'meta')), // allowing ctrl to align with previous node
 						_rxjs.tap).call(_context3, _misc.stopPropagation), _withLatestFrom.withLatestFrom).call(_context3, context.p('selected')), _map.map).call(_context3, function (_ref3) {
@@ -62286,38 +62291,40 @@ return /******/ (function(modules) { // webpackBootstrap
 								return _instanceof(parentArtefact, cls);
 							});
 						};
+						var branch = (_context4 = [].concat(_toConsumableArray(branches)), _find2.default).call(_context4, function (_ref6) {
+							var _ref7 = _slicedToArray(_ref6, 2);
 	
-						var _ref6 = (_context4 = [].concat(_toConsumableArray(branches)), _find2.default).call(_context4, function (_ref8) {
-							var _ref9 = _slicedToArray(_ref8, 2);
-	
-							var mCls = _ref9[0];
-							var pCls = _ref9[1];
+							var mCls = _ref7[0];
+							var pCls = _ref7[1];
 							return modelIs(mCls) && parentIs(pCls);
 						});
+						if (!branch) {
+							enterState('IDLE');
+						} else {
+							var _branch = _slicedToArray(branch, 3);
 	
-						var _ref7 = _slicedToArray(_ref6, 3);
+							var nextState = _branch[2];
 	
-						var nextState = _ref7[2];
-	
-						enterState(nextState, { downEvent: downEvent, parentArtefact: parentArtefact, model: model });
+							enterState(nextState, { downEvent: downEvent, parentArtefact: parentArtefact, model: model });
+						}
 					}
 				};
 			});
 	
 			/* drawing a lyph rectangle */
 			branches.add([[C.Lyph], [_Canvas2.default, _LyphRectangle2.default], 'DRAWING_LYPH_RECTANGLE']);
-			context.stateMachine.extend(function (_ref10) {
-				var enterState = _ref10.enterState;
-				var subscribe = _ref10.subscribe;
+			context.stateMachine.extend(function (_ref8) {
+				var enterState = _ref8.enterState;
+				var subscribe = _ref8.subscribe;
 				return {
-					'DRAWING_LYPH_RECTANGLE': function DRAWING_LYPH_RECTANGLE(_ref11) {
+					'DRAWING_LYPH_RECTANGLE': function DRAWING_LYPH_RECTANGLE(_ref9) {
 						var _context5;
 	
-						var downEvent = _ref11.downEvent;
-						var parentArtefact = _ref11.parentArtefact;
-						var model = _ref11.model;
+						var downEvent = _ref9.downEvent;
+						var parentArtefact = _ref9.parentArtefact;
+						var model = _ref9.model;
 	
-						updateTooltip(model.constructor.singular, 'release mouse-button when finished');
+						updateTooltip(model.constructor.singular, ['release the mouse-button when finished']);
 						var p = downEvent.point.in(parentArtefact.inside);
 						var newArtefact = new _LyphRectangle2.default(_extends({
 							model: model,
@@ -62337,18 +62344,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 			/* drawing a coalescence scenario rectangle */
 			branches.add([[C.CoalescenceScenario], [_Canvas2.default, _LyphRectangle2.default], 'DRAWING_COALESCENCE_RECTANGLE']);
-			context.stateMachine.extend(function (_ref12) {
-				var enterState = _ref12.enterState;
-				var subscribe = _ref12.subscribe;
+			context.stateMachine.extend(function (_ref10) {
+				var enterState = _ref10.enterState;
+				var subscribe = _ref10.subscribe;
 				return {
-					'DRAWING_COALESCENCE_RECTANGLE': function DRAWING_COALESCENCE_RECTANGLE(_ref13) {
+					'DRAWING_COALESCENCE_RECTANGLE': function DRAWING_COALESCENCE_RECTANGLE(_ref11) {
 						var _context6;
 	
-						var downEvent = _ref13.downEvent;
-						var parentArtefact = _ref13.parentArtefact;
-						var model = _ref13.model;
+						var downEvent = _ref11.downEvent;
+						var parentArtefact = _ref11.parentArtefact;
+						var model = _ref11.model;
 	
-						updateTooltip(model.constructor.singular, 'release mouse-button when finished');
+						updateTooltip(model.constructor.singular, ['release the mouse-button when finished']);
 						var p = downEvent.point.in(parentArtefact.inside);
 						var newArtefact = new _CoalescenceScenarioRectangle2.default(_extends({
 							model: model,
@@ -62369,18 +62376,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 			/* drawing a node glyph */
 			branches.add([[C.Node], [_Canvas2.default, _LyphRectangle2.default, _BorderLine2.default], 'DRAWING_NODE_GLYPH']);
-			context.stateMachine.extend(function (_ref14) {
-				var enterState = _ref14.enterState;
-				var subscribe = _ref14.subscribe;
+			context.stateMachine.extend(function (_ref12) {
+				var enterState = _ref12.enterState;
+				var subscribe = _ref12.subscribe;
 				return {
-					'DRAWING_NODE_GLYPH': function DRAWING_NODE_GLYPH(_ref15) {
+					'DRAWING_NODE_GLYPH': function DRAWING_NODE_GLYPH(_ref13) {
 						var _context7;
 	
-						var downEvent = _ref15.downEvent;
-						var parentArtefact = _ref15.parentArtefact;
-						var model = _ref15.model;
+						var downEvent = _ref13.downEvent;
+						var parentArtefact = _ref13.parentArtefact;
+						var model = _ref13.model;
 	
-						updateTooltip(model.constructor.singular, 'release mouse-button when finished');
+						updateTooltip(model.constructor.singular, ['release the mouse-button when finished']);
 						var p = downEvent.point.in(parentArtefact.inside);
 						var newArtefact = new _NodeGlyph2.default(_extends({
 							model: model,
@@ -62399,18 +62406,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 			/* drawing a measurable glyph */
 			branches.add([[C.Measurable], [_Canvas2.default, _LyphRectangle2.default, _BorderLine2.default, _ProcessLine2.default], 'DRAWING_MEASURABLE_GLYPH']);
-			context.stateMachine.extend(function (_ref16) {
-				var enterState = _ref16.enterState;
-				var subscribe = _ref16.subscribe;
+			context.stateMachine.extend(function (_ref14) {
+				var enterState = _ref14.enterState;
+				var subscribe = _ref14.subscribe;
 				return {
-					'DRAWING_MEASURABLE_GLYPH': function DRAWING_MEASURABLE_GLYPH(_ref17) {
+					'DRAWING_MEASURABLE_GLYPH': function DRAWING_MEASURABLE_GLYPH(_ref15) {
 						var _context8;
 	
-						var downEvent = _ref17.downEvent;
-						var parentArtefact = _ref17.parentArtefact;
-						var model = _ref17.model;
+						var downEvent = _ref15.downEvent;
+						var parentArtefact = _ref15.parentArtefact;
+						var model = _ref15.model;
 	
-						updateTooltip(model.constructor.singular, 'release mouse-button when finished');
+						updateTooltip(model.constructor.singular, ['release the mouse-button when finished']);
 						var p = downEvent.point.in(parentArtefact.inside);
 						var newArtefact = new _MeasurableGlyph2.default(_extends({
 							model: model,
@@ -62428,21 +62435,22 @@ return /******/ (function(modules) { // webpackBootstrap
 			});
 	
 			/* drawing an omega tree */
-			branches.add([[C.OmegaTree], [_Canvas2.default, _LyphRectangle2.default, _BorderLine2.default], 'DRAWING_OMEGA_TREE']);
-			context.stateMachine.extend(function (_ref18) {
-				var enterState = _ref18.enterState;
-				var subscribe = _ref18.subscribe;
+			branches.add([[C.OmegaTree], [_Canvas2.default, _LyphRectangle2.default, _BorderLine2.default, _NodeGlyph2.default], 'DRAWING_OMEGA_TREE']);
+			context.stateMachine.extend(function (_ref16) {
+				var enterState = _ref16.enterState;
+				var subscribe = _ref16.subscribe;
 				return {
-					'DRAWING_OMEGA_TREE': function DRAWING_OMEGA_TREE(_ref19) {
-						var downEvent = _ref19.downEvent;
-						var parentArtefact = _ref19.parentArtefact;
-						var model = _ref19.model;
+					'DRAWING_OMEGA_TREE': function DRAWING_OMEGA_TREE(_ref17) {
+						var downEvent = _ref17.downEvent;
+						var parentArtefact = _ref17.parentArtefact;
+						var model = _ref17.model;
 	
 						var parts = [].concat(_toConsumableArray(model.parts));
+						var newNode = C.Node.new();
 						enterState('DRAWING_FIRST_PROCESS_LINE_NODE', {
 							downEvent: downEvent,
 							parentArtefact: parentArtefact,
-							model: { source: C.Node.new() },
+							model: C.Process.new({ source: newNode, target: newNode }),
 							tooltipText: model.constructor.singular + ' (initial node)'
 						}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': function READY_TO_DRAW_PROCESS_LINE_NODE(data) {
 								return ['READY_TO_DRAW_SUB_OMEGA_TREE', _extends({}, data, {
@@ -62455,12 +62463,12 @@ return /******/ (function(modules) { // webpackBootstrap
 								})];
 							} });
 					},
-					'READY_TO_DRAW_SUB_OMEGA_TREE': function READY_TO_DRAW_SUB_OMEGA_TREE(_ref20) {
-						var sourceNodeArtefact = _ref20.sourceNodeArtefact;
-						var model = _ref20.model;
-						var conveyingLyph = _ref20.conveyingLyph;
-						var counter = _ref20.counter;
-						var total = _ref20.total;
+					'READY_TO_DRAW_SUB_OMEGA_TREE': function READY_TO_DRAW_SUB_OMEGA_TREE(_ref18) {
+						var sourceNodeArtefact = _ref18.sourceNodeArtefact;
+						var model = _ref18.model;
+						var conveyingLyph = _ref18.conveyingLyph;
+						var counter = _ref18.counter;
+						var total = _ref18.total;
 	
 						if (!conveyingLyph) {
 							enterState('IDLE');
@@ -62478,14 +62486,14 @@ return /******/ (function(modules) { // webpackBootstrap
 								})];
 							} });
 					},
-					'DRAWING_SUB_OMEGA_TREE': function DRAWING_SUB_OMEGA_TREE(_ref21) {
-						var downEvent = _ref21.downEvent;
-						var parentArtefact = _ref21.parentArtefact;
-						var sourceNodeArtefact = _ref21.sourceNodeArtefact;
-						var model = _ref21.model;
-						var conveyingLyph = _ref21.conveyingLyph;
-						var counter = _ref21.counter;
-						var total = _ref21.total;
+					'DRAWING_SUB_OMEGA_TREE': function DRAWING_SUB_OMEGA_TREE(_ref19) {
+						var downEvent = _ref19.downEvent;
+						var parentArtefact = _ref19.parentArtefact;
+						var sourceNodeArtefact = _ref19.sourceNodeArtefact;
+						var model = _ref19.model;
+						var conveyingLyph = _ref19.conveyingLyph;
+						var counter = _ref19.counter;
+						var total = _ref19.total;
 	
 						enterState('DRAWING_PROCESS_LINE_NODE', {
 							downEvent: downEvent,
@@ -62530,18 +62538,18 @@ return /******/ (function(modules) { // webpackBootstrap
 				}
 				return newNodeArtefact;
 			}
-			context.stateMachine.extend(function (_ref22) {
-				var enterState = _ref22.enterState;
-				var subscribe = _ref22.subscribe;
-				var intercept = _ref22.intercept;
+			context.stateMachine.extend(function (_ref20) {
+				var enterState = _ref20.enterState;
+				var subscribe = _ref20.subscribe;
+				var intercept = _ref20.intercept;
 				return {
-					'DRAWING_FIRST_PROCESS_LINE_NODE': function DRAWING_FIRST_PROCESS_LINE_NODE(_ref23) {
-						var downEvent = _ref23.downEvent;
-						var parentArtefact = _ref23.parentArtefact;
-						var model = _ref23.model;
-						var tooltipText = _ref23.tooltipText;
+					'DRAWING_FIRST_PROCESS_LINE_NODE': function DRAWING_FIRST_PROCESS_LINE_NODE(_ref21) {
+						var downEvent = _ref21.downEvent;
+						var parentArtefact = _ref21.parentArtefact;
+						var model = _ref21.model;
+						var tooltipText = _ref21.tooltipText;
 	
-						updateTooltip(tooltipText || 'process (initial node)', 'release mouse-button when finished');
+						updateTooltip(tooltipText || 'process (initial node)', ['release the mouse-button when finished']);
 						/* either create or use existing node */
 						var newNodeArtefact = getOrCreateNodeGlyph(downEvent, parentArtefact, model, 'source');
 						/* allow the new node to be moved, then intercept the IDLE state to allow followups */
@@ -62553,19 +62561,19 @@ return /******/ (function(modules) { // webpackBootstrap
 								model: model
 							}] });
 					},
-					'READY_TO_DRAW_PROCESS_LINE_NODE': function READY_TO_DRAW_PROCESS_LINE_NODE(_ref24) {
+					'READY_TO_DRAW_PROCESS_LINE_NODE': function READY_TO_DRAW_PROCESS_LINE_NODE(_ref22) {
 						var _context10;
 	
-						var sourceNodeArtefact = _ref24.sourceNodeArtefact;
-						var model = _ref24.model;
-						var tooltipText = _ref24.tooltipText;
+						var sourceNodeArtefact = _ref22.sourceNodeArtefact;
+						var model = _ref22.model;
+						var tooltipText = _ref22.tooltipText;
 	
-						updateTooltip(tooltipText || 'process', '\n\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t<li>click and hold the left mouse button</li>\n\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>\n\t\t\t\t\t</ul>\n\t\t\t\t');
-						(_context10 = (_context10 = (_context10 = (_context10 = (_context10 = _this.e('mousedown'), _filter.filter).call(_context10, (0, _misc.withoutMod)('shift', 'meta')), _rxjs.tap).call(_context10, _misc.stopPropagation), _withLatestFrom.withLatestFrom).call(_context10, context.p('selected')), _map.map).call(_context10, function (_ref25) {
-							var _ref26 = _slicedToArray(_ref25, 2);
+						updateTooltip(tooltipText || 'process', ['click and hold the left mouse button to create a new connected node', 'click on an existing node to connect to there', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
+						(_context10 = (_context10 = (_context10 = (_context10 = (_context10 = _this.e('mousedown'), _filter.filter).call(_context10, (0, _misc.withoutMod)('shift', 'meta')), _rxjs.tap).call(_context10, _misc.stopPropagation), _withLatestFrom.withLatestFrom).call(_context10, context.p('selected')), _map.map).call(_context10, function (_ref23) {
+							var _ref24 = _slicedToArray(_ref23, 2);
 	
-							var downEvent = _ref26[0];
-							var parentArtefact = _ref26[1];
+							var downEvent = _ref24[0];
+							var parentArtefact = _ref24[1];
 							return {
 								downEvent: downEvent,
 								parentArtefact: parentArtefact,
@@ -62583,14 +62591,14 @@ return /******/ (function(modules) { // webpackBootstrap
 						}), enterState).call(_context10, 'IDLE');
 						(_context10 = _misc.which.call(keydown, ESCAPE), enterState).call(_context10, 'IDLE');
 					},
-					'DRAWING_PROCESS_LINE_NODE': function DRAWING_PROCESS_LINE_NODE(_ref27) {
-						var downEvent = _ref27.downEvent;
-						var parentArtefact = _ref27.parentArtefact;
-						var model = _ref27.model;
-						var sourceNodeArtefact = _ref27.sourceNodeArtefact;
-						var tooltipText = _ref27.tooltipText;
+					'DRAWING_PROCESS_LINE_NODE': function DRAWING_PROCESS_LINE_NODE(_ref25) {
+						var downEvent = _ref25.downEvent;
+						var parentArtefact = _ref25.parentArtefact;
+						var model = _ref25.model;
+						var sourceNodeArtefact = _ref25.sourceNodeArtefact;
+						var tooltipText = _ref25.tooltipText;
 	
-						updateTooltip(tooltipText || 'process', '\n\t\t\t\t\t<ul style="margin: 0; padding: 0 0 0 17px;">\n\t\t\t\t\t\t<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions</li>\n\t\t\t\t\t\t<li>release the mouse-button when finished</li>\n\t\t\t\t\t</ul>\n\t\t\t\t');
+						updateTooltip(tooltipText || 'process', ['<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions', 'release the mouse-button when finished']);
 						/* either create or use existing target node */
 						var newNodeArtefact = getOrCreateNodeGlyph(downEvent, parentArtefact, model, 'target');
 						/* create the new process line */
@@ -62621,22 +62629,22 @@ return /******/ (function(modules) { // webpackBootstrap
 									return _svg.Vector2D.fromMatrixTranslation(m, context.root.inside);
 								}), (_context11 = newNodeArtefact.p('canvasTransformation'), _map.map).call(_context11, function (m) {
 									return _svg.Vector2D.fromMatrixTranslation(m, context.root.inside);
-								}), newConveyingLyph.p('parent'), newConveyingLyph.p('width'), newConveyingLyph.p('height')).subscribe(function (_ref28) {
-									var _context12, _ref30;
+								}), newConveyingLyph.p('parent'), newConveyingLyph.p('width'), newConveyingLyph.p('height')).subscribe(function (_ref26) {
+									var _context12, _ref28;
 	
-									var _ref29 = _slicedToArray(_ref28, 5);
+									var _ref27 = _slicedToArray(_ref26, 5);
 	
-									var sourceVector = _ref29[0];
-									var targetVector = _ref29[1];
-									var parent = _ref29[2];
-									var w = _ref29[3];
-									var h = _ref29[4];
+									var sourceVector = _ref27[0];
+									var targetVector = _ref27[1];
+									var parent = _ref27[2];
+									var w = _ref27[3];
+									var h = _ref27[4];
 	
 									sourceVector = sourceVector.in(parent.inside);
 									targetVector = targetVector.in(parent.inside);
 									// TODO: a quick fix follows to set a minimum size for the rectangle,
 									//     : but this should be based on the actual lyph rectangle that would be created.
-									newConveyingLyph.transformation = (_ref30 = (_context12 = _svg.ID_MATRIX.translate.apply(_svg.ID_MATRIX, _toConsumableArray(sourceVector.partwayTo(0.5, targetVector).xy)), _svg.rotateFromVector)).call.apply(_ref30, [_context12].concat(_toConsumableArray(targetVector.minus(sourceVector).xy))).translate(-w / 2, -h / 2);
+									newConveyingLyph.transformation = (_ref28 = (_context12 = _svg.ID_MATRIX.translate.apply(_svg.ID_MATRIX, _toConsumableArray(sourceVector.partwayTo(0.5, targetVector).xy)), _svg.rotateFromVector)).call.apply(_ref28, [_context12].concat(_toConsumableArray(targetVector.minus(sourceVector).xy))).translate(-w / 2, -h / 2);
 								});
 							})();
 						}

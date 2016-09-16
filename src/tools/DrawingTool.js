@@ -84,9 +84,15 @@ export default class DrawingTool extends Tool {
 		});
 		function updateTooltip(title, extra) {
 			let content = `
-				<b style="display: block; margin-bottom: 3px;">${title}</b>
-				<i>${extra}</i>
+				<b>${title}</b>
 			`;
+			if (extra && extra.length > 0) {
+				content += `
+					<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">
+						${extra.map(e => `<li>${e}</li>`).join('')}
+					</ul>
+				`;
+			}
 			$('body').data('powertip', content);
 			$('#powerTip').html(content);
 			$.powerTip.show($('body')[0]);
@@ -107,26 +113,21 @@ export default class DrawingTool extends Tool {
 			},
 			'READY_TO_DRAW_MODEL'  : ({ model }) => {
 				if (C.OmegaTree.hasInstance(model) || C.Process.hasInstance(model)) { // TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-					updateTooltip(`${model.constructor.singular} (initial node)`, `
-						<ul style="margin: 0; padding: 0 0 0 17px;">
-							<li>click and hold the left mouse button</li>
-							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
-						</ul>
-					`);
+					updateTooltip(`${model.constructor.singular} (initial node)`, [
+						`click and hold the left mouse button to create a new node`,
+						`click on an existing node to start the ${model.constructor.singular} there`,
+						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
+					]);
 				} else if (C.Lyph.hasInstance(model) || C.CoalescenceScenario.hasInstance(model)) {
-					updateTooltip(model.constructor.singular, `
-						<ul style="margin: 0; padding: 0 0 0 17px;">
-							<li>click and hold the left mouse-button and drag down/right</li>
-							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
-						</ul>
-					`);
+					updateTooltip(model.constructor.singular, [
+						`click and hold the left mouse-button and drag down/right`,
+						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
+					]);
 				} else {
-					updateTooltip(model.constructor.singular, `
-						<ul style="margin: 0; padding: 0 0 0 17px;">
-							<li>click and hold the left mouse button</li>
-							<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
-						</ul>
-					`);
+					updateTooltip(model.constructor.singular, [
+						`click and hold the left mouse button`,
+						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
+					]);
 				}
 				this.e('mousedown')
 					::filter(withoutMod('ctrl', 'shift', 'meta'))
@@ -151,8 +152,13 @@ export default class DrawingTool extends Tool {
 			'STARTED_DRAWING_MODEL': ({ downEvent, parentArtefact, model }) => {
 				const modelIs  = (classes) => classes.some(cls => cls.hasInstance(model));
 				const parentIs = (classes) => classes.some(cls => parentArtefact instanceof cls);
-				const [,,nextState] = [...branches]::find(([mCls, pCls]) => modelIs(mCls) && parentIs(pCls));
-				enterState(nextState, { downEvent, parentArtefact, model });
+				const branch = [...branches]::find(([mCls, pCls]) => modelIs(mCls) && parentIs(pCls));
+				if (!branch) {
+					enterState('IDLE');
+				} else {
+					const [,,nextState] = branch;
+					enterState(nextState, { downEvent, parentArtefact, model });
+				}
 			}
 		}));
 		
@@ -160,7 +166,9 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Lyph], [Canvas, LyphRectangle], 'DRAWING_LYPH_RECTANGLE']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_LYPH_RECTANGLE': ({downEvent, parentArtefact, model}) => {
-				updateTooltip(model.constructor.singular, `release mouse-button when finished`);
+				updateTooltip(model.constructor.singular, [
+					`release the mouse-button when finished`
+				]);
 				const p = downEvent.point.in(parentArtefact.inside);
 				const newArtefact = new LyphRectangle({
 					model   : model,
@@ -183,7 +191,9 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.CoalescenceScenario], [Canvas, LyphRectangle], 'DRAWING_COALESCENCE_RECTANGLE']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_COALESCENCE_RECTANGLE': ({downEvent, parentArtefact, model}) => {
-				updateTooltip(model.constructor.singular, `release mouse-button when finished`);
+				updateTooltip(model.constructor.singular, [
+					`release the mouse-button when finished`
+				]);
 				const p = downEvent.point.in(parentArtefact.inside);
 				const newArtefact = new CoalescenceScenarioRectangle({
 					model : model,
@@ -206,7 +216,9 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Node], [Canvas, LyphRectangle, BorderLine], 'DRAWING_NODE_GLYPH']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_NODE_GLYPH': ({downEvent, parentArtefact, model}) => {
-				updateTooltip(model.constructor.singular, `release mouse-button when finished`);
+				updateTooltip(model.constructor.singular, [
+					`release the mouse-button when finished`
+				]);
 				const p = downEvent.point.in(parentArtefact.inside);
 				let newArtefact = new NodeGlyph({
 					model : model,
@@ -227,7 +239,9 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Measurable], [Canvas, LyphRectangle, BorderLine, ProcessLine], 'DRAWING_MEASURABLE_GLYPH']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_MEASURABLE_GLYPH': ({downEvent, parentArtefact, model}) => {
-				updateTooltip(model.constructor.singular, `release mouse-button when finished`);
+				updateTooltip(model.constructor.singular, [
+					`release the mouse-button when finished`
+				]);
 				const p = downEvent.point.in(parentArtefact.inside);
 				let newArtefact = new MeasurableGlyph({
 					model : model,
@@ -245,14 +259,15 @@ export default class DrawingTool extends Tool {
 		}));
 		
 		/* drawing an omega tree */
-		branches.add([[C.OmegaTree], [Canvas, LyphRectangle, BorderLine], 'DRAWING_OMEGA_TREE']);
+		branches.add([[C.OmegaTree], [Canvas, LyphRectangle, BorderLine, NodeGlyph], 'DRAWING_OMEGA_TREE']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_OMEGA_TREE': ({downEvent, parentArtefact, model}) => {
 				const parts = [...model.parts];
+				let newNode = C.Node.new();
 				enterState('DRAWING_FIRST_PROCESS_LINE_NODE', {
 					downEvent,
 					parentArtefact,
-					model: { source: C.Node.new() },
+					model: C.Process.new({ source: newNode, target: newNode }),
 					tooltipText: `${model.constructor.singular} (initial node)`
 				}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': data => ['READY_TO_DRAW_SUB_OMEGA_TREE', {
 					...data,
@@ -321,7 +336,9 @@ export default class DrawingTool extends Tool {
 		}
 		context.stateMachine.extend(({enterState, subscribe, intercept}) => ({
 			'DRAWING_FIRST_PROCESS_LINE_NODE': ({downEvent, parentArtefact, model, tooltipText}) => {
-				updateTooltip(tooltipText || `process (initial node)`, `release mouse-button when finished`);
+				updateTooltip(tooltipText || `process (initial node)`, [
+					`release the mouse-button when finished`
+				]);
 				/* either create or use existing node */
 				const newNodeArtefact = getOrCreateNodeGlyph(downEvent, parentArtefact, model, 'source');
 				/* allow the new node to be moved, then intercept the IDLE state to allow followups */
@@ -334,12 +351,11 @@ export default class DrawingTool extends Tool {
 				}]});
 			},
 			'READY_TO_DRAW_PROCESS_LINE_NODE': ({sourceNodeArtefact, model, tooltipText}) => {
-				updateTooltip(tooltipText || `process`, `
-					<ul style="margin: 0; padding: 0 0 0 17px;">
-						<li>click and hold the left mouse button</li>
-						<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool</li>
-					</ul>
-				`);
+				updateTooltip(tooltipText || `process`, [
+					`click and hold the left mouse button to create a new connected node`,
+					`click on an existing node to connect to there`,
+					`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
+				]);
 				this.e('mousedown')
 					::filter(withoutMod('shift', 'meta')) // allowing ctrl to align with previous node
 					::tap(stopPropagation)
@@ -363,12 +379,10 @@ export default class DrawingTool extends Tool {
 					::enterState('IDLE');
 			},
 			'DRAWING_PROCESS_LINE_NODE': ({downEvent, parentArtefact, model, sourceNodeArtefact, /***/ tooltipText}) => {
-				updateTooltip(tooltipText || `process`, `
-					<ul style="margin: 0; padding: 0 0 0 17px;">
-						<li><kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions</li>
-						<li>release the mouse-button when finished</li>
-					</ul>
-				`);
+				updateTooltip(tooltipText || `process`, [
+					`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions`,
+					`release the mouse-button when finished`
+				]);
 				/* either create or use existing target node */
 				const newNodeArtefact = getOrCreateNodeGlyph(downEvent, parentArtefact, model, 'target');
 				/* create the new process line */
