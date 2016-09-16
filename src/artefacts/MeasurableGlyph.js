@@ -51,7 +51,7 @@ export default class MeasurableGlyph extends Transformable {
 		
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shape');
+		group.g().addClass('fixed main-shape');
 		
 		/* return representation(s) of element */
 		return { element: group.node };

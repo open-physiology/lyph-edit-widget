@@ -51,7 +51,7 @@ export default class MaterialGlyph extends Transformable {
 		
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shape');
+		group.g().addClass('fixed main-shape');
 		
 		/* create a random color (one per layer, stored in the model) */
 		if (!this.model[$$backgroundColor]) {

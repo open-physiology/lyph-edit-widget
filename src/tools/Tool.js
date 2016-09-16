@@ -102,8 +102,9 @@ export default class Tool extends ValueTracker {
 		}
 	}
 	
-	rootE  (e) { return fromEvent(this.context.root.element.jq, e)::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
-	windowE(e) { return fromEvent($(window), e)                   ::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
+	rootE  (e)   { return fromEvent(this.context.root.element.jq, e)::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
+	windowE(e)   { return fromEvent($(window), e)                   ::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
+	documentE(e) { return fromEvent($(document), e)                 ::enrichMouseEvent(this.context, { sampleEvents: e === 'mousemove' }) }
 	
 	e(event) {
 		return this.p('active')

@@ -14,6 +14,7 @@ import min from 'lodash-bound/min';
 import ldMap from 'lodash-bound/map';
 import find from 'lodash-bound/find';
 import entries from 'lodash-bound/entries';
+import isArray from 'lodash-bound/isArray';
 
 import _isNumber from 'lodash/isNumber';
 import _isFinite from 'lodash/isFinite';
@@ -146,10 +147,12 @@ export default class LyphRectangle extends Transformable {
 		
 		/* corner radii */
 		this.p('leftBorder.model.nature')
-			::map(nature => nature === 'open' ? 0 : CLOSED_CORNER_RADIUS)
+			::map(n => n::isArray() ? n : [n])
+			::map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
 			::subscribe_( this.p('leftCornerRadius'), v=>v() );
 		this.p('rightBorder.model.nature')
-			::map(nature => nature === 'open' ? 0 : CLOSED_CORNER_RADIUS)
+			::map(n => n::isArray() ? n : [n])
+			::map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
 			::subscribe_( this.p('rightCornerRadius'), v=>v() );
 		
 		/* length cut off of the top of a lyph (to hide the outer layer) */
@@ -174,24 +177,24 @@ export default class LyphRectangle extends Transformable {
 	createElement() {
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shadow');
-		group.g().addClass('main-shape');
-		group.g().addClass('highlight-border');
-		group.g().addClass('materials');
-		group.g().addClass('parts');
-		group.g().addClass('layers');
-		group.g().addClass('segments');
-		let axis = group.g().addClass('axis');
-		group.g().addClass('borders');
-		group.g().addClass('corners');
-		group.g().addClass('nodes');
-		let processLines = group.g().addClass('processes');
-		group.g().addClass('measurables');
+		                   group.g().addClass('fixed main-shadow');
+		                   group.g().addClass('fixed main-shape');
+		                   group.g().addClass('fixed highlight-border');
+		                   group.g().addClass('fixed materials');
+		                   group.g().addClass('fixed parts');
+		                   group.g().addClass('fixed layers');
+		                   group.g().addClass('fixed segments');
+		let axis =         group.g().addClass('fixed axis');
+		                   group.g().addClass('fixed borders');
+		                   group.g().addClass('fixed corners');
+		                   group.g().addClass('fixed nodes');
+		let processLines = group.g().addClass('fixed processes');
+		                   group.g().addClass('fixed measurables');
 		
 		/* return representation(s) of element */
 		return {
-			element:      group.node,
-			axis:         axis .node,
+			element:      group       .node,
+			axis:         axis        .node,
 			processLines: processLines.node
 		};
 	}
@@ -416,7 +419,8 @@ export default class LyphRectangle extends Transformable {
 		this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
 		this.syncModelWithArtefact(
 			'HasPart',
-			this.inside.jq.children('.parts'),
+			a => a instanceof LyphRectangle,
+			this.inside.jq.children('.parts')[0],
 			({model, width, height}) => new LyphRectangle({
 				model,
 				x:      5,          // TODO: pick unique new position and size (auto-layout)
@@ -440,7 +444,8 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'ContainsNode',
-			this.inside.jq.children('.nodes'),
+			a => a instanceof NodeGlyph,
+			this.inside.jq.children('.nodes')[0],
 			({model, width, height}) => new NodeGlyph({
 				model,
 				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
@@ -450,7 +455,8 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'ContainsMaterial',
-			this.inside.jq.children('.materials'),
+			a => a instanceof MaterialGlyph,
+			this.inside.jq.children('.materials')[0],
 			({model, width, height}) => new MaterialGlyph({
 				model,
 				x: this.newGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
@@ -460,7 +466,8 @@ export default class LyphRectangle extends Transformable {
 		
 		this.syncModelWithArtefact(
 			'HasMeasurable',
-			this.inside.jq.children('.measurables'),
+			a => a instanceof MeasurableGlyph,
+			this.inside.jq.children('.measurables')[0],
 			({model, width, height}) => new MeasurableGlyph({
 				model,
 				x: this.newFarGlyphPosition(), // TODO: pick unique new position and size (auto-layout)
@@ -497,9 +504,11 @@ export default class LyphRectangle extends Transformable {
 				'leftBorder.model.nature',
 				'rightBorder.model.nature',
 			    'topBorder.isInnerBorder'
-			]).subscribe(([lNature, rNature, isInner]) => {
-				cornerTL.attr({ visibility: (isInner || lNature === 'open') ? 'hidden' : 'visible' });
-				cornerTR.attr({ visibility: (isInner || rNature === 'open') ? 'hidden' : 'visible' });
+			]).subscribe(([ln, rn, isInner]) => {
+				ln = ln::isArray() ? ln : [ln];
+				rn = rn::isArray() ? rn : [rn];
+				cornerTL.attr({ visibility: (isInner || ln.length === 1 && ln[0] === 'open') ? 'hidden' : 'visible' });
+				cornerTR.attr({ visibility: (isInner || rn.length === 1 && rn[0] === 'open') ? 'hidden' : 'visible' });
 			});
 			
 			this.leftBorder  = null;
@@ -618,7 +627,7 @@ export default class LyphRectangle extends Transformable {
 	}
 	
 	
-	syncModelWithArtefact(relationship, parentElement, createNewArtefact) {
+	syncModelWithArtefact(relationship, artefactTest, parentElement, createNewArtefact) {
 		/* new free-floating thing in the model --> new artifact */
 		this.model[`-->${relationship}`].e('add')
 			::filter(c => c.class === relationship)
@@ -631,11 +640,12 @@ export default class LyphRectangle extends Transformable {
 			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')
+		    ::filter(artefactTest)
 		    .subscribe((artefact) => {
 			    /* event when removed */
 			    const removed = artefact.p('parent')::filter(parent => parent !== this);
 		    	/* put into the dom */
-				parentElement.append(artefact.element);
+				$(parentElement).append(artefact.element);
 			    /* remove from dom when removed */
 				removed.subscribe(() => {
 					if (artefact.element.jq.parent()[0] === parentElement) {
@@ -650,7 +660,11 @@ export default class LyphRectangle extends Transformable {
 			// dropped directly into this lyph rectangle
 			if ([LyphRectangle, NodeGlyph, MeasurableGlyph, MaterialGlyph].includes(droppedEntity.constructor)) {
 				this[$$toBeRecycled].set(droppedEntity.model, droppedEntity);
-				this.freeFloatingStuff.add(droppedEntity, { force: true });
+				if ([LyphRectangle].includes(droppedEntity.constructor)) {
+					this.model.parts.add(droppedEntity.model)
+				} else {
+					this.freeFloatingStuff.add(droppedEntity, { force: true }); // TODO: split up
+				}
 			} else {
 				return false;
 			}

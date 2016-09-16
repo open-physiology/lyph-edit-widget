@@ -179,12 +179,12 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 	createElement() {
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shadow');
-		group.g().addClass('main-shape');
-		group.g().addClass('shared-layer');
-		group.g().addClass('lyphs');
-		group.g().addClass('borders');
-		group.g().addClass('corners');
+		group.g().addClass('fixed main-shadow');
+		group.g().addClass('fixed main-shape');
+		group.g().addClass('fixed shared-layer');
+		group.g().addClass('fixed lyphs');
+		group.g().addClass('fixed borders');
+		group.g().addClass('fixed corners');
 		
 		/* return representation(s) of element */
 		return { element: group.node };

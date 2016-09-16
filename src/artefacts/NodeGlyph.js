@@ -51,7 +51,7 @@ export default class NodeGlyph extends Transformable {
 	createElement() {
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shape');
+		group.g().addClass('fixed main-shape');
 		
 		return { element: group.node };
 	}

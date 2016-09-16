@@ -4,10 +4,10 @@ export default $;
 import 'jquery-mousewheel';
 // jqMousewheel($);
 
-// /* powertip plugin */
-// import '../../node_modules/jquery-powertip/dist/jquery.powertip.min.js';
-// import '../../node_modules/jquery-powertip/dist/css/jquery.powertip.min.css';
-// import '../../node_modules/jquery-powertip/dist/css/jquery.powertip-dark.min.css';
+/* powertip plugin */
+import '../../node_modules/jquery-powertip/dist/jquery.powertip.js';
+import '../../node_modules/jquery-powertip/dist/css/jquery.powertip.min.css';
+import '../../node_modules/jquery-powertip/dist/css/jquery.powertip-dark.min.css';
 
 /* convenience static methods */
 Object.assign($, {

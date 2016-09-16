@@ -13,6 +13,7 @@ import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
 import isFunction from 'lodash-bound/isFunction';
 import defaults from 'lodash-bound/defaults';
+import isArray from 'lodash-bound/isArray';
 
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
@@ -29,9 +30,7 @@ export default class BorderToggleTool extends Tool {
 		
 		const {root} = context;
 		
-		const click = this.rootE('click');
-		
-		click
+		this.rootE('click')
 			::filter(withoutMod('ctrl', 'shift', 'meta'))
 			::withLatestFrom(context.p('selected'), (event, artefact) => {
 				event.artefact = artefact;
@@ -40,10 +39,13 @@ export default class BorderToggleTool extends Tool {
 			::filter(({artefact}) => artefact instanceof BorderLine)
 			::tap(stopPropagation)
 			.subscribe(({artefact: borderLine}) => {
-				if (Array.isArray(borderLine.model.nature) || borderLine.model.nature === 'closed') {
-					borderLine.model.nature = 'open';
+				if (!borderLine.model.nature::isArray()) {
+					borderLine.model.nature = [borderLine.model.nature];
+				}
+				if (borderLine.model.nature.length === 2 || borderLine.model.nature[0] === 'closed') {
+					borderLine.model.nature = ['open'];
 				} else {
-					borderLine.model.nature = 'closed';
+					borderLine.model.nature = ['closed'];
 				}
 			});
 		

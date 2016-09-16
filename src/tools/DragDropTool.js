@@ -21,7 +21,7 @@ import {stopPropagation} from "../util/misc";
 import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {POINT} from "../util/svg";
+import {POINT, ID_MATRIX} from "../util/svg";
 import {never} from "rxjs/observable/never";
 import {ignoreElements} from "rxjs/operator/ignoreElements";
 import {skipUntil} from "rxjs/operator/skipUntil";
@@ -36,6 +36,12 @@ import {emitWhenComplete} from "../util/rxjs";
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {Vector2D} from "../util/svg";
+import {rotateAround} from "../util/svg";
+import minBy from "lodash-bound/minBy";
+import {newSVGPoint} from "../util/svg";
+
+
+const {abs, sqrt} = Math;
 
 
 function reassessHoveredArtefact(a) {
@@ -52,8 +58,6 @@ export default class DragDropTool extends Tool {
 	
 	constructor(context) {
 		super(context, { events: ['mousedown', 'mouseenter'] });
-		
-		const {root} = context;
 		
 		const mousemove = this.windowE('mousemove');
 		const mouseup   = this.windowE('mouseup');
@@ -82,33 +86,53 @@ export default class DragDropTool extends Tool {
 				::tap(stopPropagation)
 				::withLatestFrom(context.p('selected'))
 				::filter(([,handleArtifact]) => handleArtifact.draggable)
-				::map(([downEvent, movingArtefact]) => ({downEvent, movingArtefact}))
+				::map(([downEvent, movingArtefact]) => ({mousedownVector: downEvent.point, movingArtefact}))
 		        ::enterState('INSIDE_MOVE_THRESHOLD'),
-			'INSIDE_MOVE_THRESHOLD': ({downEvent, movingArtefact}) => [
+			'INSIDE_MOVE_THRESHOLD': ({mousedownVector, movingArtefact}) => [
 				mousemove
 					::take(4)
 					::ignoreElements()
-					::emitWhenComplete({downEvent, movingArtefact})
+					::emitWhenComplete({mousedownVector, movingArtefact})
 					::enterState('MOVING'),
 			    mouseup
 				    ::enterState('IDLE')
 				// TODO: go IDLE on pressing escape
 			],
-			'MOVING': ({downEvent, movingArtefact}) =>  {
+			'MOVING': ({mousedownVector, movingArtefact, referencePoint}) =>  {
 				/* start dragging */
 				movingArtefact.dragging = true;
 				for (let a of movingArtefact.traverse('post')) {
 					a.element.jq.mouseleave();
 				}
 				reassessHoveredArtefact(movingArtefact.parent);
+				movingArtefact.moveToFront();
 				
 				/* record start dimensions */
 				const transformationStart = movingArtefact.transformation;
 				
 				/* move while dragging */
-				of(downEvent)::concat(mousemove)
-					::map(event => event.point.in(movingArtefact.element).minus(downEvent.point.in(movingArtefact.element)))
-					::subscribe((translationDiff) => {
+				mousemove
+					::subscribe((moveEvent) => {
+						let mouseVector = moveEvent.point.in(movingArtefact.element);
+						if (referencePoint && moveEvent.ctrlKey) {
+							let cReferencePoint = referencePoint.in(movingArtefact.element);
+							let mouseVector45   = mouseVector.svgPoint
+								.matrixTransform(ID_MATRIX::rotateAround(cReferencePoint, 45));
+							mouseVector45 = new Vector2D({ x: mouseVector45.x, y: mouseVector45.y, context: movingArtefact.element });
+							let cDiff   = mouseVector  .minus(cReferencePoint);
+							let cDiff45 = mouseVector45.minus(cReferencePoint);
+							const newPt = (xp, yp, m = ID_MATRIX) => new Vector2D({
+								...newSVGPoint(xp.x, yp.y).matrixTransform(m)::pick('x', 'y'),
+								context: movingArtefact.element
+							});
+							mouseVector = [
+								{ diff: abs(cDiff.x),   snap: () => newPt(cReferencePoint, mouseVector) },
+								{ diff: abs(cDiff.y),   snap: () => newPt(mouseVector, cReferencePoint) },
+								{ diff: abs(cDiff45.x), snap: () => newPt(cReferencePoint, mouseVector45, ID_MATRIX::rotateAround(cReferencePoint, -45)) },
+								{ diff: abs(cDiff45.y), snap: () => newPt(mouseVector45, cReferencePoint, ID_MATRIX::rotateAround(cReferencePoint, -45)) }
+							]::minBy('diff').snap();
+						}
+						let translationDiff = mouseVector.minus(mousedownVector.in(movingArtefact.element));
 						movingArtefact.transformation = transformationStart
 							.translate(...translationDiff.xy);
 					});
@@ -118,21 +142,19 @@ export default class DragDropTool extends Tool {
 				let initial_dragged_parent         = movingArtefact.parent;
 				mouseup
 					::withLatestFrom(context.p('selected'))
-					::tap(([up, recipient]) => {
+					::tap(([,recipient]) => {
 						/* either drop it on the recipient */
 						let success = false;
-						if (recipient && recipient.drop::isFunction()) {
+						if (recipient.drop::isFunction()) {
 							success = recipient.drop(movingArtefact, recipient) !== false;
 						}
-						
 						/* or revert to previous state if recipient rejects it */
 						if (!success) {
 							movingArtefact::assign({
 								transformation: initial_dragged_transformation,
-								parent: initial_dragged_parent
+								parent:         initial_dragged_parent
 							});
 						}
-						
 						/* stop dragging */
 						movingArtefact.dragging = false;
 				    })

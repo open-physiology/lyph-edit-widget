@@ -22,7 +22,6 @@ import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {POINT} from "../util/svg";
-import {svgPageCoordinates} from "../util/rxjs";
 import {never} from "rxjs/observable/never";
 import {ignoreElements} from "rxjs/operator/ignoreElements";
 import {skipUntil} from "rxjs/operator/skipUntil";

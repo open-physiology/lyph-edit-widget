@@ -13,6 +13,8 @@ import assert from 'power-assert';
 
 import {humanMsg} from './misc';
 
+const {sqrt} = Math;
+
 export const M11 = 'a';
 export const M12 = 'c';
 export const M21 = 'b';
@@ -78,11 +80,15 @@ function setCTMDirectly(matrix) {
 		.initialize(refSVG.createSVGTransformFromMatrix(matrix));
 }
 
-export class SVGPoint {
+export function newSVGPoint(x, y) {
+	let result = refSVG.createSVGPoint();
+	result::assign({x, y});
+	return result;
+}
+
+export class SVGPoint { // TODO; replace with newSVGPoint
 	constructor(x, y) {
-		let result = refSVG.createSVGPoint();
-		result::assign({x, y});
-		return result;
+		return newSVGPoint(x, y);
 	}
 }
 
@@ -106,15 +112,17 @@ export class Vector2D {
 	}
 	
 	in(context) {
-		assert(this.context, humanMsg`
+		assert(!!this.context, humanMsg`
 			Expecting Point instance to have a context.
 		`);
 		context = context.context || context;
 		if (this.context === context) { return this }
-		return new Vector2D(
-			this.svgPoint.matrixTransform(this.context.getTransformToElement(context)),
+		let coords = this.svgPoint.matrixTransform(this.context.getTransformToElement(context));
+		return new Vector2D({
+			x: coords.x,
+			y: coords.y,
 			context
-		);
+		});
 	}
 	
 	get x () { return this.svgPoint.x  }
@@ -155,6 +163,22 @@ export class Vector2D {
 			context: this.context
 		});
 	}
+	
+	distanceTo(other) {
+		const d = this.minus(other);
+		return sqrt(d.x*d.x + d.y*d.y);
+	}
+	
+	partwayTo(factor, other) {
+		return this.plus(other).times(factor);
+	}
+	
+	obj(xKey = 'x', yKey = 'y') {
+		return {
+			[xKey]: this.x,
+			[yKey]: this.y
+		};
+	}
 }
 
 export function pagePoint() {
@@ -188,4 +212,11 @@ export function rotateFromVector(dx, dy) {
 		}
 	}
 	return this.rotateFromVector(dx, dy);
+}
+
+export function rotateAround({x, y}, a) {
+	return this
+		.translate(x, y)
+		.rotate(a)
+		.translate(-x, -y);
 }

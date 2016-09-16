@@ -111,7 +111,7 @@ export default class RotateTool extends Tool {
 						rotatingArtefact.transformation = transformation
 							.translate(0.5*width, 0.5*height)
 							.rotate(angle - mouseAngle)
-							.translate(-0.5*width, -0.5*height);
+							.translate(-0.5*width, -0.5*height); // TODO: use ::rotateAround
 					});
 				
 				/* stop rotating on mouseup */

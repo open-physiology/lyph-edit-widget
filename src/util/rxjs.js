@@ -34,52 +34,6 @@ export function subscribe_(subject, pipeFn = n=>n()) {
 	);
 }
 
-export function shiftedMovementFor(obj_xy) {
-	return combineLatest(this::take(1), obj_xy::take(1), (ref, obj) => ({
-		x: obj.x - ref.x,
-		y: obj.y - ref.y
-	}))::switchMap(
-		() => this,
-		(delta, next) => ({
-			x: next.x + delta.x,
-			y: next.y + delta.y
-		})
-	);
-}
-
-export function shiftedMatrixCoordinatesFor(obj_m) {
-	return combineLatest(
-		this::take(1), obj_m::take(1),
-		(ref, obj) => obj.translate(-ref.x, -ref.y)
-	)::switchMap(
-		() => this,
-		(delta, next) => {
-			let m = delta.translate(next.x, next.y);
-			return { x: m[tX], y: m[tY] };
-		}
-	);
-}
-
-export function shiftedMatrixMovementFor(obj_m) {
-	return combineLatest(
-		this, obj_m,
-		(ref, obj) => obj.translate(-ref.x, -ref.y)
-	)::take(1)::switchMap(
-		() => this,
-		(delta, next) => delta.translate(next.x, next.y)
-	);
-}
-
-export function shiftedMMovementFor(obj) {
-	return this
-		::map(ref => obj.translate(-ref.x, -ref.y))
-		::take(1)
-		::switchMap(
-			() => this,
-			(delta, next) => delta.translate(next.x, next.y)
-		);
-}
-
 export function log(...args) {
 	return this::tap((value) => {
 		console.log(...args, value);
@@ -95,10 +49,6 @@ export function afterMatching(other, cancel = never()) {
 		::delayWhen( other::ignoreElements )
 		::takeUntil( cancel                )
 	);
-}
-
-export function svgPageCoordinates({pageX = 0, pageY = 0, x = pageX, y = pageY}) {
-	return createSVGPoint(x, y);
 }
 
 export const tap = Observable.prototype.do;

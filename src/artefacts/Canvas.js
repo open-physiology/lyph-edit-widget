@@ -80,9 +80,9 @@ export default class Canvas extends SvgEntity {
 		let viewport = Snap((this[$$existingSVG] || $(`<svg>`))[0]);
 		let canvas = viewport.g();
 		
-		canvas.g().addClass('free-floating-entities');
-		canvas.g().addClass('processes');
-		canvas.g().addClass('foreground');
+		canvas.g().addClass('fixed free-floating-entities');
+		canvas.g().addClass('fixed processes');
+		canvas.g().addClass('fixed foreground');
 		
 		/* return representation(s) of element */
 		return {

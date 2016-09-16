@@ -48,8 +48,8 @@ let C = window.module.classes;
 //
 // let natureSetter = (...borderNatures) => function () {
 // 	let borders = [...this.radialBorders];
-// 	borders[0].nature = borderNatures[0];
-// 	borders[1].nature = borderNatures[1];
+// 	borders[0].nature = [borderNatures[0]];
+// 	borders[1].nature = [borderNatures[1]];
 // 	return this;
 // };
 // let tube = natureSetter('open',   'open'  );
@@ -496,14 +496,14 @@ const NO_AXIS = { createRadialBorders: true };
 
 let natureSetter = (...borderNatures) => function () {
 	let borders = [...this.radialBorders];
-	borders[0].nature = borderNatures[0];
-	borders[1].nature = borderNatures[1];
+	borders[0].nature = [borderNatures[0]];
+	borders[1].nature = [borderNatures[1]];
 	return this;
 };
 let tube = natureSetter('open',   'open'  );
-// let bagL = natureSetter('closed', 'open'  );
-// let bagR = natureSetter('open',   'closed');
-// let cyst = natureSetter('closed', 'closed');
+let bagL = natureSetter('closed', 'open'  );
+let bagR = natureSetter('open',   'closed');
+let cyst = natureSetter('closed', 'closed');
 
 let root = new Canvas({ element: $('#svg') });
 
@@ -520,26 +520,29 @@ root.element.promise.then(() => {
 	
 	/* testing the drawing tool */
 	for (let [label, newModel, matchesModel] of [
-		[ "Lyph", () => C.Lyph   .new({}, AXIS), ::C.Lyph.hasInstance ],
-	    [ "Node", () => C.Node   .new({}),       ::C.Node.hasInstance ],
-        [ "Process", () => C.Process.new({
+		[ "Lyph", () => C.Lyph.new({
+			layers: [
+				C.Lyph.new({ name: "Inner Layer" }, NO_AXIS)::cyst(),
+				C.Lyph.new({ name: "Outer Layer" }, NO_AXIS)::cyst()
+			]
+		}, AXIS)::cyst(), ::C.Lyph.hasInstance],
+		[ "Measurable", () => C.Measurable.new({}), ::C.Measurable.hasInstance ],
+	    [ "Node",       () => C.Node      .new({}), ::C.Node.hasInstance       ],
+        [ "Process",    () => C.Process   .new({
             source: C.Node.new(),
             target: C.Node.new()
         }), m => C.Process.hasInstance(m) && m.conveyingLyph.size === 0],
         [ "Conveyed Process", () => C.Process.new({
-            conveyingLyph: [C.Lyph.new({ name: "Conveying Lyph" }, AXIS)],
-            source: C.Node.new(),
-            target: C.Node.new()
+            conveyingLyph: [C.Lyph.new({ name: "Conveying Lyph" }, AXIS)::tube()],
+            source:         C.Node.new(),
+            target:         C.Node.new()
         }), m => C.Process.hasInstance(m) && m.conveyingLyph.size > 0],
 		[ "Coalescence Scenario", () => (sharedLayer => C.CoalescenceScenario.new({
 			lyphs: [
 				C.Lyph.new({
 					name: "Urinary pFTU",
 					layers: [
-						C.Lyph.new({
-							name:      "Urine",
-							measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Urine" }) ]
-						}, NO_AXIS)::tube(),
+						C.Lyph.new({ name: "Urine"      }, NO_AXIS)::tube(),
 						C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
 						sharedLayer
 					]
@@ -547,10 +550,7 @@ root.element.promise.then(() => {
 				C.Lyph.new({
 					name: "Blood pFTU",
 					layers: [
-						C.Lyph.new({
-							name:      "Blood",
-							measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Blood" }) ]
-						}, NO_AXIS)::tube(),
+						C.Lyph.new({ name: "Blood"       }, NO_AXIS)::tube(),
 						C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
 						sharedLayer
 					]
@@ -558,18 +558,31 @@ root.element.promise.then(() => {
 			]
 		}))( // shared layer
 			C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube()
-		), ::C.CoalescenceScenario.hasInstance]
+		), ::C.CoalescenceScenario.hasInstance ],
+		[ "Omega Tree", () => {
+			const lyph1 = C.Lyph.new({ name: "Level 1"                    }, AXIS)::bagL();
+			const lyph2 = C.Lyph.new({ name: "Level 2", treeParent: lyph1 }, AXIS)::tube();
+			const lyph3 = C.Lyph.new({ name: "Level 3", treeParent: lyph2 }, AXIS)::tube();
+			const lyph4 = C.Lyph.new({ name: "Level 4", treeParent: lyph3 }, AXIS)::tube();
+			const lyph5 = C.Lyph.new({ name: "Level 5", treeParent: lyph4 }, AXIS)::bagR();
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3, lyph4, lyph5]
+			});
+		}, ::C.OmegaTree.hasInstance ]
 	]) {
 		const checkbox = $(`
 			<label title="New ${label}">
-				<input type="checkbox"> New ${label}
+				<input type="checkbox"> ${label}
 			</label>
 		`).appendTo('#controls').children('input');
+		checkbox.keydown((e) => { e.preventDefault() });
 		checkbox.change(({currentTarget}) => {
-			drawingTool.model = $(currentTarget).prop('checked')
-				? newModel()
-				: null;
-			drawingTool.model.name = label;
+			if ($(currentTarget).prop('checked')) {
+				drawingTool.model = newModel();
+				drawingTool.model.name = label;
+			} else {
+				drawingTool.model = null;
+			}
 		});
 		drawingTool.p('model')
 			::filter(m => !matchesModel(m))

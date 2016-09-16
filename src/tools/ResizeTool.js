@@ -100,35 +100,33 @@ export default class ResizeTool extends Tool {
 				const mouseStart    = downEvent.point;
 				
 				/* resize while dragging */
-				// setTimeout(() => {
-					of(downEvent)::concat(mousemove)
-						::map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
-						::subscribe(({x: xDiff, y: yDiff}) => {
-							let width          = mouseDownIsOrigin ? 0 : artefactStart.width;
-							let height         = mouseDownIsOrigin ? 0 : artefactStart.height;
-							let transformation = artefactStart.transformation;
-							if (directions.left) {
-								transformation = transformation.translate(xDiff, 0);
-								width -= xDiff;
-							} else if (directions.right) {
-								width += xDiff;
-							}
-							if (directions.top) {
-								transformation = transformation.translate(0, yDiff);
-								height -= yDiff;
-							} else if (directions.bottom) {
-								height += yDiff;
-							}
-							width  = Math.max(width  || 0, resizingArtefact.minWidth  || 0);
-							height = Math.max(height || 0, resizingArtefact.minHeight || 0);
-							resizingArtefact::assign({ transformation, width, height });
-						});
-				
-					/* stop resizing */
-					mouseup
-						::tap(() => { resizingArtefact.dragging = false })
-						::enterState('IDLE');
-				// });
+				mousemove
+					::map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
+					::subscribe(({x: xDiff, y: yDiff}) => {
+						let width          = mouseDownIsOrigin ? 0 : artefactStart.width;
+						let height         = mouseDownIsOrigin ? 0 : artefactStart.height;
+						let transformation = artefactStart.transformation;
+						if (directions.left) {
+							transformation = transformation.translate(xDiff, 0);
+							width -= xDiff;
+						} else if (directions.right) {
+							width += xDiff;
+						}
+						if (directions.top) {
+							transformation = transformation.translate(0, yDiff);
+							height -= yDiff;
+						} else if (directions.bottom) {
+							height += yDiff;
+						}
+						width  = Math.max(width  || 0, resizingArtefact.minWidth  || 0);
+						height = Math.max(height || 0, resizingArtefact.minHeight || 0);
+						resizingArtefact::assign({ transformation, width, height });
+					});
+			
+				/* stop resizing */
+				mouseup
+					::tap(() => { resizingArtefact.dragging = false })
+					::enterState('IDLE');
 			}
 		}));
 	}

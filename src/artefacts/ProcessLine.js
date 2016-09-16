@@ -43,7 +43,9 @@ export default class ProcessLine extends SvgEntity {
 		this.p(['source.parent', 'target.parent'])
 			::filter(([sp, tp]) => !!sp && !!tp)
 			::map(([sp, tp]) => closestCommonAncestor(sp, tp))
-			.subscribe( this.p('parent') );
+			.subscribe( (cca) => {
+				this.parent = cca;
+			} );
 		
 		merge(
 			this.p(['source.canvasTransformation', 'parent'])

@@ -47,8 +47,8 @@ export default class CornerHandle extends SvgEntity {
 	createElement() {
 		const group = this.root.gElement();
 		
-		group.g().addClass('highlight-border');
-		let handle = group.g().addClass('handle');
+		             group.g().addClass('fixed highlight-border');
+		let handle = group.g().addClass('fixed handle');
 		
 		/* return representation(s) of element */
 		return {

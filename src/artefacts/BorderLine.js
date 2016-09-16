@@ -5,6 +5,7 @@ import defaults from 'lodash-bound/defaults';
 import isNumber from 'lodash-bound/isNumber';
 import size from 'lodash-bound/size';
 import at from 'lodash-bound/at';
+import isArray from 'lodash-bound/isArray';
 
 import _isNumber from 'lodash/isNumber';
 import _isBoolean from 'lodash/isBoolean';
@@ -86,10 +87,10 @@ export default class BorderLine extends Transformable {
 	createElement() {
 		const group = this.root.gElement();
 		
-		group.g().addClass('main-shape');
-		let handle = group.g().addClass('handle');
-		group.g().addClass('nodes');
-		group.g().addClass('measurables');
+		             group.g().addClass('fixed main-shape');
+		let handle = group.g().addClass('fixed handle');
+		             group.g().addClass('fixed nodes');
+		             group.g().addClass('fixed measurables');
 		
 		/* return representation(s) of element */
 		return {
@@ -121,7 +122,8 @@ export default class BorderLine extends Transformable {
 			
 			/* manifest nature in the DOM */
 			this.model.p('nature')
-				::map(n => ({ stroke: n === 'open' ? '#aaaaa' : 'black' }))
+				::map(n => n::isArray() ? n : [n])
+				::map(n => ({ stroke: n.length === 1 && n[0] === 'open' ? '#aaaaa' : 'black' }))
 				.subscribe( ::line.attr );
 			
 			// this.findAncestor(a => a.free).inside.jq

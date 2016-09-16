@@ -132,7 +132,12 @@ export default class SvgObject extends ValueTracker {
 	}
 	
 	moveToFront() {
-		this.element.parentElement.appendChild(this.element);
+		for (let element = this.element; element !== this.root.inside; element = element.parentElement) {
+			if (!element.classList.contains('fixed')) {
+				element.parentElement.appendChild(element);
+			}
+		}
+		// this.element.parentElement.appendChild(this.element); // TODO: remove
 	}
 	
 	static definePartGetter(key, def = ()=>{}) {

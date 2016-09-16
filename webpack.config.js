@@ -27,7 +27,11 @@ module.exports = {
 			{
 				test: require.resolve("snapsvg"),
 				loader: "imports?this=>window"
-			}
+			},
+			{
+				test: /\.css$/,
+				loader: 'style!css!autoprefixer'
+			},
 		]
 	},
 	plugins: [
