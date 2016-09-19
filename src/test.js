@@ -520,23 +520,53 @@ root.element.promise.then(() => {
 	
 	/* testing the drawing tool */
 	for (let [label, newModel, matchesModel] of [
-		[ "Lyph", () => C.Lyph.new({
+		[ "Kidney Lobus", () => C.Lyph.new({
 			layers: [
-				C.Lyph.new({ name: "Inner Layer" }, NO_AXIS)::cyst(),
-				C.Lyph.new({ name: "Outer Layer" }, NO_AXIS)::cyst()
+				C.Lyph.new({ name: "Medulla of Lobus" }, NO_AXIS)::bagR(),
+				C.Lyph.new({ name: "Cortex of Lobus"  }, NO_AXIS)::bagR()
 			]
-		}, AXIS)::cyst(), ::C.Lyph.hasInstance],
-		[ "Measurable", () => C.Measurable.new({}), ::C.Measurable.hasInstance ],
-	    [ "Node",       () => C.Node      .new({}), ::C.Node.hasInstance       ],
-        [ "Process",    () => C.Process   .new({
-            source: C.Node.new(),
-            target: C.Node.new()
-        }), m => C.Process.hasInstance(m) && m.conveyingLyph.size === 0],
-        [ "Conveyed Process", () => C.Process.new({
-            conveyingLyph: [C.Lyph.new({ name: "Conveying Lyph" }, AXIS)::tube()],
+		}, AXIS)::bagR(), ::C.Lyph.hasInstance],
+		// [ "Measurable", () => C.Measurable.new({}), ::C.Measurable.hasInstance ],
+	    // [ "Node",       () => C.Node      .new({}), ::C.Node.hasInstance       ],
+        // [ "Process",    () => C.Process   .new({
+        //     source: C.Node.new(),
+        //     target: C.Node.new()
+        // }), m => C.Process.hasInstance(m) && m.conveyingLyph.size === 0],
+        [ "Microcirculation", () => C.Process.new({
+            conveyingLyph: [C.Lyph.new({ name: "Blood Vessel" }, AXIS)::tube()],
             source:         C.Node.new(),
             target:         C.Node.new()
         }), m => C.Process.hasInstance(m) && m.conveyingLyph.size > 0],
+		[ "Epithelial Tree", () => {
+			const lyph1 = C.Lyph.new({ name: "Bowman's Capsule"                             }, AXIS)::bagL();
+			const lyph2 = C.Lyph.new({ name: "Proximal Tubule",           treeParent: lyph1 }, AXIS)::tube();
+			const lyph3 = C.Lyph.new({ name: "Descending Limb",           treeParent: lyph2 }, AXIS)::tube();
+			const lyph4 = C.Lyph.new({ name: "Ascending Thick Limb",      treeParent: lyph3 }, AXIS)::tube();
+			const lyph5 = C.Lyph.new({ name: "Ascending Thin Limb",       treeParent: lyph4 }, AXIS)::tube();
+			const lyph6 = C.Lyph.new({ name: "Distal Convoluted Tubule",  treeParent: lyph5 }, AXIS)::tube();
+			const lyph7 = C.Lyph.new({ name: "Cortical Collecting Duct",  treeParent: lyph6 }, AXIS)::tube();
+			const lyph8 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph7 }, AXIS)::tube();
+			const lyph9 = C.Lyph.new({ name: "Minor Calyx",               treeParent: lyph8 }, AXIS)::tube();
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
+			});
+		}, ::C.OmegaTree.hasInstance ],
+		[ "Venous Endothelial Tree", () => {
+			const lyph1 = C.Lyph.new({ name: "Stellate Vein"                      }, AXIS)::tube();
+			const lyph2 = C.Lyph.new({ name: "Arcuate Vein",    treeParent: lyph1 }, AXIS)::tube();
+			const lyph3 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2 }, AXIS)::tube();
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3]
+			});
+		}, ::C.OmegaTree.hasInstance ],
+		[ "Arterial Endothelial Tree", () => {
+			const lyph1 = C.Lyph.new({ name: "Afferent Artery"                      }, AXIS)::tube();
+			const lyph2 = C.Lyph.new({ name: "Arcuate Artery",    treeParent: lyph1 }, AXIS)::tube();
+			const lyph3 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2 }, AXIS)::tube();
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3]
+			});
+		}, ::C.OmegaTree.hasInstance ],
 		[ "Coalescence Scenario", () => (sharedLayer => C.CoalescenceScenario.new({
 			lyphs: [
 				C.Lyph.new({
@@ -558,17 +588,7 @@ root.element.promise.then(() => {
 			]
 		}))( // shared layer
 			C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube()
-		), ::C.CoalescenceScenario.hasInstance ],
-		[ "Omega Tree", () => {
-			const lyph1 = C.Lyph.new({ name: "Level 1"                    }, AXIS)::bagL();
-			const lyph2 = C.Lyph.new({ name: "Level 2", treeParent: lyph1 }, AXIS)::tube();
-			const lyph3 = C.Lyph.new({ name: "Level 3", treeParent: lyph2 }, AXIS)::tube();
-			const lyph4 = C.Lyph.new({ name: "Level 4", treeParent: lyph3 }, AXIS)::tube();
-			const lyph5 = C.Lyph.new({ name: "Level 5", treeParent: lyph4 }, AXIS)::bagR();
-			return C.OmegaTree.new({
-				parts: [lyph1, lyph2, lyph3, lyph4, lyph5]
-			});
-		}, ::C.OmegaTree.hasInstance ]
+		), ::C.CoalescenceScenario.hasInstance ]
 	]) {
 		const checkbox = $(`
 			<label title="New ${label}">

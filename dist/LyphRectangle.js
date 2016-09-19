@@ -18141,7 +18141,7 @@ return /******/ (function(modules) { // webpackBootstrap
 													spillunder: 0
 												});
 											});
-											layer.moveToFront();
+											layer.moveToFront({ onlyFreeArtefacts: false });
 										};
 	
 										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
@@ -28325,8 +28325,16 @@ return /******/ (function(modules) { // webpackBootstrap
 		}, {
 			key: 'moveToFront',
 			value: function moveToFront() {
+				var _ref6 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+				var _ref6$onlyFreeArtefac = _ref6.onlyFreeArtefacts;
+				var onlyFreeArtefacts = _ref6$onlyFreeArtefac === undefined ? true : _ref6$onlyFreeArtefac;
+	
 				for (var element = this.element; element !== this.root.inside; element = element.parentElement) {
-					if (!element.classList.contains('fixed')) {
+					var fixed = element.classList.contains('fixed');
+					var artefact = window[_symbols.$$elementCtrl].get(element);
+					// debugger;
+					if (!fixed && (!onlyFreeArtefacts || !artefact || artefact.free)) {
 						element.parentElement.appendChild(element);
 					}
 				}

@@ -405,7 +405,7 @@ export default class LyphRectangle extends Transformable {
 							spillunder: 0
 						});
 					});
-					layer.moveToFront();
+					layer.moveToFront({ onlyFreeArtefacts: false });
 				}
 			});
 		

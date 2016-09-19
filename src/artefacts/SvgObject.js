@@ -131,9 +131,12 @@ export default class SvgObject extends ValueTracker {
 		this::assign(keyVals);
 	}
 	
-	moveToFront() {
+	moveToFront({ onlyFreeArtefacts = true } = {}) {
 		for (let element = this.element; element !== this.root.inside; element = element.parentElement) {
-			if (!element.classList.contains('fixed')) {
+			const fixed = element.classList.contains('fixed');
+			const artefact = window[$$elementCtrl].get(element);
+			// debugger;
+			if (!fixed && (!onlyFreeArtefacts || !artefact || artefact.free)) {
 				element.parentElement.appendChild(element);
 			}
 		}

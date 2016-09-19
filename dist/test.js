@@ -18267,7 +18267,7 @@ return /******/ (function(modules) { // webpackBootstrap
 													spillunder: 0
 												});
 											});
-											layer.moveToFront();
+											layer.moveToFront({ onlyFreeArtefacts: false });
 										};
 	
 										for (var i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
@@ -30243,8 +30243,16 @@ return /******/ (function(modules) { // webpackBootstrap
 		}, {
 			key: 'moveToFront',
 			value: function moveToFront() {
+				var _ref6 = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+				var _ref6$onlyFreeArtefac = _ref6.onlyFreeArtefacts;
+				var onlyFreeArtefacts = _ref6$onlyFreeArtefac === undefined ? true : _ref6$onlyFreeArtefac;
+	
 				for (var element = this.element; element !== this.root.inside; element = element.parentElement) {
-					if (!element.classList.contains('fixed')) {
+					var fixed = element.classList.contains('fixed');
+					var artefact = window[_symbols.$$elementCtrl].get(element);
+					// debugger;
+					if (!fixed && (!onlyFreeArtefacts || !artefact || artefact.free)) {
 						element.parentElement.appendChild(element);
 					}
 				}
@@ -67470,62 +67478,80 @@ return /******/ (function(modules) { // webpackBootstrap
 		var drawingTool = new _DrawingTool2.default(root.context);
 	
 		/* testing the drawing tool */
-		_ref = [["Lyph", function () {
+		_ref = [["Kidney Lobus", function () {
 			var _context;
 	
 			return (_context = C.Lyph.new({
-				layers: [(_context = C.Lyph.new({ name: "Inner Layer" }, NO_AXIS), cyst).call(_context), (_context = C.Lyph.new({ name: "Outer Layer" }, NO_AXIS), cyst).call(_context)]
-			}, AXIS), cyst).call(_context);
-		}, (_context2 = C.Lyph).hasInstance.bind(_context2)], ["Measurable", function () {
-			return C.Measurable.new({});
-		}, (_context2 = C.Measurable).hasInstance.bind(_context2)], ["Node", function () {
-			return C.Node.new({});
-		}, (_context2 = C.Node).hasInstance.bind(_context2)], ["Process", function () {
-			return C.Process.new({
-				source: C.Node.new(),
-				target: C.Node.new()
-			});
-		}, function (m) {
-			return C.Process.hasInstance(m) && m.conveyingLyph.size === 0;
-		}], ["Conveyed Process", function () {
+				layers: [(_context = C.Lyph.new({ name: "Medulla of Lobus" }, NO_AXIS), bagR).call(_context), (_context = C.Lyph.new({ name: "Cortex of Lobus" }, NO_AXIS), bagR).call(_context)]
+			}, AXIS), bagR).call(_context);
+		}, (_context2 = C.Lyph).hasInstance.bind(_context2)],
+		// [ "Measurable", () => C.Measurable.new({}), ::C.Measurable.hasInstance ],
+		// [ "Node",       () => C.Node      .new({}), ::C.Node.hasInstance       ],
+		// [ "Process",    () => C.Process   .new({
+		//     source: C.Node.new(),
+		//     target: C.Node.new()
+		// }), m => C.Process.hasInstance(m) && m.conveyingLyph.size === 0],
+		["Microcirculation", function () {
 			var _context3;
 	
 			return C.Process.new({
-				conveyingLyph: [(_context3 = C.Lyph.new({ name: "Conveying Lyph" }, AXIS), tube).call(_context3)],
+				conveyingLyph: [(_context3 = C.Lyph.new({ name: "Blood Vessel" }, AXIS), tube).call(_context3)],
 				source: C.Node.new(),
 				target: C.Node.new()
 			});
 		}, function (m) {
 			return C.Process.hasInstance(m) && m.conveyingLyph.size > 0;
-		}], ["Coalescence Scenario", function () {
+		}], ["Epithelial Tree", function () {
+			var _context4;
+	
+			var lyph1 = (_context4 = C.Lyph.new({ name: "Bowman's Capsule" }, AXIS), bagL).call(_context4);
+			var lyph2 = (_context4 = C.Lyph.new({ name: "Proximal Tubule", treeParent: lyph1 }, AXIS), tube).call(_context4);
+			var lyph3 = (_context4 = C.Lyph.new({ name: "Descending Limb", treeParent: lyph2 }, AXIS), tube).call(_context4);
+			var lyph4 = (_context4 = C.Lyph.new({ name: "Ascending Thick Limb", treeParent: lyph3 }, AXIS), tube).call(_context4);
+			var lyph5 = (_context4 = C.Lyph.new({ name: "Ascending Thin Limb", treeParent: lyph4 }, AXIS), tube).call(_context4);
+			var lyph6 = (_context4 = C.Lyph.new({ name: "Distal Convoluted Tubule", treeParent: lyph5 }, AXIS), tube).call(_context4);
+			var lyph7 = (_context4 = C.Lyph.new({ name: "Cortical Collecting Duct", treeParent: lyph6 }, AXIS), tube).call(_context4);
+			var lyph8 = (_context4 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph7 }, AXIS), tube).call(_context4);
+			var lyph9 = (_context4 = C.Lyph.new({ name: "Minor Calyx", treeParent: lyph8 }, AXIS), tube).call(_context4);
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
+			});
+		}, (_context2 = C.OmegaTree).hasInstance.bind(_context2)], ["Venous Endothelial Tree", function () {
 			var _context5;
 	
-			return function (sharedLayer) {
-				var _context4;
-	
-				return C.CoalescenceScenario.new({
-					lyphs: [(_context4 = C.Lyph.new({
-						name: "Urinary pFTU",
-						layers: [(_context4 = C.Lyph.new({ name: "Urine" }, NO_AXIS), tube).call(_context4), (_context4 = C.Lyph.new({ name: "Epithelium" }, NO_AXIS), tube).call(_context4), sharedLayer]
-					}, AXIS), tube).call(_context4), (_context4 = C.Lyph.new({
-						name: "Blood pFTU",
-						layers: [(_context4 = C.Lyph.new({ name: "Blood" }, NO_AXIS), tube).call(_context4), (_context4 = C.Lyph.new({ name: "Endothelium" }, NO_AXIS), tube).call(_context4), sharedLayer]
-					}, AXIS), tube).call(_context4)]
-				});
-			}( // shared layer
-			(_context5 = C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS), tube).call(_context5));
-		}, (_context2 = C.CoalescenceScenario).hasInstance.bind(_context2)], ["Omega Tree", function () {
+			var lyph1 = (_context5 = C.Lyph.new({ name: "Stellate Vein" }, AXIS), tube).call(_context5);
+			var lyph2 = (_context5 = C.Lyph.new({ name: "Arcuate Vein", treeParent: lyph1 }, AXIS), tube).call(_context5);
+			var lyph3 = (_context5 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2 }, AXIS), tube).call(_context5);
+			return C.OmegaTree.new({
+				parts: [lyph1, lyph2, lyph3]
+			});
+		}, (_context2 = C.OmegaTree).hasInstance.bind(_context2)], ["Arterial Endothelial Tree", function () {
 			var _context6;
 	
-			var lyph1 = (_context6 = C.Lyph.new({ name: "Level 1" }, AXIS), bagL).call(_context6);
-			var lyph2 = (_context6 = C.Lyph.new({ name: "Level 2", treeParent: lyph1 }, AXIS), tube).call(_context6);
-			var lyph3 = (_context6 = C.Lyph.new({ name: "Level 3", treeParent: lyph2 }, AXIS), tube).call(_context6);
-			var lyph4 = (_context6 = C.Lyph.new({ name: "Level 4", treeParent: lyph3 }, AXIS), tube).call(_context6);
-			var lyph5 = (_context6 = C.Lyph.new({ name: "Level 5", treeParent: lyph4 }, AXIS), bagR).call(_context6);
+			var lyph1 = (_context6 = C.Lyph.new({ name: "Afferent Artery" }, AXIS), tube).call(_context6);
+			var lyph2 = (_context6 = C.Lyph.new({ name: "Arcuate Artery", treeParent: lyph1 }, AXIS), tube).call(_context6);
+			var lyph3 = (_context6 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2 }, AXIS), tube).call(_context6);
 			return C.OmegaTree.new({
-				parts: [lyph1, lyph2, lyph3, lyph4, lyph5]
+				parts: [lyph1, lyph2, lyph3]
 			});
-		}, (_context2 = C.OmegaTree).hasInstance.bind(_context2)]];
+		}, (_context2 = C.OmegaTree).hasInstance.bind(_context2)], ["Coalescence Scenario", function () {
+			var _context8;
+	
+			return function (sharedLayer) {
+				var _context7;
+	
+				return C.CoalescenceScenario.new({
+					lyphs: [(_context7 = C.Lyph.new({
+						name: "Urinary pFTU",
+						layers: [(_context7 = C.Lyph.new({ name: "Urine" }, NO_AXIS), tube).call(_context7), (_context7 = C.Lyph.new({ name: "Epithelium" }, NO_AXIS), tube).call(_context7), sharedLayer]
+					}, AXIS), tube).call(_context7), (_context7 = C.Lyph.new({
+						name: "Blood pFTU",
+						layers: [(_context7 = C.Lyph.new({ name: "Blood" }, NO_AXIS), tube).call(_context7), (_context7 = C.Lyph.new({ name: "Endothelium" }, NO_AXIS), tube).call(_context7), sharedLayer]
+					}, AXIS), tube).call(_context7)]
+				});
+			}( // shared layer
+			(_context8 = C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS), tube).call(_context8));
+		}, (_context2 = C.CoalescenceScenario).hasInstance.bind(_context2)]];
 	
 		if (!(_ref && (typeof _ref[Symbol.iterator] === 'function' || Array.isArray(_ref)))) {
 			throw new TypeError('Expected _ref to be iterable, got ' + _inspect(_ref));
@@ -67537,7 +67563,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 		try {
 			var _loop = function _loop() {
-				var _context7;
+				var _context9;
 	
 				var _step$value = _slicedToArray(_step.value, 3);
 	
@@ -67559,7 +67585,7 @@ return /******/ (function(modules) { // webpackBootstrap
 						drawingTool.model = null;
 					}
 				});
-				(_context7 = drawingTool.p('model'), _filter.filter).call(_context7, function (m) {
+				(_context9 = drawingTool.p('model'), _filter.filter).call(_context9, function (m) {
 					return !matchesModel(m);
 				}).subscribe(function () {
 					checkbox.prop('checked', false);
