@@ -36,6 +36,11 @@ import {rotateFromVector, tX, tY} from "../util/svg";
 import {Vector2D} from "../util/svg";
 import {M21} from "../util/svg";
 import {M22} from "../util/svg";
+import {rotateAround} from "../util/svg";
+import {snap45} from "../util/svg";
+
+
+const {atan2, floor} = Math;
 
 
 export default class RotateTool extends Tool {
@@ -72,47 +77,50 @@ export default class RotateTool extends Tool {
 				::tap(stopPropagation)
 				::withLatestFrom(context.p('selected'))
 				::filter(([,handleArtifact]) => handleArtifact.draggable && handleArtifact.free)
-				::map(([downEvent, rotatingArtefact]) => ({downEvent, rotatingArtefact}))
+				::map(([downEvent, rotatingArtefact]) => ({mousedownVector: downEvent.point, rotatingArtefact}))
 		        ::enterState('INSIDE_ROTATE_THRESHOLD'),
-			'INSIDE_ROTATE_THRESHOLD': ({downEvent, rotatingArtefact}) => [
+			'INSIDE_ROTATE_THRESHOLD': ({mousedownVector, rotatingArtefact}) => [
 				mousemove
 					::take(4)
 					::ignoreElements()
-					::emitWhenComplete({downEvent, rotatingArtefact})
+					::emitWhenComplete({mousedownVector, rotatingArtefact})
 					::enterState('ROTATING'),
 			    mouseup
 				    ::enterState('IDLE')
 				// TODO: go IDLE on pressing escape
 			],
-			'ROTATING': ({downEvent, rotatingArtefact}) =>  {
+			'ROTATING': ({mousedownVector, rotatingArtefact}) =>  {
 				
 				/* setup */
 				rotatingArtefact.dragging = true; // TODO: rename
 				
 				/* pre-processing */
 				const {width, height, transformation} = rotatingArtefact::pick('transformation', 'width', 'height');
-				const startAngle = Math.atan2(transformation[M21], transformation[M22]) * 180 / Math.PI;
+				const startAngle = atan2(transformation[M21], transformation[M22]) * 180 / Math.PI;
 				const nonRotatedMatrix = transformation
-					.translate(0.5*width, 0.5*height)
-					.rotate(-startAngle)
-					.translate(-0.5*width, -0.5*height);
+					::rotateAround({
+						x: 0.5*width,
+						y: 0.5*height
+					}, -startAngle);
 				const center = new Vector2D({
 					x: nonRotatedMatrix[tX] + width  / 2,
 					y: nonRotatedMatrix[tY] + height / 2
 				});
-				const startDiff  = downEvent.point.minus(center);
-				const mouseAngle = Math.atan2(startDiff.y, startDiff.x) * 180 / Math.PI;
+				const startDiff  = mousedownVector.minus(center);
+				const initialMouseAngle = atan2(startDiff.y, startDiff.x) * 180 / Math.PI;
 				
 				/* rotate while dragging */
-				of(downEvent)::concat(mousemove)
-					::map(event => event.point.minus(center))
-					::subscribe((currentDiff) => {
-						let angle = Math.atan2(currentDiff.y, currentDiff.x) / Math.PI * 180;
-						rotatingArtefact.transformation = transformation
-							.translate(0.5*width, 0.5*height)
-							.rotate(angle - mouseAngle)
-							.translate(-0.5*width, -0.5*height); // TODO: use ::rotateAround
-					});
+				mousemove::subscribe((moveEvent) => {
+					let mouseVector = moveEvent.point;//.in(rotatingArtefact.element);
+					let currentDiff = mouseVector.minus(center);
+					let angle = atan2(currentDiff.y, currentDiff.x) / Math.PI * 180;
+					angle -= initialMouseAngle;
+					if (moveEvent.ctrlKey) {
+						angle = floor(angle / 45) * 45;
+					}
+					rotatingArtefact.transformation = transformation
+						::rotateAround({ x: 0.5*width, y: 0.5*height }, angle);
+				});
 				
 				/* stop rotating on mouseup */
 				mouseup

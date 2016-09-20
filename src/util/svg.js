@@ -12,8 +12,9 @@ import {map} from "rxjs/operator/map";
 import assert from 'power-assert';
 
 import {humanMsg} from './misc';
+import minBy from 'lodash-bound/minBy';
 
-const {sqrt} = Math;
+const {abs, atan2, sqrt} = Math;
 
 export const M11 = 'a';
 export const M12 = 'c';
@@ -223,4 +224,24 @@ export function rotateAround({x, y}, a) {
 
 export function moveToFront() {
 	this.parentElement.appendChild(this);
+}
+
+export function snap45(mouseVector, referenceArtefact, referencePoint) {
+	let cReferencePoint = referencePoint.in(referenceArtefact.element);
+	let mouseVector45 = mouseVector.svgPoint
+		.matrixTransform(ID_MATRIX::rotateAround(cReferencePoint, 45));
+	mouseVector45 = new Vector2D({ x: mouseVector45.x, y: mouseVector45.y, context: referenceArtefact.element });
+	let cDiff = mouseVector.minus(cReferencePoint);
+	let cDiff45 = mouseVector45.minus(cReferencePoint);
+	const newPt = (xp, yp, m = ID_MATRIX) => new Vector2D({
+		...newSVGPoint(xp.x, yp.y).matrixTransform(m)::pick('x', 'y'),
+		context: referenceArtefact.element
+	});
+	mouseVector = [
+		{ diff: abs(cDiff.x),   snap: () => newPt(cReferencePoint, mouseVector    ) },
+		{ diff: abs(cDiff.y),   snap: () => newPt(mouseVector,     cReferencePoint) },
+		{ diff: abs(cDiff45.x), snap: () => newPt(cReferencePoint, mouseVector45,   ID_MATRIX::rotateAround(cReferencePoint, -45)) },
+		{ diff: abs(cDiff45.y), snap: () => newPt(mouseVector45,   cReferencePoint, ID_MATRIX::rotateAround(cReferencePoint, -45)) }
+	]::minBy('diff').snap();
+	return mouseVector;
 }

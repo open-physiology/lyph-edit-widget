@@ -42,12 +42,12 @@ const $$backgroundColor = Symbol('$$backgroundColor');
 
 export default class NodeGlyph extends Transformable {
 	
-	@property({ initial: 'red' }) color;
+	@property({ transform: (c) => (c || 'red') }) color;
 	
 	constructor(options) {
 		super(options);
 		
-		this.setFromObject(options, { draggable: true });
+		this.setFromObject(options, ['color'], { draggable: true });
 	}
 	
 	createElement() {
@@ -70,9 +70,10 @@ export default class NodeGlyph extends Transformable {
 			});
 			
 			this.p('color').subscribe((color) => {
+				console.log('color', color);
 				circle.attr({
-					stroke: chroma(color).darken(),
-					fill  : chroma(color).brighten()
+					stroke: chroma(color || 'red').darken(),
+					fill  : chroma(color || 'red').brighten()
 				});
 			});
 			

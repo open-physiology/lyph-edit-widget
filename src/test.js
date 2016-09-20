@@ -527,15 +527,72 @@ root.element.promise.then(() => {
 	new BorderToggleTool             (root.context);
 	let drawingTool = new DrawingTool(root.context);
 	
-	function threeLayers() {
+	function threeLayers(nature = tube) {
 		return {
 			layers: [
-	            C.Lyph.new({ name: "Layer 3" }, NO_AXIS)::tube(),
-	            C.Lyph.new({ name: "Layer 2" }, NO_AXIS)::tube(),
-	            C.Lyph.new({ name: "Layer 1" }, NO_AXIS)::tube()
+	            C.Lyph.new({ name: "Layer 3" }, NO_AXIS)::nature(),
+	            C.Lyph.new({ name: "Layer 2" }, NO_AXIS)::nature(),
+	            C.Lyph.new({ name: "Layer 1" }, NO_AXIS)::nature()
             ]
 		};
 	}
+	
+	/* preload omega tree model */
+	const preloadedEpithelialTree = (() => {
+		const lyph1 = C.Lyph.new({ name: "Minor Calyx"                                 , ...threeLayers()     }, AXIS)::tube();
+		const lyph2 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph1, ...threeLayers()     }, AXIS)::tube();
+		const lyph3 = C.Lyph.new({ name: "Cortical Collecting Duct",  treeParent: lyph2, ...threeLayers()     }, AXIS)::tube();
+		const lyph4 = C.Lyph.new({ name: "Distal Convoluted Tubule",  treeParent: lyph3, ...threeLayers()     }, AXIS)::tube();
+		const lyph5 = C.Lyph.new({ name: "Ascending Thin Limb",       treeParent: lyph4, ...threeLayers()     }, AXIS)::tube();
+		const lyph6 = C.Lyph.new({ name: "Ascending Thick Limb",      treeParent: lyph5, ...threeLayers()     }, AXIS)::tube();
+		const lyph7 = C.Lyph.new({ name: "Descending Limb",           treeParent: lyph6, ...threeLayers()     }, AXIS)::tube();
+		const lyph8 = C.Lyph.new({ name: "Proximal Tubule",           treeParent: lyph7, ...threeLayers()     }, AXIS)::tube();
+		const lyph9 = C.Lyph.new({ name: "Bowman's Capsule",          treeParent: lyph8, ...threeLayers(bagR) }, AXIS)::bagR();
+		const result = C.OmegaTree.new({
+			parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
+		});
+		result.processColor = '#777700';
+		return result;
+	})();
+	const preloadedVenousEndothelialTree = (() => {
+		const lyph1 = C.Lyph.new({ name: "Stellate Vein"                     , ...threeLayers() }, AXIS)::tube();
+		const lyph2 = C.Lyph.new({ name: "Arcuate Vein",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
+		const lyph3 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
+		return C.OmegaTree.new({
+			parts: [lyph1, lyph2, lyph3]
+		});
+	})();
+	const preloadedArterialEndothelialTree = (() => {
+		const lyph1 = C.Lyph.new({ name: "Afferent Artery"                     , ...threeLayers() }, AXIS)::tube();
+		const lyph2 = C.Lyph.new({ name: "Arcuate Artery",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
+		const lyph3 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
+		return C.OmegaTree.new({
+			parts: [lyph1, lyph2, lyph3]
+		});
+	})();
+	const preloadedCoalescenceScenario = (() => (sharedLayer => C.CoalescenceScenario.new({
+		lyphs: [
+			C.Lyph.new({
+				name: "Urinary pFTU",
+				layers: [
+					C.Lyph.new({ name: "Urine"      }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
+					sharedLayer
+				]
+			}, AXIS)::tube(),
+			C.Lyph.new({
+				name: "Blood pFTU",
+				layers: [
+					C.Lyph.new({ name: "Blood"       }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
+					sharedLayer
+				]
+			}, AXIS)::tube()
+		]
+	}))( // shared layer
+		C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube()
+	))();
+	
 	
 	/* testing the drawing tool */
 	for (let [cls, label, newModel, matchesModel] of [
@@ -551,12 +608,6 @@ root.element.promise.then(() => {
 				C.Lyph.new({ name: "Cortex of Lobus"  }, NO_AXIS)::bagR()
 			]
 		}, AXIS)::bagR(), mfn => mfn && mfn.class === C.Lyph && mfn.label === "Kidney Lobus"],
-		// [ "Measurable", () => C.Measurable.new({}), ::C.Measurable.hasInstance ],
-	    // [ "Node",       () => C.Node      .new({}), ::C.Node.hasInstance       ],
-        // [ "Process",    () => C.Process   .new({
-        //     source: C.Node.new(),
-        //     target: C.Node.new()
-        // }), m => C.Process.hasInstance(m) && m.conveyingLyph.size === 0],
         [ C.Process, "Microcirculation", () => C.Process.new({
             conveyingLyph: [C.Lyph.new({ name: "Blood Vessel", layers: [
                 C.Lyph.new({ name: "Outer Wall"  }, NO_AXIS)::tube(),
@@ -566,60 +617,10 @@ root.element.promise.then(() => {
             source:         C.Node.new(),
             target:         C.Node.new()
         }), mfn => mfn && mfn.class === C.Process],
-		[ C.OmegaTree, "Epithelial Tree", () => {
-			const lyph1 = C.Lyph.new({ name: "Minor Calyx"                                 , ...threeLayers() }, AXIS)::tube();
-			const lyph2 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
-			const lyph3 = C.Lyph.new({ name: "Cortical Collecting Duct",  treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
-			const lyph4 = C.Lyph.new({ name: "Distal Convoluted Tubule",  treeParent: lyph3, ...threeLayers() }, AXIS)::tube();
-			const lyph5 = C.Lyph.new({ name: "Ascending Thin Limb",       treeParent: lyph4, ...threeLayers() }, AXIS)::tube();
-			const lyph6 = C.Lyph.new({ name: "Ascending Thick Limb",      treeParent: lyph5, ...threeLayers() }, AXIS)::tube();
-			const lyph7 = C.Lyph.new({ name: "Descending Limb",           treeParent: lyph6, ...threeLayers() }, AXIS)::tube();
-			const lyph8 = C.Lyph.new({ name: "Proximal Tubule",           treeParent: lyph7, ...threeLayers() }, AXIS)::tube();
-			const lyph9 = C.Lyph.new({ name: "Bowman's Capsule",          treeParent: lyph8, ...threeLayers() }, AXIS)::bagR();
-			const result = C.OmegaTree.new({
-				parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
-			});
-			result.processColor = '#777700';
-			return result;
-		}, mfn => mfn && mfn.class === C.OmegaTree ],
-		[ C.OmegaTree, "Venous Endothelial Tree", () => {
-			const lyph1 = C.Lyph.new({ name: "Stellate Vein"                     , ...threeLayers() }, AXIS)::tube();
-			const lyph2 = C.Lyph.new({ name: "Arcuate Vein",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
-			const lyph3 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
-			return C.OmegaTree.new({
-				parts: [lyph1, lyph2, lyph3]
-			});
-		}, mfn => mfn && mfn.class === C.OmegaTree ],
-		[ C.OmegaTree, "Arterial Endothelial Tree", () => {
-			const lyph1 = C.Lyph.new({ name: "Afferent Artery"                     , ...threeLayers() }, AXIS)::tube();
-			const lyph2 = C.Lyph.new({ name: "Arcuate Artery",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
-			const lyph3 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
-			return C.OmegaTree.new({
-				parts: [lyph1, lyph2, lyph3]
-			});
-		}, mfn => mfn && mfn.class === C.OmegaTree ],
-		[ C.CoalescenceScenario, "Coalescence Scenario", () => (sharedLayer => C.CoalescenceScenario.new({
-			lyphs: [
-				C.Lyph.new({
-					name: "Urinary pFTU",
-					layers: [
-						C.Lyph.new({ name: "Urine"      }, NO_AXIS)::tube(),
-						C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
-						sharedLayer
-					]
-				}, AXIS)::tube(),
-				C.Lyph.new({
-					name: "Blood pFTU",
-					layers: [
-						C.Lyph.new({ name: "Blood"       }, NO_AXIS)::tube(),
-						C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
-						sharedLayer
-					]
-				}, AXIS)::tube()
-			]
-		}))( // shared layer
-			C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube()
-		), mfn => mfn && mfn.class === C.CoalescenceScenario ]
+		[ C.OmegaTree, "Epithelial Tree",           () => preloadedEpithelialTree,           mfn => mfn && mfn.class === C.OmegaTree ],
+		[ C.OmegaTree, "Venous Endothelial Tree",   () => preloadedVenousEndothelialTree,    mfn => mfn && mfn.class === C.OmegaTree ],
+		[ C.OmegaTree, "Arterial Endothelial Tree", () => preloadedArterialEndothelialTree,  mfn => mfn && mfn.class === C.OmegaTree ],
+		[ C.CoalescenceScenario, "Coalescence Scenario", () => preloadedCoalescenceScenario, mfn => mfn && mfn.class === C.CoalescenceScenario ]
 	]) {
 		const checkbox = $(`
 			<label title="New ${label}">
@@ -637,11 +638,8 @@ root.element.promise.then(() => {
 				modelFn.class = cls;
 				modelFn.label = label;
 				drawingTool.modelFn = modelFn;
-				// drawingTool.model = newModel();
-				// drawingTool.model.name = label;
 			} else {
 				drawingTool.modelFn = null;
-				// drawingTool.model = null;
 			}
 		});
 		drawingTool.p('modelFn')

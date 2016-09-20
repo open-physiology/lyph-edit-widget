@@ -39,6 +39,7 @@ import {Vector2D} from "../util/svg";
 import {rotateAround} from "../util/svg";
 import minBy from "lodash-bound/minBy";
 import {newSVGPoint} from "../util/svg";
+import {snap45} from "../util/svg";
 
 const {abs, sqrt} = Math;
 
@@ -79,28 +80,7 @@ export default class DragDropTool extends Tool {
 		// });
 		
 		
-		function snap45(moveEvent, movingArtefact, referencePoint) {
-			let mouseVector = moveEvent.point.in(movingArtefact.element);
-			if (referencePoint && moveEvent.ctrlKey) {
-				let cReferencePoint = referencePoint.in(movingArtefact.element);
-				let mouseVector45 = mouseVector.svgPoint
-				                               .matrixTransform(ID_MATRIX::rotateAround(cReferencePoint, 45));
-				mouseVector45 = new Vector2D({ x: mouseVector45.x, y: mouseVector45.y, context: movingArtefact.element });
-				let cDiff = mouseVector.minus(cReferencePoint);
-				let cDiff45 = mouseVector45.minus(cReferencePoint);
-				const newPt = (xp, yp, m = ID_MATRIX) => new Vector2D({
-					...newSVGPoint(xp.x, yp.y).matrixTransform(m)::pick('x', 'y'),
-					context: movingArtefact.element
-				});
-				mouseVector = [
-					{ diff: abs(cDiff.x), snap: () => newPt(cReferencePoint, mouseVector) },
-					{ diff: abs(cDiff.y), snap: () => newPt(mouseVector, cReferencePoint) },
-					{ diff: abs(cDiff45.x), snap: () => newPt(cReferencePoint, mouseVector45, ID_MATRIX::rotateAround(cReferencePoint, -45)) },
-					{ diff: abs(cDiff45.y), snap: () => newPt(mouseVector45, cReferencePoint, ID_MATRIX::rotateAround(cReferencePoint, -45)) }
-				]::minBy('diff').snap();
-			}
-			return mouseVector;
-		}
+		
 		
 		context.stateMachine.extend(({ enterState, subscribe }) => ({
 			'IDLE': () => this.e('mousedown')
@@ -138,7 +118,10 @@ export default class DragDropTool extends Tool {
 				/* move while dragging */
 				mousemove
 					::subscribe((moveEvent) => {
-						var mouseVector = snap45(moveEvent, movingArtefact, referencePoint);
+						let mouseVector = moveEvent.point.in(movingArtefact.element);
+						if (referencePoint && moveEvent.ctrlKey) {
+							mouseVector = snap45(mouseVector, movingArtefact, referencePoint);
+						}
 						let translationDiff = mouseVector.minus(mousedownVector.in(movingArtefact.element));
 						movingArtefact.transformation = transformationStart
 							.translate(...translationDiff.xy);
