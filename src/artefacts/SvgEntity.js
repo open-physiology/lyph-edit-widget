@@ -20,6 +20,9 @@ import SvgObject from './SvgObject.js';
 import ObservableSet from "../util/ObservableSet";
 import {subscribe_} from "../util/rxjs";
 
+import {log} from '../util/rxjs';
+import {skip} from "rxjs/operator/skip";
+
 
 export default class SvgEntity extends SvgObject {
 
@@ -54,10 +57,9 @@ export default class SvgEntity extends SvgObject {
 		this.children.e('add')                               .subscribe(e => { e.parent = this });
 		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
 		
-		/* when a parent is dragging, its children are dragging */
-		this.p('parent.dragging')
-			// ::switchMap(parent => parent ? parent.p('dragging') : of(true))
-			::subscribe_( this.p('dragging') , n=>n() );
+		/* when a parent is dragging, its children are ancestorDragging */
+		this.p(['parent.dragging', 'parent.ancestorDragging'], (d, ad) => d || ad)
+			::subscribe_( this.p('ancestorDragging') , n=>n() );
 		
 	}
 	

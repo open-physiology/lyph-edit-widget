@@ -70,6 +70,7 @@ import {tY} from "../util/svg";
 import {tap} from "../util/rxjs";
 import {setVirtualParent} from "../util/svg";
 import ProcessLine from "./ProcessLine";
+import {moveToFront} from "../util/svg";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -172,23 +173,35 @@ export default class LyphRectangle extends Transformable {
 			this.model[$$backgroundColor] = chroma.randomHsvGolden(0.8, 0.8);
 		}
 		
+		
+		
+		
+		// this.p('dragging').subscribe((dragging) => {
+		// 	if (!dragging) { debugger }
+		// 	console.log(''+this, 'dragging =', dragging); // TODO: remove
+		// });
+		
+		
+		
+		
 	}
 	
 	createElement() {
 		const group = this.root.gElement();
 		
+		/* create fixed subgroups of the lyph */
 		                   group.g().addClass('fixed main-shadow');
 		                   group.g().addClass('fixed main-shape');
 		                   group.g().addClass('fixed highlight-border');
-		                   group.g().addClass('fixed materials');
-		                   group.g().addClass('fixed parts');
 		                   group.g().addClass('fixed layers');
 		                   group.g().addClass('fixed segments');
+		                   group.g().addClass('fixed parts');
 		let axis =         group.g().addClass('fixed axis');
 		                   group.g().addClass('fixed borders');
 		                   group.g().addClass('fixed corners');
-		                   group.g().addClass('fixed nodes');
 		let processLines = group.g().addClass('fixed processes');
+		                   group.g().addClass('fixed nodes');
+		                   group.g().addClass('fixed materials');
 		                   group.g().addClass('fixed measurables');
 		
 		/* return representation(s) of element */
@@ -401,11 +414,9 @@ export default class LyphRectangle extends Transformable {
 						layer::assign({ spillunder: spill ? spillunder : 0 });
 					});
 					removed::take(1).subscribe(() => {
-						layer::assign({
-							spillunder: 0
-						});
+						layer::assign({ spillunder: 0 });
 					});
-					layer.moveToFront({ onlyFreeArtefacts: false });
+					layer.element::moveToFront();
 				}
 			});
 		

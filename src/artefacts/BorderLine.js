@@ -27,7 +27,6 @@ import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import {flag} from "../util/ValueTracker";
-import {$$elementCtrl} from "../symbols";
 import NodeGlyph from "./NodeGlyph";
 import LyphRectangle from "./LyphRectangle";
 import MeasurableGlyph from "./MeasurableGlyph";
@@ -177,8 +176,8 @@ export default class BorderLine extends Transformable {
 			
 			$(hitBoxGroup.node)
 				.css({ opacity: 0 })
-				.attr('controller', ''+this);
-			window[$$elementCtrl].set(hitBoxGroup.node, this);
+				.attr('controller', ''+this)
+				.association('controller', this);
 			
 			this.p('parent.free')
 				.subscribe((free) => { hitBoxGroup.attr({ pointerEvents: free ? 'inherit' : 'none' }) });

@@ -2,6 +2,7 @@ import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
+import {log} from "../util/rxjs";
 import {map} from "rxjs/operator/map";
 import {merge} from "rxjs/observable/merge";
 import {closestCommonAncestor} from "./SvgEntity";
@@ -15,11 +16,12 @@ export default class ProcessLine extends SvgEntity {
 	
 	@property() source;
 	@property() target;
+	@property({ initial: 'red' }) color;
 	
 	constructor(options) {
 		super(options);
 		this.setFromObject(options, [
-			'source', 'target'
+			'source', 'target', 'color'
 		], { free: false });
 	}
 	
@@ -35,17 +37,20 @@ export default class ProcessLine extends SvgEntity {
 		
 		let line = group.line().attr({
 			strokeWidth  : '3px',
-			stroke       : 'red',
 			pointerEvents: 'none',
 			strokeLinecap: 'round'
 		});
 		
+		this.p('color')::map(c => ({ stroke: c })).subscribe( ::line.attr );
+		
 		this.p(['source.parent', 'target.parent'])
+			::log('(sp, tp)')
 			::filter(([sp, tp]) => !!sp && !!tp)
+			::log('(sp, tp)')
 			::map(([sp, tp]) => closestCommonAncestor(sp, tp))
-			.subscribe( (cca) => {
-				this.parent = cca;
-			} );
+			::log('(cca)')
+			.subscribe(this.p('parent'));
+			// .subscribe((cca) => { this.parent = cca });
 		
 		merge(
 			this.p(['source.canvasTransformation', 'parent'])

@@ -60,10 +60,6 @@ export default class Canvas extends SvgEntity {
 		
 		this[$$existingSVG] = $(options.element);
 		
-		this.setFromObject(options, ['model'], {
-			dragging: false
-		});
-		
 		if (!this.model) { this.model = { name: '(canvas)' } }
 		
 	}

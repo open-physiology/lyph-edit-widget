@@ -40,7 +40,6 @@ import {rotateAround} from "../util/svg";
 import minBy from "lodash-bound/minBy";
 import {newSVGPoint} from "../util/svg";
 
-
 const {abs, sqrt} = Math;
 
 
@@ -80,6 +79,29 @@ export default class DragDropTool extends Tool {
 		// });
 		
 		
+		function snap45(moveEvent, movingArtefact, referencePoint) {
+			let mouseVector = moveEvent.point.in(movingArtefact.element);
+			if (referencePoint && moveEvent.ctrlKey) {
+				let cReferencePoint = referencePoint.in(movingArtefact.element);
+				let mouseVector45 = mouseVector.svgPoint
+				                               .matrixTransform(ID_MATRIX::rotateAround(cReferencePoint, 45));
+				mouseVector45 = new Vector2D({ x: mouseVector45.x, y: mouseVector45.y, context: movingArtefact.element });
+				let cDiff = mouseVector.minus(cReferencePoint);
+				let cDiff45 = mouseVector45.minus(cReferencePoint);
+				const newPt = (xp, yp, m = ID_MATRIX) => new Vector2D({
+					...newSVGPoint(xp.x, yp.y).matrixTransform(m)::pick('x', 'y'),
+					context: movingArtefact.element
+				});
+				mouseVector = [
+					{ diff: abs(cDiff.x), snap: () => newPt(cReferencePoint, mouseVector) },
+					{ diff: abs(cDiff.y), snap: () => newPt(mouseVector, cReferencePoint) },
+					{ diff: abs(cDiff45.x), snap: () => newPt(cReferencePoint, mouseVector45, ID_MATRIX::rotateAround(cReferencePoint, -45)) },
+					{ diff: abs(cDiff45.y), snap: () => newPt(mouseVector45, cReferencePoint, ID_MATRIX::rotateAround(cReferencePoint, -45)) }
+				]::minBy('diff').snap();
+			}
+			return mouseVector;
+		}
+		
 		context.stateMachine.extend(({ enterState, subscribe }) => ({
 			'IDLE': () => this.e('mousedown')
 				::filter(withoutMod('ctrl', 'shift', 'meta'))
@@ -98,13 +120,16 @@ export default class DragDropTool extends Tool {
 				    ::enterState('IDLE')
 				// TODO: go IDLE on pressing escape
 			],
-			'MOVING': ({mousedownVector, movingArtefact, referencePoint}) =>  {
+			'MOVING': ({mousedownVector, movingArtefact, referencePoint, reassessSelection = true}) =>  {
 				/* start dragging */
 				movingArtefact.dragging = true;
-				for (let a of movingArtefact.traverse('post')) {
-					a.element.jq.mouseleave();
+				if (reassessSelection) {
+					for (let a of movingArtefact.traverse('post')) {
+						a.element.jq.mouseleave();
+					}
+					reassessHoveredArtefact(movingArtefact.parent);
 				}
-				reassessHoveredArtefact(movingArtefact.parent);
+				
 				movingArtefact.moveToFront();
 				
 				/* record start dimensions */
@@ -113,25 +138,7 @@ export default class DragDropTool extends Tool {
 				/* move while dragging */
 				mousemove
 					::subscribe((moveEvent) => {
-						let mouseVector = moveEvent.point.in(movingArtefact.element);
-						if (referencePoint && moveEvent.ctrlKey) {
-							let cReferencePoint = referencePoint.in(movingArtefact.element);
-							let mouseVector45   = mouseVector.svgPoint
-								.matrixTransform(ID_MATRIX::rotateAround(cReferencePoint, 45));
-							mouseVector45 = new Vector2D({ x: mouseVector45.x, y: mouseVector45.y, context: movingArtefact.element });
-							let cDiff   = mouseVector  .minus(cReferencePoint);
-							let cDiff45 = mouseVector45.minus(cReferencePoint);
-							const newPt = (xp, yp, m = ID_MATRIX) => new Vector2D({
-								...newSVGPoint(xp.x, yp.y).matrixTransform(m)::pick('x', 'y'),
-								context: movingArtefact.element
-							});
-							mouseVector = [
-								{ diff: abs(cDiff.x),   snap: () => newPt(cReferencePoint, mouseVector) },
-								{ diff: abs(cDiff.y),   snap: () => newPt(mouseVector, cReferencePoint) },
-								{ diff: abs(cDiff45.x), snap: () => newPt(cReferencePoint, mouseVector45, ID_MATRIX::rotateAround(cReferencePoint, -45)) },
-								{ diff: abs(cDiff45.y), snap: () => newPt(mouseVector45, cReferencePoint, ID_MATRIX::rotateAround(cReferencePoint, -45)) }
-							]::minBy('diff').snap();
-						}
+						var mouseVector = snap45(moveEvent, movingArtefact, referencePoint);
 						let translationDiff = mouseVector.minus(mousedownVector.in(movingArtefact.element));
 						movingArtefact.transformation = transformationStart
 							.translate(...translationDiff.xy);

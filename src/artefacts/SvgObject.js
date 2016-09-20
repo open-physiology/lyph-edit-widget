@@ -23,7 +23,7 @@ import {args} from "../util/misc";
 
 import {assign} from 'bound-native-methods';
 import {flag} from "../util/ValueTracker";
-import {$$elementCtrl} from "../symbols";
+import {moveToFront} from "../util/svg";
 
 const $$svg             = Symbol('$$svg');
 const $$creatingElement = Symbol('$$creatingElement');
@@ -34,14 +34,11 @@ const $$placeholder     = Symbol('$$placeholder');
 const $$partKeys        = Symbol('$$partKeys');
 
 
-window[$$elementCtrl] = new WeakMap();
-
-
-
 export default class SvgObject extends ValueTracker {
 	
 	@flag(false) selected;
 	@flag(false) dragging;
+	@flag(false) ancestorDragging;
 	@flag(false) hidden;
 	
 	@flag(false) free;
@@ -55,7 +52,8 @@ export default class SvgObject extends ValueTracker {
 		this.setFromObject(options, [
 			'free',
 			'selected',
-			'dragging'
+			'dragging',
+			'ancestorDragging'
 		]);
 	}
 	
@@ -93,8 +91,9 @@ export default class SvgObject extends ValueTracker {
 			}
 			
 			/* annotate the main element as being controlled by this object */
-			$(this[$$creation].element).attr('controller', ''+this); // for css-selectors
-			window[$$elementCtrl].set(this[$$creation].element, this);
+			$(this[$$creation].element)
+				.attr('controller', ''+this)
+				.association('controller', this);
 			
 			/* stop creating; resolve promise */
 			this[$$creatingElement] = false;
@@ -114,11 +113,11 @@ export default class SvgObject extends ValueTracker {
 		await this.element.promise;
 		
 		/* manage 'dragging' property */
-		this.p(['hidden', 'dragging']).subscribe(([hidden, dragging]) => {
+		this.p(['hidden', 'dragging', 'ancestorDragging']).subscribe(([hidden, dragging, ancestorDragging]) => {
 			this.element.jq.css(
 				hidden
 				? { pointerEvents: 'none', opacity: 0   }
-				: dragging
+				: (dragging || ancestorDragging)
 				? { pointerEvents: 'none', opacity: 0.8 }
 				: { pointerEvents: '',     opacity: 1   });
 		});
@@ -131,16 +130,14 @@ export default class SvgObject extends ValueTracker {
 		this::assign(keyVals);
 	}
 	
-	moveToFront({ onlyFreeArtefacts = true } = {}) {
+	moveToFront() {
 		for (let element = this.element; element !== this.root.inside; element = element.parentElement) {
-			const fixed = element.classList.contains('fixed');
-			const artefact = window[$$elementCtrl].get(element);
-			// debugger;
-			if (!fixed && (!onlyFreeArtefacts || !artefact || artefact.free)) {
-				element.parentElement.appendChild(element);
+			const fixed    = element.classList.contains('fixed');
+			const artefact = $(element).association('controller');
+			if (!fixed && (!artefact || artefact.free)) {
+				element::moveToFront();
 			}
 		}
-		// this.element.parentElement.appendChild(this.element); // TODO: remove
 	}
 	
 	static definePartGetter(key, def = ()=>{}) {

@@ -42,6 +42,8 @@ const $$backgroundColor = Symbol('$$backgroundColor');
 
 export default class NodeGlyph extends Transformable {
 	
+	@property({ initial: 'red' }) color;
+	
 	constructor(options) {
 		super(options);
 		
@@ -63,10 +65,15 @@ export default class NodeGlyph extends Transformable {
 			let mainShapeGroup = this.inside.svg.select('.main-shape');
 			let circle = mainShapeGroup.circle().attr({
 				strokeWidth: '1px',
-				stroke     : '#aa0000',
-				fill       : '#ff5555',
 				cx         : 0,
 				cy         : 0
+			});
+			
+			this.p('color').subscribe((color) => {
+				circle.attr({
+					stroke: chroma(color).darken(),
+					fill  : chroma(color).brighten()
+				});
 			});
 			
 			// { // TODO: remove
@@ -80,20 +87,6 @@ export default class NodeGlyph extends Transformable {
 				::map(r => ({ r }))
 				.subscribe( ::circle.attr )
 		}
-	}
-	
-	// drop(droppedEntity) {
-	// 	// TODO
-	// }
-	
-	static indicator(x = 0, y = 0) {
-		return refSnap.circle().attr({
-			strokeWidth: '1px',
-			stroke     : '#aa0000',
-			fill       : '#ff5555',
-			cx         : x,
-			cy         : y
-		}).node::enrichDOM();
 	}
 	
 }

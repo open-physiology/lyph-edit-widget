@@ -220,3 +220,7 @@ export function rotateAround({x, y}, a) {
 		.rotate(a)
 		.translate(-x, -y);
 }
+
+export function moveToFront() {
+	this.parentElement.appendChild(this);
+}

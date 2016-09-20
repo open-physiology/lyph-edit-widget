@@ -11,7 +11,6 @@ import {afterMatching, log} from "../util/rxjs";
 import {stopPropagation} from "../util/misc";
 import {withoutMod} from "../util/misc";
 import {createSVGPoint, ID_MATRIX} from "../util/svg";
-import {$$elementCtrl} from "../symbols";
 import {switchMap} from "rxjs/operator/switchMap";
 import {of} from "rxjs/observable/of";
 import {setCTM} from "../util/svg";
@@ -46,7 +45,7 @@ function enrichMouseEvent(context, {sampleEvents = false} = {}) {
 	return this
 		::optionallySample()
 		::withLatestFrom(context.p('canvasScreenCTM'), (event, canvasScreenCTM) => {
-			event.controller = window[$$elementCtrl].get(event.currentTarget);
+			event.controller = $(event.currentTarget).association('controller');
 			let svgPoint = new SVGPoint(event.pageX, event.pageY).matrixTransform(canvasScreenCTM.inverse());
 			event.point = new Vector2D({
 				x:       svgPoint.x,
