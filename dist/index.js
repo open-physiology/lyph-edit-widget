@@ -60771,31 +60771,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 			/* tooltip management */
 			var tooltip = context.TooltipTool;
-			// $('body').powerTip({
-			// 	followMouse: true,
-			// 	fadeInTime:   0,
-			// 	fadeOutTime:  0,
-			// 	offset:      20,
-			// 	manual:      true
-			// });
-			// function updateTooltip(title, extra) {
-			// 	let content = `
-			// 		<b>${title}</b>
-			// 	`;
-			// 	if (extra && extra.length > 0) {
-			// 		content += `
-			// 			<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">
-			// 				${ extra.map(e => `<li>${e}</li>`).join('') }
-			// 			</ul>
-			// 		`;
-			// 	}
-			// 	$('body').data('powertip', content);
-			// 	$('#powerTip').html(content);
-			// 	$.powerTip.show($('body')[0]);
-			// 	$('#powerTip').css({ pointerEvents: 'none' });
-			// 	$(document).off('click.powertip'); // disable annoying feature
-			// }
-			// function hideTooltip() { $.powerTip.hide() }
 	
 			/* preparing to draw a given model */
 			var branches = new Set();
@@ -60807,7 +60782,6 @@ return /******/ (function(modules) { // webpackBootstrap
 						var _context2;
 	
 						tooltip.hide();
-						// this.model   = null;
 						_this.modelFn = null;
 						(_context2 = (_context2 = (_context2 = _this.p('modelFn'), _filter.filter).call(_context2, function (m) {
 							return !!m;
@@ -60822,7 +60796,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 						if (modelFn.class === C.OmegaTree || modelFn.class === C.Process) {
 							// TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-							tooltip.show(modelFn.class.singular + ' (initial node)', ['click and hold the left mouse button to create a new node', 'click on an existing node to start the ' + modelFn.class.singular + ' there', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
+							tooltip.show('' + modelFn.class.singular, ['click and hold the left mouse button to create a new node', 'click on an existing node to start the ' + modelFn.class.singular + ' there', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
 						} else if (modelFn.class === C.Lyph || modelFn.class === C.CoalescenceScenario) {
 							tooltip.show(modelFn.class.singular, ['click and hold the left mouse-button and drag down/right', '<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool']);
 						} else {
@@ -61030,7 +61004,7 @@ return /******/ (function(modules) { // webpackBootstrap
 							modelFn: function modelFn() {
 								return C.Process.new({ source: newNode, target: newNode });
 							},
-							tooltipText: model.constructor.singular + ' (initial node)',
+							tooltipText: model.constructor.singular + ' (0/' + parts.length + ': initial node)',
 							processColor: model.processColor
 						}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': function READY_TO_DRAW_PROCESS_LINE_NODE(data) {
 								return ['READY_TO_DRAW_SUB_OMEGA_TREE', _extends({}, data, {
@@ -61056,7 +61030,7 @@ return /******/ (function(modules) { // webpackBootstrap
 						}
 						enterState('READY_TO_DRAW_PROCESS_LINE_NODE', {
 							sourceNodeArtefact: sourceNodeArtefact,
-							tooltipText: model.constructor.singular + ' (' + (counter + 1) + '/' + total + ')'
+							tooltipText: model.constructor.singular + ' (' + (counter + 1) + '/' + total + ': ' + conveyingLyph.name + ')'
 						}, { 'DRAWING_PROCESS_LINE_NODE': function DRAWING_PROCESS_LINE_NODE(data) {
 								return ['DRAWING_SUB_OMEGA_TREE', _extends({}, data, {
 									model: model,
@@ -61086,7 +61060,7 @@ return /******/ (function(modules) { // webpackBootstrap
 									conveyingLyph: [conveyingLyph]
 								});
 							},
-							tooltipText: model.constructor.singular + ' (' + (counter + 1) + '/' + total + ')',
+							tooltipText: model.constructor.singular + ' (' + (counter + 1) + '/' + total + ': ' + conveyingLyph.name + ')',
 							processColor: model.processColor
 						}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': function READY_TO_DRAW_PROCESS_LINE_NODE(data) {
 								return ['READY_TO_DRAW_SUB_OMEGA_TREE', _extends({}, data, {

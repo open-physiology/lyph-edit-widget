@@ -58,7 +58,6 @@ export default class TooltipTool extends Tool {
 		});
 		
 		this.p(['enabled', 'shown'], (e, s) => e && s).subscribe((visible) => {
-			console.log('visible', visible);
 			if (visible) {
 				this.show();
 			} else {
@@ -68,9 +67,7 @@ export default class TooltipTool extends Tool {
 	}
 	
 	show(title = this.title, content = this.content) {
-		console.log('show (1)', title, content);
 		if (!this.enabled) { return }
-		console.log('show (2)', title, content);
 		this.title   = title;
 		this.content = content;
 		let fullContent = `<b>${title}</b>`;

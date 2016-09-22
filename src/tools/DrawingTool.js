@@ -80,38 +80,12 @@ export default class DrawingTool extends Tool {
 		
 		/* tooltip management */
 		const tooltip = context.TooltipTool;
-		// $('body').powerTip({
-		// 	followMouse: true,
-		// 	fadeInTime:   0,
-		// 	fadeOutTime:  0,
-		// 	offset:      20,
-		// 	manual:      true
-		// });
-		// function updateTooltip(title, extra) {
-		// 	let content = `
-		// 		<b>${title}</b>
-		// 	`;
-		// 	if (extra && extra.length > 0) {
-		// 		content += `
-		// 			<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">
-		// 				${ extra.map(e => `<li>${e}</li>`).join('') }
-		// 			</ul>
-		// 		`;
-		// 	}
-		// 	$('body').data('powertip', content);
-		// 	$('#powerTip').html(content);
-		// 	$.powerTip.show($('body')[0]);
-		// 	$('#powerTip').css({ pointerEvents: 'none' });
-		// 	$(document).off('click.powertip'); // disable annoying feature
-		// }
-		// function hideTooltip() { $.powerTip.hide() }
 		
 		/* preparing to draw a given model */
 		const branches = new Set();
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'IDLE': () => {
 				tooltip.hide();
-				// this.model   = null;
 				this.modelFn = null;
 				this.p('modelFn')
 					::filter(m => !!m)
@@ -120,7 +94,7 @@ export default class DrawingTool extends Tool {
 			},
 			'READY_TO_DRAW_MODEL'  : ({ modelFn }) => {
 				if (modelFn.class === C.OmegaTree || modelFn.class === C.Process) { // TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-					tooltip.show(`${modelFn.class.singular} (initial node)`, [
+					tooltip.show(`${modelFn.class.singular}`, [
 						`click and hold the left mouse button to create a new node`,
 						`click on an existing node to start the ${modelFn.class.singular} there`,
 						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
@@ -276,7 +250,7 @@ export default class DrawingTool extends Tool {
 					downEvent,
 					parentArtefact,
 					modelFn: () => C.Process.new({ source: newNode, target: newNode }),
-					tooltipText: `${model.constructor.singular} (initial node)`,
+					tooltipText: `${model.constructor.singular} (0/${parts.length}: initial node)`,
 					processColor: model.processColor
 				}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': data => ['READY_TO_DRAW_SUB_OMEGA_TREE', {
 					...data,
@@ -293,7 +267,7 @@ export default class DrawingTool extends Tool {
 				}
 				enterState('READY_TO_DRAW_PROCESS_LINE_NODE', {
 					sourceNodeArtefact,
-					tooltipText: `${model.constructor.singular} (${counter+1}/${total})`
+					tooltipText: `${model.constructor.singular} (${counter+1}/${total}: ${conveyingLyph.name})`
 				}, { 'DRAWING_PROCESS_LINE_NODE': data => ['DRAWING_SUB_OMEGA_TREE', {
 					...data,
 					model,
@@ -312,7 +286,7 @@ export default class DrawingTool extends Tool {
 						target: C.Node.new(),
 						conveyingLyph: [conveyingLyph]
 					}),
-					tooltipText: `${model.constructor.singular} (${counter+1}/${total})`,
+					tooltipText: `${model.constructor.singular} (${counter+1}/${total}: ${conveyingLyph.name})`,
 					processColor: model.processColor
 				}, { 'READY_TO_DRAW_PROCESS_LINE_NODE': data => ['READY_TO_DRAW_SUB_OMEGA_TREE', {
 					...data,
