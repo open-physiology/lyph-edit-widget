@@ -39,6 +39,7 @@ import searchArgs from "./util/searchArgs";
 import {createMatrix} from "./util/svg";
 import RotateTool from "./tools/RotateTool";
 import {toPromise} from "rxjs/operator/toPromise";
+import TooltipTool from "./tools/TooltipTool";
 
 let C = window.module.classes;
 
@@ -518,6 +519,7 @@ let cyst = natureSetter('closed', 'closed');
 
 root.element.promise.then(() => {
 	/* initialize tools */
+	let tooltipTool = new TooltipTool(root.context);
 	new SelectTool                   (root.context);
 	new DragDropTool                 (root.context);
 	new ResizeTool                   (root.context);
@@ -527,6 +529,16 @@ root.element.promise.then(() => {
 	new BorderToggleTool             (root.context);
 	let drawingTool = new DrawingTool(root.context);
 	
+	/* toggle tooltips */
+	const showTtCheckbox = $('#showTooltips');
+	showTtCheckbox.change(() => {
+        tooltipTool.enabled = showTtCheckbox.prop('checked');
+	});
+	tooltipTool.p('enabled').subscribe((e) => {
+		showTtCheckbox.prop('checked', e);
+	});
+	
+	/* convenience functions */
 	function threeLayers(nature = tube) {
 		return {
 			layers: [

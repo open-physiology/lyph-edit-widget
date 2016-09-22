@@ -20,14 +20,14 @@
             top:  4px;
             left: 4px;
         }
-        #info, #controls {
+        #corner > div {
             display: inline-block;
             border: dotted 1px black;
             height: 22px;
             padding: 1px 3px;
             vertical-align: top;
         }
-        #info *, #controls * {
+        #corner > div * {
             vertical-align: middle;
         }
     </style>
@@ -37,6 +37,7 @@
     <div id="corner">
         <div id="info"><span></span></div>
         <div id="controls"></div>
+        <div id="config"><label><input id="showTooltips" type="checkbox"> <i>Tooltips</i></label></div>
     </div>
 
     <svg id="svg"></svg>

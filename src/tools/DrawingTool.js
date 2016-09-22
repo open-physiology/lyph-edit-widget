@@ -79,37 +79,38 @@ export default class DrawingTool extends Tool {
 		// TODO: remove the 'active' property from tools, now that we have state machines
 		
 		/* tooltip management */
-		$('body').powerTip({
-			followMouse: true,
-			fadeInTime:   0,
-			fadeOutTime:  0,
-			offset:      20,
-			manual:      true
-		});
-		function updateTooltip(title, extra) {
-			let content = `
-				<b>${title}</b>
-			`;
-			if (extra && extra.length > 0) {
-				content += `
-					<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">
-						${ extra.map(e => `<li>${e}</li>`).join('') }
-					</ul>
-				`;
-			}
-			$('body').data('powertip', content);
-			$('#powerTip').html(content);
-			$.powerTip.show($('body')[0]);
-			$('#powerTip').css({ pointerEvents: 'none' });
-			$(document).off('click.powertip'); // disable annoying feature
-		}
-		function hideTooltip() { $.powerTip.hide() }
+		const tooltip = context.TooltipTool;
+		// $('body').powerTip({
+		// 	followMouse: true,
+		// 	fadeInTime:   0,
+		// 	fadeOutTime:  0,
+		// 	offset:      20,
+		// 	manual:      true
+		// });
+		// function updateTooltip(title, extra) {
+		// 	let content = `
+		// 		<b>${title}</b>
+		// 	`;
+		// 	if (extra && extra.length > 0) {
+		// 		content += `
+		// 			<ul style="margin: 3px 0 0 0; padding: 0 0 0 17px; font-style: italic;">
+		// 				${ extra.map(e => `<li>${e}</li>`).join('') }
+		// 			</ul>
+		// 		`;
+		// 	}
+		// 	$('body').data('powertip', content);
+		// 	$('#powerTip').html(content);
+		// 	$.powerTip.show($('body')[0]);
+		// 	$('#powerTip').css({ pointerEvents: 'none' });
+		// 	$(document).off('click.powertip'); // disable annoying feature
+		// }
+		// function hideTooltip() { $.powerTip.hide() }
 		
 		/* preparing to draw a given model */
 		const branches = new Set();
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'IDLE': () => {
-				hideTooltip();
+				tooltip.hide();
 				// this.model   = null;
 				this.modelFn = null;
 				this.p('modelFn')
@@ -119,18 +120,18 @@ export default class DrawingTool extends Tool {
 			},
 			'READY_TO_DRAW_MODEL'  : ({ modelFn }) => {
 				if (modelFn.class === C.OmegaTree || modelFn.class === C.Process) { // TODO: configure this flexibly; this is a hack to get it working quickly for omega trees
-					updateTooltip(`${modelFn.class.singular} (initial node)`, [
+					tooltip.show(`${modelFn.class.singular} (initial node)`, [
 						`click and hold the left mouse button to create a new node`,
 						`click on an existing node to start the ${modelFn.class.singular} there`,
 						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
 					]);
 				} else if (modelFn.class === C.Lyph || modelFn.class === C.CoalescenceScenario) {
-					updateTooltip(modelFn.class.singular, [
+					tooltip.show(modelFn.class.singular, [
 						`click and hold the left mouse-button and drag down/right`,
 						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
 					]);
 				} else {
-					updateTooltip(modelFn.class.singular, [
+					tooltip.show(modelFn.class.singular, [
 						`click and hold the left mouse button`,
 						`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
 					]);
@@ -172,7 +173,7 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Lyph], [Canvas, LyphRectangle], 'DRAWING_LYPH_RECTANGLE']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_LYPH_RECTANGLE': ({downEvent, parentArtefact, modelFn}) => {
-				updateTooltip(modelFn.class.singular, [
+				tooltip.show(modelFn.class.singular, [
 					`release the mouse-button when finished`
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
@@ -197,7 +198,7 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.CoalescenceScenario], [Canvas, LyphRectangle], 'DRAWING_COALESCENCE_RECTANGLE']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_COALESCENCE_RECTANGLE': ({downEvent, parentArtefact, modelFn}) => {
-				updateTooltip(modelFn.class.singular, [
+				tooltip.show(modelFn.class.singular, [
 					`release the mouse-button when finished`
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
@@ -222,7 +223,7 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Node], [Canvas, LyphRectangle, BorderLine], 'DRAWING_NODE_GLYPH']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_NODE_GLYPH': ({downEvent, parentArtefact, modelFn}) => {
-				updateTooltip(modelFn.class.singular, [
+				tooltip.show(modelFn.class.singular, [
 					`release the mouse-button when finished`
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
@@ -245,7 +246,7 @@ export default class DrawingTool extends Tool {
 		branches.add([[C.Measurable], [Canvas, LyphRectangle, BorderLine, ProcessLine], 'DRAWING_MEASURABLE_GLYPH']);
 		context.stateMachine.extend(({enterState, subscribe}) => ({
 			'DRAWING_MEASURABLE_GLYPH': ({downEvent, parentArtefact, modelFn}) => {
-				updateTooltip(modelFn.class.singular, [
+				tooltip.show(modelFn.class.singular, [
 					`release the mouse-button when finished`
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
@@ -347,7 +348,7 @@ export default class DrawingTool extends Tool {
 		}
 		context.stateMachine.extend(({enterState, subscribe, intercept}) => ({
 			'DRAWING_FIRST_PROCESS_LINE_NODE': ({downEvent, parentArtefact, modelFn, tooltipText, processColor}) => {
-				updateTooltip(tooltipText || `process (initial node)`, [
+				tooltip.show(tooltipText || `process (initial node)`, [
 					`release the mouse-button when finished`
 				]);
 				/* either create or use existing node */
@@ -365,7 +366,7 @@ export default class DrawingTool extends Tool {
 				}]});
 			},
 			'READY_TO_DRAW_PROCESS_LINE_NODE': ({sourceNodeArtefact, modelFn, tooltipText}) => {
-				updateTooltip(tooltipText || `process`, [
+				tooltip.show(tooltipText || `process`, [
 					`click and hold the left mouse button to create a new connected node`,
 					`click on an existing node to connect to there`,
 					`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
@@ -393,7 +394,7 @@ export default class DrawingTool extends Tool {
 					::enterState('IDLE');
 			},
 			'DRAWING_PROCESS_LINE_NODE': ({downEvent, parentArtefact, modelFn, sourceNodeArtefact, /***/ tooltipText, processColor}) => {
-				updateTooltip(tooltipText || `process`, [
+				tooltip.show(tooltipText || `process`, [
 					`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">ctrl</kb> = snap to compass directions`,
 					`release the mouse-button when finished`
 				]);
