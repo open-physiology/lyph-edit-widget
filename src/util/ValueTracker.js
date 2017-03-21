@@ -139,11 +139,9 @@ export default class ValueTracker {
 		
 		/* define the bus which manages the property */
 		let subject = this[$$settableProperties][name] = new BehaviorSubject(initial)
-			// ::filter              (this[$$filterBy] )
-			::filter              (this::isValid    )
-			::map                 (this::transform  )
-			// ::takeUntil           (this[$$takeUntil])
-			::distinctUntilChanged(this::isEqual    );
+			::filter              (this::isValid  )
+			::map                 (this::transform)
+			::distinctUntilChanged(this::isEqual  );
 		this[$$properties][name] = readonly ? subject.asObservable() : subject;
 		
 		/* keep track of current value */

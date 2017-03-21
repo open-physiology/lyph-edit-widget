@@ -152,8 +152,8 @@ export default class DrawingTool extends Tool {
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
 				const newArtefact = new LyphRectangle({
-					model   : modelFn(),
-					parent  : parentArtefact, // TODO: specific types of parentage (layer, part, segment, ...) so that the 'drop' code below is not needed
+					model : modelFn(),
+					parent: parentArtefact, // TODO: specific types of parentage (layer, part, segment, ...) so that the 'drop' code below is not needed
 					...p.obj()
 				});
 				if (parentArtefact.drop::isFunction()) {
