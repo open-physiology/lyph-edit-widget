@@ -9,7 +9,7 @@ module.exports = {
 	output: {
 		path: './dist',
 		filename: '[name].js',
-		library: 'OpenPhysiologyModel',
+		library: 'LyphEditWidget',
 		libraryTarget: 'umd',
 		sourceMapFilename: '[file].map'
 	},
@@ -18,6 +18,10 @@ module.exports = {
 			{
 				test: /\.js$/,
 				exclude: /node\_modules/,
+				loader: 'babel'
+			},
+			{
+				test: /node\_modules\/open-physiology-model\/.+\.js$/,
 				loader: 'babel'
 			},
 			{

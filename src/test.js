@@ -83,7 +83,7 @@ if (getArguments.has('preassemble') || getArguments.has('assemble')) {
 	});
 	
 	// TODO: left-border/right-border cross over in coalescence; fix it
-	let sharedLayer = C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube();
+	let sharedLayer = C.Lyph.new({ name: "Basement Membrane", ...longitudinalBorders() }, NO_AXIS)::tube();
 	
 	let urinaryPFTU, bloodPFTU;
 	let coalescence1 = C.CoalescenceScenario.new({
@@ -95,11 +95,13 @@ if (getArguments.has('preassemble') || getArguments.has('assemble')) {
 					C.Lyph.new({
 						name:      "Urine",
 						materials: [ sodium, water ],
-						measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Urine" }) ]
+						measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Urine" }) ],
+						...longitudinalBorders()
 					}, NO_AXIS)::tube(),
-					C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Epithelium", ...longitudinalBorders() }, NO_AXIS)::tube(),
 					sharedLayer
-				]
+				],
+				...longitudinalBorder()
 			}, AXIS)::tube(),
 			bloodPFTU = C.Lyph.new({
 				name: "Blood pFTU",
@@ -107,11 +109,13 @@ if (getArguments.has('preassemble') || getArguments.has('assemble')) {
 					C.Lyph.new({
 						name:      "Blood",
 						materials: [ sodium, water ],
-						measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Blood" }) ]
+						measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Blood" }) ],
+						...longitudinalBorders()
 					}, NO_AXIS)::tube(),
-					C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Endothelium", ...longitudinalBorders() }, NO_AXIS)::tube(),
 					sharedLayer
-				]
+				],
+				...longitudinalBorder()
 			}, AXIS)::tube()
 		]
 	});
@@ -120,76 +124,86 @@ if (getArguments.has('preassemble') || getArguments.has('assemble')) {
 	let cytosolLayer = (nature) => C.Lyph.new({
 		name: "Cytosol",
 		materials: [sodium, water],
-		measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Cytosol" }) ]
+		measurables: [ C.Measurable.new({ name: "Concentration of Sodium in Cytosol" }) ],
+		...longitudinalBorders()
 	}, NO_AXIS);
-	let plasmaMembraneLayer = () => C.Lyph.new({ name: "Plasma Membrane" }, NO_AXIS);
+	let plasmaMembraneLayer = () => C.Lyph.new({ name: "Plasma Membrane", ...longitudinalBorders() }, NO_AXIS);
 	
 	let redBloodCell = C.Lyph.new({
 		name: "Red Blood Cell",
 		layers: [
 			cytosolLayer()::cyst(),
 			plasmaMembraneLayer()::cyst()
-		]
+		],
+		...longitudinalBorder()
 	}, AXIS)::cyst(); // specified as bag in the e-mail, but surely a cell is a cyst?
 	let apicalRegionOfEpithelialCell = C.Lyph.new({
 		name: "Apical region of Epithelial Cell",
 		layers: [
 			cytosolLayer()::bagL(),
 			plasmaMembraneLayer()::bagL()
-		]
+		],
+		...longitudinalBorder()
 	}, AXIS)::bagL();
 	let basolateralRegionOfEpithelialCell = C.Lyph.new({
 		name: "Basolateral region of Epithelial Cell",
 		layers: [
 			cytosolLayer()::bagR(),
 			plasmaMembraneLayer()::bagR()
-		]
+		],
+		...longitudinalBorder()
 	}, AXIS)::bagR();
 	
 	
-	let wallLayer  = () => C.Lyph.new({ name: "Wall"  }, NO_AXIS);
-	let lumenLayer = () => C.Lyph.new({ name: "Lumen" }, NO_AXIS);
+	let wallLayer  = () => C.Lyph.new({ name: "Wall", ...longitudinalBorders()  }, NO_AXIS);
+	let lumenLayer = () => C.Lyph.new({ name: "Lumen", ...longitudinalBorders() }, NO_AXIS);
 	let Gmodel = C.Lyph.new({
 		name: "V-Type, Extracellular (UniProt ID: P15313)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	let Hmodel = C.Lyph.new({
 		name: "V-Type, Transmembrane (UniProt ID: P15313)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	let Imodel = C.Lyph.new({
 		name: "V-Type, Intracellular (UniProt ID: P15313)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	let Lmodel = C.Lyph.new({
 		name: "NBC, Extracellular (UniProt ID: Q9Y6R1)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	let Kmodel = C.Lyph.new({
 		name: "NBC, Transmembrane (UniProt ID: Q9Y6R1)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	let Jmodel = C.Lyph.new({
 		name: "NBC, Intracellular (UniProt ID: Q9Y6R1)",
 		layers: [
 			lumenLayer()::tube(),
 			wallLayer() ::tube(),
-		]
+		],
+				...longitudinalBorder()
 	}, AXIS)::tube();
 	
 	let rateMeasurable = C.Measurable.new({ name: "Sodium flux" });
@@ -502,6 +516,22 @@ if (getArguments.has('preassemble') || getArguments.has('assemble')) {
 // no co-highlighting of related materials
 // shared layer crosses border natures
 
+function longitudinalBorders() {
+	return {
+		longitudinalBorders: [
+			C.Border.new(),
+			C.Border.new()
+		]
+	};
+}
+function longitudinalBorder() {
+	return {
+		longitudinalBorders: [
+			C.Border.new()
+		]
+	};
+}
+
 const AXIS    = { createAxis: true, createRadialBorders: true };
 const NO_AXIS = { createRadialBorders: true };
 
@@ -542,96 +572,112 @@ root.element.promise.then(() => {
 	function threeLayers(nature = tube) {
 		return {
 			layers: [
-	            C.Lyph.new({ name: "Layer 3" }, NO_AXIS)::nature(),
-	            C.Lyph.new({ name: "Layer 2" }, NO_AXIS)::nature(),
-	            C.Lyph.new({ name: "Layer 1" }, NO_AXIS)::nature()
+	            C.Lyph.new({ name: "Layer 3", ...longitudinalBorders() }, NO_AXIS)::nature(),
+	            C.Lyph.new({ name: "Layer 2", ...longitudinalBorders() }, NO_AXIS)::nature(),
+	            C.Lyph.new({ name: "Layer 1", ...longitudinalBorders() }, NO_AXIS)::nature()
             ]
 		};
 	}
 	
-	/* preload omega tree model */
-	const preloadedEpithelialTree = (() => {
-		const lyph1 = C.Lyph.new({ name: "Minor Calyx"                                 , ...threeLayers()     }, AXIS)::tube();
-		const lyph2 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph1, ...threeLayers()     }, AXIS)::tube();
-		const lyph3 = C.Lyph.new({ name: "Cortical Collecting Duct",  treeParent: lyph2, ...threeLayers()     }, AXIS)::tube();
-		const lyph4 = C.Lyph.new({ name: "Distal Convoluted Tubule",  treeParent: lyph3, ...threeLayers()     }, AXIS)::tube();
-		const lyph5 = C.Lyph.new({ name: "Ascending Thin Limb",       treeParent: lyph4, ...threeLayers()     }, AXIS)::tube();
-		const lyph6 = C.Lyph.new({ name: "Ascending Thick Limb",      treeParent: lyph5, ...threeLayers()     }, AXIS)::tube();
-		const lyph7 = C.Lyph.new({ name: "Descending Limb",           treeParent: lyph6, ...threeLayers()     }, AXIS)::tube();
-		const lyph8 = C.Lyph.new({ name: "Proximal Tubule",           treeParent: lyph7, ...threeLayers()     }, AXIS)::tube();
-		const lyph9 = C.Lyph.new({ name: "Bowman's Capsule",          treeParent: lyph8, ...threeLayers(bagR) }, AXIS)::bagR();
-		const result = C.OmegaTree.new({
-			parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
-		});
-		result.processColor = '#777700';
-		return result;
-	})();
-	const preloadedVenousEndothelialTree = (() => {
-		const lyph1 = C.Lyph.new({ name: "Stellate Vein"                     , ...threeLayers() }, AXIS)::tube();
-		const lyph2 = C.Lyph.new({ name: "Arcuate Vein",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
-		const lyph3 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
-		return C.OmegaTree.new({
-			parts: [lyph1, lyph2, lyph3]
-		});
-	})();
-	const preloadedArterialEndothelialTree = (() => {
-		const lyph1 = C.Lyph.new({ name: "Afferent Artery"                     , ...threeLayers() }, AXIS)::tube();
-		const lyph2 = C.Lyph.new({ name: "Arcuate Artery",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
-		const lyph3 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
-		return C.OmegaTree.new({
-			parts: [lyph1, lyph2, lyph3]
-		});
-	})();
+	// /* preload omega tree model */
+	// const preloadedEpithelialTree = (() => {
+	// 	const lyph1 = C.Lyph.new({ name: "Minor Calyx"                                 , ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph2 = C.Lyph.new({ name: "Medullary Collecting Duct", treeParent: lyph1, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph3 = C.Lyph.new({ name: "Cortical Collecting Duct",  treeParent: lyph2, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph4 = C.Lyph.new({ name: "Distal Convoluted Tubule",  treeParent: lyph3, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph5 = C.Lyph.new({ name: "Ascending Thin Limb",       treeParent: lyph4, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph6 = C.Lyph.new({ name: "Ascending Thick Limb",      treeParent: lyph5, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph7 = C.Lyph.new({ name: "Descending Limb",           treeParent: lyph6, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph8 = C.Lyph.new({ name: "Proximal Tubule",           treeParent: lyph7, ...threeLayers()     }, AXIS)::tube();
+	// 	const lyph9 = C.Lyph.new({ name: "Bowman's Capsule",          treeParent: lyph8, ...threeLayers(bagR) }, AXIS)::bagR();
+	// 	const result = C.OmegaTree.new({
+	// 		parts: [lyph1, lyph2, lyph3, lyph4, lyph5, lyph6, lyph7, lyph8, lyph9]
+	// 	});
+	// 	result.processColor = '#777700';
+	// 	return result;
+	// })();
+	// const preloadedVenousEndothelialTree = (() => {
+	// 	const lyph1 = C.Lyph.new({ name: "Stellate Vein"                     , ...threeLayers() }, AXIS)::tube();
+	// 	const lyph2 = C.Lyph.new({ name: "Arcuate Vein",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
+	// 	const lyph3 = C.Lyph.new({ name: "Interlobar Vein", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
+	// 	return C.OmegaTree.new({
+	// 		parts: [lyph1, lyph2, lyph3]
+	// 	});
+	// })();
+	// const preloadedArterialEndothelialTree = (() => {
+	// 	const lyph1 = C.Lyph.new({ name: "Afferent Artery"                     , ...threeLayers() }, AXIS)::tube();
+	// 	const lyph2 = C.Lyph.new({ name: "Arcuate Artery",    treeParent: lyph1, ...threeLayers() }, AXIS)::tube();
+	// 	const lyph3 = C.Lyph.new({ name: "Interlobar Artery", treeParent: lyph2, ...threeLayers() }, AXIS)::tube();
+	// 	return C.OmegaTree.new({
+	// 		parts: [lyph1, lyph2, lyph3]
+	// 	});
+	// })();
 	const preloadedCoalescenceScenario = (() => (sharedLayer => C.CoalescenceScenario.new({
 		lyphs: [
 			C.Lyph.new({
 				name: "Urinary pFTU",
 				layers: [
-					C.Lyph.new({ name: "Urine"      }, NO_AXIS)::tube(),
-					C.Lyph.new({ name: "Epithelium" }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Urine", ...longitudinalBorders()      }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Epithelium", ...longitudinalBorders() }, NO_AXIS)::tube(),
 					sharedLayer
-				]
+				],
+						...longitudinalBorder()
 			}, AXIS)::tube(),
 			C.Lyph.new({
 				name: "Blood pFTU",
 				layers: [
-					C.Lyph.new({ name: "Blood"       }, NO_AXIS)::tube(),
-					C.Lyph.new({ name: "Endothelium" }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Blood"      , ...longitudinalBorders() }, NO_AXIS)::tube(),
+					C.Lyph.new({ name: "Endothelium", ...longitudinalBorders() }, NO_AXIS)::tube(),
 					sharedLayer
-				]
+				],
+						...longitudinalBorder()
 			}, AXIS)::tube()
 		]
 	}))( // shared layer
-		C.Lyph.new({ name: "Basement Membrane" }, NO_AXIS)::tube()
+		C.Lyph.new({ name: "Basement Membrane", ...longitudinalBorders() }, NO_AXIS)::tube()
 	))();
 	
 	
 	/* testing the drawing tool */
 	for (let [cls, label, newModel, matchesModel] of [
-		[ C.Lyph, "Epithelial Cell", () => C.Lyph.new({
-			layers: [
-				C.Lyph.new({ name: "Cytosol"          }, NO_AXIS)::cyst(),
-				C.Lyph.new({ name: "Plasma Membrane"  }, NO_AXIS)::cyst()
-			]
-		}, AXIS)::cyst(), mfn => mfn && mfn.class === C.Lyph && mfn.label === "Epithelial Cell"],
+		[ C.Lyph, "Epithelial Cell", () => {
+			
+			let result = C.Lyph.new({
+				layers: [
+					C.Lyph.new({ name: "Cytosol"        , ...longitudinalBorders() }, NO_AXIS)::cyst(),
+					C.Lyph.new({ name: "Plasma Membrane", ...longitudinalBorders() }, NO_AXIS)::cyst()
+				],
+						...longitudinalBorder()
+			}, AXIS)::cyst();
+			
+			// console.log(result);
+			// debugger;
+			
+			return result;
+		
+		
+		}, mfn => mfn && mfn.class === C.Lyph && mfn.label === "Epithelial Cell"],
 		[ C.Lyph, "Kidney Lobus", () => C.Lyph.new({
 			layers: [
-				C.Lyph.new({ name: "Medulla of Lobus" }, NO_AXIS)::bagR(),
-				C.Lyph.new({ name: "Cortex of Lobus"  }, NO_AXIS)::bagR()
-			]
+				C.Lyph.new({ name: "Medulla of Lobus", ...longitudinalBorders() }, NO_AXIS)::bagR(),
+				C.Lyph.new({ name: "Cortex of Lobus" , ...longitudinalBorders() }, NO_AXIS)::bagR()
+			],
+					...longitudinalBorder()
 		}, AXIS)::bagR(), mfn => mfn && mfn.class === C.Lyph && mfn.label === "Kidney Lobus"],
         [ C.Process, "Microcirculation", () => C.Process.new({
             conveyingLyph: [C.Lyph.new({ name: "Blood Vessel", layers: [
-                C.Lyph.new({ name: "Outer Wall"  }, NO_AXIS)::tube(),
-                C.Lyph.new({ name: "Inner Wall"  }, NO_AXIS)::tube(),
-                C.Lyph.new({ name: "Blood"       }, NO_AXIS)::tube()
-            ]}, AXIS)::tube()],
+                C.Lyph.new({ name: "Outer Wall", ...longitudinalBorders() }, NO_AXIS)::tube(),
+                C.Lyph.new({ name: "Inner Wall", ...longitudinalBorders() }, NO_AXIS)::tube(),
+                C.Lyph.new({ name: "Blood"     , ...longitudinalBorders() }, NO_AXIS)::tube()
+            ],
+            		...longitudinalBorder()
+            }, AXIS)::tube()],
             source:         C.Node.new(),
             target:         C.Node.new()
         }), mfn => mfn && mfn.class === C.Process],
-		[ C.OmegaTree, "Epithelial Tree",           () => preloadedEpithelialTree,           mfn => mfn && mfn.class === C.OmegaTree ],
-		[ C.OmegaTree, "Venous Endothelial Tree",   () => preloadedVenousEndothelialTree,    mfn => mfn && mfn.class === C.OmegaTree ],
-		[ C.OmegaTree, "Arterial Endothelial Tree", () => preloadedArterialEndothelialTree,  mfn => mfn && mfn.class === C.OmegaTree ],
+		// [ C.OmegaTree, "Epithelial Tree",           () => preloadedEpithelialTree,           mfn => mfn && mfn.class === C.OmegaTree ],
+		// [ C.OmegaTree, "Venous Endothelial Tree",   () => preloadedVenousEndothelialTree,    mfn => mfn && mfn.class === C.OmegaTree ],
+		// [ C.OmegaTree, "Arterial Endothelial Tree", () => preloadedArterialEndothelialTree,  mfn => mfn && mfn.class === C.OmegaTree ],
 		[ C.CoalescenceScenario, "Coalescence Scenario", () => preloadedCoalescenceScenario, mfn => mfn && mfn.class === C.CoalescenceScenario ]
 	]) {
 		const checkbox = $(`

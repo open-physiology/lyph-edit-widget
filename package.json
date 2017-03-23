@@ -63,7 +63,7 @@
     "open-physiology-model": "mhelvens/open-physiology-model#has-multiple-parents",
     "promise-defer": "^1.0.0",
     "rearg": "0.0.2",
-    "rxjs": "~5.0.0-beta",
+    "rxjs": "~5",
     "snap.svg.zpd": "0.0.11",
     "snapsvg-cjs": "0.0.4",
     "svg-innerhtml": "~1",

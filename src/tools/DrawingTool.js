@@ -151,8 +151,12 @@ export default class DrawingTool extends Tool {
 					`release the mouse-button when finished`
 				]);
 				const p = downEvent.point.in(parentArtefact.inside);
+				
+				// debugger;
+				let bla = modelFn();
+				
 				const newArtefact = new LyphRectangle({
-					model : modelFn(),
+					model : bla,
 					parent: parentArtefact, // TODO: specific types of parentage (layer, part, segment, ...) so that the 'drop' code below is not needed
 					...p.obj()
 				});

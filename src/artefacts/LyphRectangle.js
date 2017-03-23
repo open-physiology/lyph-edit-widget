@@ -130,10 +130,14 @@ export default class LyphRectangle extends Transformable {
 		
 		/* create the border artifacts */
 		for (let setKey of ['radialBorders', 'longitudinalBorders']) {
-			this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
-				parent: this,
-				model:  border
-			}))::subscribe_( this[setKey].e('add') , n=>n() );
+			this.model[setKey].e('add')::map(border => {
+				let recycled = this[$$recycle](border);
+				if (recycled) { return recycled }
+				return new BorderLine({
+					parent: this,
+					model:  border
+				});
+			}).subscribe( this[setKey].e('add') );
 		}
 		
 		for (let setKey of [

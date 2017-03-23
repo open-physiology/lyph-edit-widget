@@ -1,2 +1,2 @@
-import OPModel from 'open-physiology-model/dist/open-physiology-model-minimal';
+import OPModel from 'open-physiology-model/src/index';
 window.module = OPModel();
