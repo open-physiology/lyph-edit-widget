@@ -18,18 +18,17 @@ import {args, humanMsg} from './misc';
 
 import { $$rxSubscriber } from 'rxjs/symbol/rxSubscriber';
 
-import {Subject}              from 'rxjs/Subject';
-import {BehaviorSubject}      from 'rxjs/BehaviorSubject';
-import {of}                   from 'rxjs/observable/of';
-import {never}                from 'rxjs/observable/never';
-import {combineLatest}        from 'rxjs/observable/combineLatest';
-import {distinctUntilChanged} from 'rxjs/operator/distinctUntilChanged';
-import {filter}               from 'rxjs/operator/filter';
-import {takeUntil}            from 'rxjs/operator/takeUntil';
-import {skip}                 from 'rxjs/operator/skip';
-import {map}                  from 'rxjs/operator/map';
-import {withLatestFrom}       from 'rxjs/operator/withLatestFrom';
-import {switchMap}            from 'rxjs/operator/switchMap';
+import {Subject, BehaviorSubject, Observable} from '../libs/rxjs.js';
+// TODO: no longer need to import: of;
+// TODO: no longer need to import: never;
+// TODO: no longer need to import: combineLatest;
+// TODO: make sure we don't need to import: distinctUntilChanged;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: skip;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: switchMap;
 import 'rxjs/add/operator/do';
 
 const $$events             = Symbol('$$events');
@@ -66,11 +65,11 @@ export default class ValueTracker {
 	}
 	
 	constructor() {
-		this[$$takeUntil] = never();
+		this[$$takeUntil] = Observable.never();
 		this[$$filterBy]  = (()=>true);
 	}
 	
-	setValueTrackerOptions({ takeUntil = never(), filterBy = (()=>true) }) {
+	setValueTrackerOptions({ takeUntil = Observable.never(), filterBy = (()=>true) }) {
 		this[$$takeUntil] = takeUntil;
 		this[$$filterBy]  = filterBy;
 		this[$$initialize]();
@@ -94,8 +93,8 @@ export default class ValueTracker {
 			`There is already a property '${name}' on this object.`);
 		
 		this[$$events][name] = new Subject()
-			::takeUntil(this[$$takeUntil])
-			::filter   (this[$$filterBy] );
+			.takeUntil(this[$$takeUntil])
+			.filter   (this[$$filterBy] );
 		
 		return this[$$events][name];
 	}
@@ -139,9 +138,9 @@ export default class ValueTracker {
 		
 		/* define the bus which manages the property */
 		let subject = this[$$settableProperties][name] = new BehaviorSubject(initial)
-			::filter              (this::isValid  )
-			::map                 (this::transform)
-			::distinctUntilChanged(this::isEqual  );
+			.filter              (this::isValid  )
+			.map                 (this::transform)
+			.distinctUntilChanged(this::isEqual  );
 		this[$$properties][name] = readonly ? subject.asObservable() : subject;
 		
 		/* keep track of current value */
@@ -151,7 +150,7 @@ export default class ValueTracker {
 		
 		/* create event version of the property */
 		this[$$events][name] = subject.asObservable()
-			::skip(1); // skip 'current value' on subscribe
+			.skip(1); // skip 'current value' on subscribe
 		
 		/* if not yet done, create object property */
 		if (!decoratorUsed) {
@@ -178,7 +177,7 @@ export default class ValueTracker {
 	 */
 	e(name) {
 		this[$$initialize]();
-		return this[$$events][name] || never();
+		return this[$$events][name] || Observable.never();
 	}
 	
 	/**
@@ -195,8 +194,8 @@ export default class ValueTracker {
 	@args('s?a?a?f?') p(name, deps, optionalPassiveDeps = [], optionalTransformer = (...a)=>a) {
 		this[$$initialize]();
 		if (deps) {
-			return combineLatest(...deps               .map(::this.p))
-				::withLatestFrom(...optionalPassiveDeps.map(::this.p),
+			return Observable.combineLatest(...deps               .map(::this.p))
+				.withLatestFrom(...optionalPassiveDeps.map(::this.p),
 				(active, ...passive) => optionalTransformer(...active, ...passive));
 		} else if (name) {
 			let head = name, sep, tail;
@@ -204,10 +203,10 @@ export default class ValueTracker {
 			if (match) {
 				[,head,sep,tail] = match;
 				let loose = (sep === '?.');
-				return this.p(head)::switchMap((obj) => {
+				return this.p(head).switchMap((obj) => {
 					if (!obj) {
-						if (loose) { return of(null) }
-						else       { return never()  }
+						if (loose) { return Observable.of(null) }
+						else       { return Observable.never()  }
 					}
 					assert(obj.p::isFunction(), humanMsg`
 						The '${head}' property did not return
@@ -223,8 +222,8 @@ export default class ValueTracker {
 			
 			// const [head, ...tail] = name.split('.');
 			// if (tail.length > 0) {
-			// 	return this.p(head)::switchMap((obj) => {
-			// 		if (!obj) { return never() }
+			// 	return this.p(head).switchMap((obj) => {
+			// 		if (!obj) { return Observable.never() }
 			// 		assert(obj.p::isFunction(), humanMsg`
 			// 			The '${head}' property did not return
 			// 			a ValueTracker-based object,

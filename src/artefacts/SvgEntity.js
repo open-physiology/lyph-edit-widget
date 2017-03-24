@@ -4,15 +4,16 @@ import assert from 'power-assert';
 
 import {property} from '../util/ValueTracker.js';
 
-import {switchMap}  from 'rxjs/operator/switchMap';
-import {partition} from 'rxjs/operator/partition';
-import {merge}     from 'rxjs/observable/merge';
-import {map} from 'rxjs/operator/map';
-import {of} from 'rxjs/observable/of';
-import {filter} from 'rxjs/operator/filter';
-import {startWith} from 'rxjs/operator/startWith';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {takeUntil} from 'rxjs/operator/takeUntil';
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: partition;
+// TODO: no longer need to import: merge;
+// TODO: make sure we don't need to import: map;
+// TODO: no longer need to import: of;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: startWith;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: make sure we don't need to import: takeUntil;
+import {Observable} from '../libs/rxjs.js';
 
 import isFunction from 'lodash-bound/isFunction';
 
@@ -21,7 +22,7 @@ import ObservableSet from "../util/ObservableSet";
 import {subscribe_} from "../util/rxjs";
 
 import {log} from '../util/rxjs';
-import {skip} from "rxjs/operator/skip";
+// TODO: make sure we don't need to import: skip;
 
 
 export default class SvgEntity extends SvgObject {
@@ -43,11 +44,11 @@ export default class SvgEntity extends SvgObject {
 		
 		/* maintain the root of this entity */
 		this.p('parent')
-			::switchMap(e => e ? e.p('root') : of(this))
+			.switchMap(e => e ? e.p('root') : Observable.of(this))
 			::subscribe_( this.p('root') , n=>n() );
 		
 		/* maintain this entity as a child of its parent */
-		this.p('parent')::startWith(null)::pairwise()
+		this.p('parent').startWith(null).pairwise()
 			.subscribe(([prev, curr]) => {
 				if (prev) { prev.children.delete(this) }
 				if (curr) { curr.children.add   (this) }
@@ -55,7 +56,7 @@ export default class SvgEntity extends SvgObject {
 		
 		/* maintain this entity as a parent of its children */
 		this.children.e('add')                               .subscribe(e => { e.parent = this });
-		this.children.e('delete')::filter(e=>e.parent===this).subscribe(e => { e.parent = null });
+		this.children.e('delete').filter(e=>e.parent===this).subscribe(e => { e.parent = null });
 		
 		/* when a parent is dragging, its children are ancestorDragging */
 		this.p(['parent.dragging', 'parent.ancestorDragging'], (d, ad) => d || ad)
@@ -212,9 +213,9 @@ export function closestCommonAncestor(a, b) {
 // 	// 	);
 // 	//
 // 	// 	return new Promise((resolve) => {
-// 	// 		merge(
-// 	// 			fromEvent(interactable, 'dragend') .map(()=>({ status: 'finished' })),
-// 	// 			fromEvent($('body'), 'keyup').which(27).map(()=>({ status: 'aborted'  }))
+// 	// 		Observable.merge(
+// 	// 			Observable.fromEvent(interactable, 'dragend') .map(()=>({ status: 'finished' })),
+// 	// 			Observable.fromEvent($('body'), 'keyup').which(27).map(()=>({ status: 'aborted'  }))
 // 	// 		).take(1).subscribe(resolve);
 // 	// 	});
 // 	// }
@@ -235,8 +236,8 @@ export function closestCommonAncestor(a, b) {
 // 	// 	);
 // 	//
 // 	// 	return new Promise((resolve) => {
-// 	// 		merge(
-// 	// 			fromEvent(interactable, 'resizeend').map(()=>({ status: 'finished' })),
+// 	// 		Observable.merge(
+// 	// 			Observable.fromEvent(interactable, 'resizeend').map(()=>({ status: 'finished' })),
 // 	// 			$('body').asKefirStream('keyup').which(27) .map(()=>({ status: 'aborted'  }))
 // 	// 		).take(1).subscribe(resolve);
 // 	// 	});

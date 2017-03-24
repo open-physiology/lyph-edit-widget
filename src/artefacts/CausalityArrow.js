@@ -1,9 +1,10 @@
+import {Observable} from '../libs/rxjs.js';
 import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
-import {map} from "rxjs/operator/map";
-import {merge} from "rxjs/observable/merge";
+// TODO: make sure we don't need to import: map;
+// TODO: no longer need to import: merge;
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -42,9 +43,9 @@ export default class CausalityArrow extends SvgEntity {
 			markerEnd: marker
 		});
 		
-		merge(
-			this.p('cause.canvasTransformation' )::map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
-			this.p('effect.canvasTransformation')::map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
+		Observable.merge(
+			this.p('cause.canvasTransformation' ).map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
+			this.p('effect.canvasTransformation').map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
 		).subscribe( ::line.attr );
 	}
 	

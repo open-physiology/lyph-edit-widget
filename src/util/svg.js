@@ -4,10 +4,10 @@ import {args} from './misc';
 import {assign} from 'bound-native-methods';
 import pick from 'lodash-bound/pick';
 import ValueTracker from './ValueTracker';
-import {merge} from 'rxjs/observable/merge';
+// TODO: no longer need to import: merge;
 import {log} from './rxjs';
-import {filter} from "rxjs/operator/filter";
-import {map} from "rxjs/operator/map";
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: map;
 
 import assert from 'power-assert';
 
@@ -57,8 +57,8 @@ export function setVirtualParent(artefact) {
 			'virtualParent',
 			'virtualTransformation',
 			'virtualParent.positionChange'
-		])  ::filter(([vp,vt]) => !!vp && !!vt)
-			::map(([vp,vt]) => vp.inside.getTransformToElement($(this).parent()[0]).multiply(vt))
+		])  .filter(([vp,vt]) => !!vp && !!vt)
+			.map(([vp,vt]) => vp.inside.getTransformToElement($(this).parent()[0]).multiply(vt))
 			.subscribe( this::setCTMDirectly );
 	}
 	vpt.p('virtualParent').next(artefact);

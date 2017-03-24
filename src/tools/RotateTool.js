@@ -1,14 +1,14 @@
 import $ from 'jquery';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {of} from 'rxjs/observable/of';
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {map} from 'rxjs/operator/map';
-import {concat} from 'rxjs/operator/concat';
+// TODO: no longer need to import: fromEvent;
+// TODO: no longer need to import: of;
+// TODO: no longer need to import: combineLatest;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: concat;
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -22,15 +22,15 @@ import {shiftedMovementFor, log} from "../util/rxjs";
 import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {POINT} from "../util/svg";
-import {never} from "rxjs/observable/never";
-import {ignoreElements} from "rxjs/operator/ignoreElements";
-import {skipUntil} from "rxjs/operator/skipUntil";
-import {delay} from "rxjs/operator/delay";
-import {skip} from "rxjs/operator/skip";
+// TODO: no longer need to import: never;
+// TODO: make sure we don't need to import: ignoreElements;
+// TODO: make sure we don't need to import: skipUntil;
+// TODO: make sure we don't need to import: delay;
+// TODO: make sure we don't need to import: skip;
 import {subscribe_} from "../util/rxjs";
 import {shiftedMMovementFor} from "../util/rxjs";
 import {emitWhenComplete, tap} from "../util/rxjs";
-import {mapTo} from "rxjs/operator/mapTo";
+// TODO: make sure we don't need to import: mapTo;
 import Machine from "../util/Machine";
 import {rotateFromVector, tX, tY} from "../util/svg";
 import {Vector2D} from "../util/svg";
@@ -56,33 +56,33 @@ export default class RotateTool extends Tool {
 		
 		// context.registerCursor((handleArtifact) => {
 		// 	if (!handleArtifact.draggable) { return false }
-		// 	let isDragging    = handleArtifact.p('dragging')::filter(d=>d);
-		// 	let isNotDragging = handleArtifact.p('dragging')::filter(d=>!d);
-		// 	let isSelected    = handleArtifact.p('selected')::filter(s=>s);
-		// 	let isNotSelected = handleArtifact.p('selected')::filter(s=>!s);
+		// 	let isDragging    = handleArtifact.p('dragging').filter(d=>d);
+		// 	let isNotDragging = handleArtifact.p('dragging').filter(d=>!d);
+		// 	let isSelected    = handleArtifact.p('selected').filter(s=>s);
+		// 	let isNotSelected = handleArtifact.p('selected').filter(s=>!s);
 		// 	let GRAB     = '-webkit-grab -moz-grab grab';
 		// 	let GRABBING = '-webkit-grabbing -moz-grabbing grabbing';
-		// 	return of(GRAB)::concat(isDragging
-		// 		// ::takeUntil( combineLatest(isNotDragging::skip(1), isNotSelected::skip(1)::delay(100), (nd,ns)=>nd&&ns)::filter(v=>v) )
-		// 		::switchMap(() => of(GRABBING)
-		// 			::concat(never()::takeUntil(isNotDragging))
-		// 			::concat(of(GRAB)))
+		// 	return Observable.of(GRAB).concat(isDragging
+		// 		// .takeUntil( Observable.combineLatest(isNotDragging.skip(1), isNotSelected.skip(1).delay(100), (nd,ns)=>nd&&ns).filter(v=>v) )
+		// 		.switchMap(() => Observable.of(GRABBING)
+		// 			.concat(Observable.never().takeUntil(isNotDragging))
+		// 			.concat(Observable.of(GRAB)))
 		// 	);
 		// });
 		
 		
 		context.stateMachine.extend(({ enterState, subscribe }) => ({
 			'IDLE': () => this.e('mousedown')
-				::filter(withMod('shift'))
+				.filter(withMod('shift'))
 				::tap(stopPropagation)
-				::withLatestFrom(context.p('selected'))
-				::filter(([,handleArtifact]) => handleArtifact.draggable && handleArtifact.free)
-				::map(([downEvent, rotatingArtefact]) => ({mousedownVector: downEvent.point, rotatingArtefact}))
+				.withLatestFrom(context.p('selected'))
+				.filter(([,handleArtifact]) => handleArtifact.draggable && handleArtifact.free)
+				.map(([downEvent, rotatingArtefact]) => ({mousedownVector: downEvent.point, rotatingArtefact}))
 		        ::enterState('INSIDE_ROTATE_THRESHOLD'),
 			'INSIDE_ROTATE_THRESHOLD': ({mousedownVector, rotatingArtefact}) => [
 				mousemove
-					::take(4)
-					::ignoreElements()
+					.take(4)
+					.ignoreElements()
 					::emitWhenComplete({mousedownVector, rotatingArtefact})
 					::enterState('ROTATING'),
 			    mouseup

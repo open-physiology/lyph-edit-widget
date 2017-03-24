@@ -1,18 +1,18 @@
 import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {startWith} from 'rxjs/operator/startWith';
-import {merge} from 'rxjs/observable/merge';
-import {never} from 'rxjs/observable/never';
-import {scan} from 'rxjs/operator/scan';
-import {map} from 'rxjs/operator/map';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {distinctUntilChanged} from 'rxjs/operator/distinctUntilChanged'
-import {Subject} from 'rxjs/Subject';
-import {interval} from 'rxjs/observable/interval';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: fromEvent;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: startWith;
+// TODO: no longer need to import: merge;
+// TODO: no longer need to import: never;
+// TODO: make sure we don't need to import: scan;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: make sure we don't need to import: distinctUntilChanged
+import {Subject} from '../libs/rxjs.js';
+// TODO: no longer need to import: interval;
 
 //noinspection JSFileReferences
 import {ALT} from 'keycode.js';
@@ -43,18 +43,18 @@ import {ID_MATRIX} from "../util/svg";
 
 import indent from 'indent-string';
 import LyphRectangle from "../artefacts/LyphRectangle";
-import {withLatestFrom} from "rxjs/operator/withLatestFrom";
-import {takeUntil} from "rxjs/operator/takeUntil";
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: takeUntil;
 import CoalescenceScenarioRectangle from "../artefacts/CoalescenceScenarioRectangle";
 import CornerHandle from "../artefacts/CornerHandle";
 import NodeGlyph from "../artefacts/NodeGlyph";
 import BorderLine from "../artefacts/BorderLine";
 import MeasurableGlyph from "../artefacts/MeasurableGlyph";
 import {setCTM} from "../util/svg";
-import {of} from "rxjs/observable/of";
-import {from} from "rxjs/observable/from";
-import {Observable} from "rxjs/Observable";
-import {exhaustMap} from "rxjs/operator/exhaustMap";
+// TODO: no longer need to import: of;
+// TODO: no longer need to import: from;
+import {Observable} from "../libs/rxjs.js";
+// TODO: make sure we don't need to import: exhaustMap;
 import MaterialGlyph from "../artefacts/MaterialGlyph";
 import {tap} from "../util/rxjs";
 import ProcessLine from "../artefacts/ProcessLine";
@@ -85,15 +85,15 @@ export default class SelectTool extends Tool {
 			/* registering mouse cursors for specific types of artifact */
 			context.cursorSet = new Set();
 			context.registerCursor = ::context.cursorSet.add;
-			context.p('selected')::switchMap((artifact) => {
+			context.p('selected').switchMap((artifact) => {
 				for (let candidate of context.cursorSet) {
 					let cursor = candidate(artifact);
 					if (cursor) {
-						if (cursor::isString()) { return of(cursor) }
+						if (cursor::isString()) { return Observable.of(cursor) }
 						else                    { return cursor     }
 					}
 				}
-				return of('auto');
+				return Observable.of('auto');
 			}).subscribe((cursor) => {
 				root.inside.jq.attr(
 					'style',
@@ -108,8 +108,8 @@ export default class SelectTool extends Tool {
 		const mouseleave = this.e('mouseleave');
 		
 		/* build selected artefact stream */
-		merge(mouseenter, mouseleave)
-			::scan((top, {controller, type}) => {
+		Observable.merge(mouseenter, mouseleave)
+			.scan((top, {controller, type}) => {
 				switch (type) {
 					case 'mouseenter': onMouseenter(controller); break;
 					case 'mouseleave': onMouseleave(controller); break;
@@ -132,22 +132,22 @@ export default class SelectTool extends Tool {
 					}
 				}
 			}, root)
-			::distinctUntilChanged()
+			.distinctUntilChanged()
 			// ::log('(selected)')
-			::switchMap((top) => mousewheel
-				::filter(withMod('alt'))
+			.switchMap((top) => mousewheel
+				.filter(withMod('alt'))
 				::tap(stopPropagation)
-				::map(e=>e.deltaY)
-				::scan((s, d) => {
+				.map(e=>e.deltaY)
+				.scan((s, d) => {
 					let next = s[d>0 ? 'parent' : $$child];
 					if (!next || next === root) { return s }
 					return next;
 				}, top)
-				::startWith(top))
+				.startWith(top))
 			.subscribe( context.p('selected') );
 		
 		/* set the selected property on  */
-		context.p('selected')::pairwise().subscribe(([prev, curr]) => {
+		context.p('selected').pairwise().subscribe(([prev, curr]) => {
 			if (prev) { prev.selected = false }
 			if (curr) { curr.selected = true  }
 		});
@@ -222,9 +222,9 @@ export default class SelectTool extends Tool {
 		});
 		
 		/* animate selection border */
-		rectangularBoxVisible::switchMap(v => !v
-			? never()
-			: interval(1000/60)::map(n => ({ strokeDashoffset: -(n / 3 % v.strokeDasharray::sum()) }))
+		rectangularBoxVisible.switchMap(v => !v
+			? Observable.never()
+			: Observable.interval(1000/60).map(n => ({ strokeDashoffset: -(n / 3 % v.strokeDasharray::sum()) }))
 		).subscribe( ::rects.attr );
 		
 		/* sizing */
@@ -235,8 +235,8 @@ export default class SelectTool extends Tool {
 		
 		/* positioning */
 		context.p('selected')
-			::filter(selected => selected && selected[$$isRectangular])
-			::map(s => s.element.getTransformToElement(context.root.inside).translate(s.x || 0, s.y || 0))
+			.filter(selected => selected && selected[$$isRectangular])
+			.map(s => s.element.getTransformToElement(context.root.inside).translate(s.x || 0, s.y || 0))
             .subscribe( rectangularSelectBox.node::setCTM );
 	}
 	
@@ -289,14 +289,14 @@ export default class SelectTool extends Tool {
 		
 		/* visibility observable */
 		let pointBoxVisible = context.p(['selected', 'selected.dragging'])
-			::map(([selected, dragging]) =>
+			.map(([selected, dragging]) =>
 				selected  &&
 				!dragging &&
 				selected[$$isPoint]
 			);
 		
 		/* make (in)visible */
-		pointBoxVisible::map(v => ({
+		pointBoxVisible.map(v => ({
 			visibility:      v ? 'visible' : 'hidden',
 			...(!v ? {} : {
 				strokeDasharray: v.strokeDasharray.join(','),
@@ -305,17 +305,17 @@ export default class SelectTool extends Tool {
 		})).subscribe( ::circles.attr );
 		
 		/* animate selection border */
-		pointBoxVisible::switchMap(v => !v
-			? never()
-			: interval(1000/60)::map(n => ({
+		pointBoxVisible.switchMap(v => !v
+			? Observable.never()
+			: Observable.interval(1000/60).map(n => ({
 				strokeDashoffset: -(n / 3 % v.strokeDasharray::sum())
 			}))
 		).subscribe( ::circles.attr );
 		
 		/* positioning */
 		context.p('selected')
-			::filter(selected => selected && selected[$$isPoint])
-			::map(s => s.element.getTransformToElement(context.root.inside).translate(s.x || 0, s.y || 0))
+			.filter(selected => selected && selected[$$isPoint])
+			.map(s => s.element.getTransformToElement(context.root.inside).translate(s.x || 0, s.y || 0))
             .subscribe( pointBox.node::setCTM );
 	}
 	
@@ -358,7 +358,7 @@ export default class SelectTool extends Tool {
 		
 		/* visibility observable */
 		let boxIsVisible = context.p(['selected', 'selected.dragging'])
-			::map(([selected, dragging]) =>
+			.map(([selected, dragging]) =>
 				selected  &&
 				!dragging &&
 				selected[$$isLine]
@@ -373,16 +373,16 @@ export default class SelectTool extends Tool {
 		});
 		
 		/* animate selection border */
-		boxIsVisible::switchMap(v => !v
-			? never()
-			: interval(1000/60)::map(n => ({ strokeDashoffset: -(n / 3 % v.strokeDasharray::sum()) }))
+		boxIsVisible.switchMap(v => !v
+			? Observable.never()
+			: Observable.interval(1000/60).map(n => ({ strokeDashoffset: -(n / 3 % v.strokeDasharray::sum()) }))
 		).subscribe( ::rects.attr );
 		
 		/* sizing */
-		boxIsVisible::switchMap(v => !v
-			? never()
+		boxIsVisible.switchMap(v => !v
+			? Observable.never()
 			: context.p(['selected.x1', 'selected.y1', 'selected.x2', 'selected.y2'])
-                ::map(([x1, y1, x2, y2]) => ({
+                .map(([x1, y1, x2, y2]) => ({
                 	w: Math.sqrt(Math.pow(Math.abs(x1-x2),2) + Math.pow(Math.abs(y1-y2),2)) + 8,
 					h: 8,
 					t: ID_MATRIX

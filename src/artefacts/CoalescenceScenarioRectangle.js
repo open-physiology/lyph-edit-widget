@@ -23,26 +23,26 @@ import _zip from 'lodash/zip';
 
 import uniqueId from 'lodash/uniqueId';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {of} from 'rxjs/observable/of';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: of;
 
 // import {map} from '../util/bound-hybrid-functions';
 
-import {merge} from 'rxjs/observable/merge';
-import {range} from 'rxjs/observable/range';
-import {interval} from 'rxjs/observable/interval';
+// TODO: no longer need to import: merge;
+// TODO: no longer need to import: range;
+// TODO: no longer need to import: interval;
 
-import {sampleTime} from 'rxjs/operator/sampleTime';
-import {filter} from 'rxjs/operator/filter';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {mergeMap} from 'rxjs/operator/mergeMap';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {toPromise} from 'rxjs/operator/toPromise';
-import {concat} from 'rxjs/operator/concat';
-import {map} from 'rxjs/operator/map';
+// TODO: make sure we don't need to import: sampleTime;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: mergeMap;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: toPromise;
+// TODO: make sure we don't need to import: concat;
+// TODO: make sure we don't need to import: map;
 
 import chroma from '../libs/chroma.js';
 
@@ -60,7 +60,7 @@ import Transformable from "./Transformable";
 import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
 import LyphRectangle from "./LyphRectangle";
-import {startWith} from "rxjs/operator/startWith";
+// TODO: make sure we don't need to import: startWith;
 import {setCTM} from "../util/svg";
 
 
@@ -127,7 +127,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		}));
 		// /* create the border artifacts */
 		// for (let setKey of ['radialBorders', 'longitudinalBorders']) {
-		// 	this.model[setKey].e('add')::map(border => this[$$recycle](border) || new BorderLine({
+		// 	this.model[setKey].e('add').map(border => this[$$recycle](border) || new BorderLine({
 		// 		parent : this,
 		// 		model  : border
 		// 	}))::subscribe_( this[setKey].e('add') , n=>n() );
@@ -135,7 +135,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// TODO: coalescence-scenario does not (yet) have borders of its own
 		
 		/* create the lyph artifacts */
-		this.model.lyphs.e('add')::map(lyph => this[$$recycle](lyph) || new LyphRectangle({
+		this.model.lyphs.e('add').map(lyph => this[$$recycle](lyph) || new LyphRectangle({
 			parent   : this,
 			model    : lyph,
 			draggable: false,
@@ -144,10 +144,10 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		
 		/* create the shared layer artifacts */
 		this.p('normalLyph.model.-->HasLayer')
-			::filter(layers => layers.size > 0)
-			::map(layers => [...layers]::maxBy('relativePosition')[2])
-			::filter(layer => layer !== (this.sharedLayer && this.sharedLayer.model))
-			::map(layer => this[$$recycle](layer) || new LyphRectangle({
+			.filter(layers => layers.size > 0)
+			.map(layers => [...layers]::maxBy('relativePosition')[2])
+			.filter(layer => layer !== (this.sharedLayer && this.sharedLayer.model))
+			.map(layer => this[$$recycle](layer) || new LyphRectangle({
 				parent   : this,
 				model    : layer,
 				draggable: false,
@@ -164,7 +164,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this[setKey].e('add')::subscribe_( this.children.e('add') , n=>n() );
 			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
 		}
-		this.p('sharedLayer')::startWith(null)::pairwise().subscribe(([prev, curr]) => {
+		this.p('sharedLayer').startWith(null).pairwise().subscribe(([prev, curr]) => {
 			if (prev) { this.children.delete(prev) }
 			if (curr) { this.children.add(curr) }
 		});
@@ -258,7 +258,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.leftBorder  = null;
 			this.rightBorder = null;
 			this.radialBorders.e('add').subscribe((borderLine) => {
-				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.radialBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				borderLine.y1 = 0;
@@ -280,7 +280,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.topBorder    = null;
 			this.bottomBorder = null; // also axis
 			this.longitudinalBorders.e('add').subscribe((borderLine) => {
-				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.longitudinalBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				borderLine.x1 = 0;
@@ -306,7 +306,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.normalLyph  = null;
 			this.rotatedLyph = null;
 			this.lyphs.e('add').subscribe((lyph) => {
-				const removed = this.lyphs.e('delete')::filter(l=>l===lyph);
+				const removed = this.lyphs.e('delete').filter(l=>l===lyph);
 				lyphGroup.append(lyph.element);
 				lyph.hideOuterLayer = true;
 				removed.subscribe(() => {
@@ -326,7 +326,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				'normalLyph.layers', 'rotatedLyph.layers',
 				'normalLyph',        'rotatedLyph',
 			    'width', 'height'
-			])  ::filter(([nl, rl]) => nl.size > 0 && rl.size > 0)
+			])  .filter(([nl, rl]) => nl.size > 0 && rl.size > 0)
 				.subscribe(([normalLayers, rotatedLayers, normalLyph, rotatedLyph, width, height]) => {
 					normalLyph.width = rotatedLyph.width = width;
 					const layerThickness = (height - normalLyph.axisThickness - rotatedLyph.axisThickness) /
@@ -346,12 +346,12 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		{
 			const sharedLayerGroup = this.inside.jq.children('.shared-layer');
 			
-			this.p('sharedLayer')::filter(v=>v).subscribe((sharedLayer) => {
-				const removed = this.p('sharedLayer')::filter(sl=>sl!==sharedLayer);
+			this.p('sharedLayer').filter(v=>v).subscribe((sharedLayer) => {
+				const removed = this.p('sharedLayer').filter(sl=>sl!==sharedLayer);
 				sharedLayerGroup.append(sharedLayer.element);
 				sharedLayer.p('topBorder')
-					::takeUntil(removed)
-					::filter(v=>v)
+					.takeUntil(removed)
+					.filter(v=>v)
 					.subscribe((topBorder) => { topBorder.isInnerBorder = true });
 				removed.subscribe(() => {
 					if (sharedLayer.topBorder) { sharedLayer.topBorder.isInnerBorder = false }
@@ -363,7 +363,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				'normalLyph.layers', 'rotatedLyph.layers', 'sharedLayer',
 				'normalLyph',        'rotatedLyph',
 			    'width', 'height'
-			])  ::filter(([nl, rl, sl]) => nl.size > 0 && rl.size > 0 && sl)
+			])  .filter(([nl, rl, sl]) => nl.size > 0 && rl.size > 0 && sl)
 				.subscribe(([normalLayers, rotatedLayers, sharedLayer, normalLyph, rotatedLyph, width, height]) => {
 					sharedLayer.width = width;
 					const layerThickness = (height - normalLyph.axisThickness - rotatedLyph.axisThickness) /
@@ -385,7 +385,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.leftBorder  = null;
 			this.rightBorder = null;
 			this.radialBorders.e('add').subscribe((borderLine) => {
-				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.radialBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				this.p(['height', 'spillunder'], _add)
@@ -411,7 +411,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			this.topBorder    = null;
 			this.bottomBorder = null; // also axis
 			this.longitudinalBorders.e('add').subscribe((borderLine) => {
-				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.longitudinalBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				
@@ -454,8 +454,8 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			    [rotatedLyph, 'rightBorder', this,        'leftBorder' ]
 			]) {
 				source.p(`${sBorder}.model.nature`)
-					// ::takeUntil(removed) // TODO: do this
-					::withLatestFrom(target.p(`${tBorder}.model`))
+					// .takeUntil(removed) // TODO: do this
+					.withLatestFrom(target.p(`${tBorder}.model`))
 					.subscribe(([nature, borderModel]) => {
 						borderModel.nature = nature;
 					});
@@ -472,21 +472,21 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// 	/* new layer in the model --> new layer artifact */
 		// 	this[$$relativeLayerPosition] = new WeakMap();
 		// 	this.model['-->HasLayer'].e('add').subscribe((rel) => {
-		// 		const removed = this.model['-->HasLayer'].e('delete')::filter(r=>r===rel);
+		// 		const removed = this.model['-->HasLayer'].e('delete').filter(r=>r===rel);
 		// 		let layerBox = this[$$recycle](rel[2]) || new LyphRectangle({
 		// 			parent  : this,
 		// 			model   : rel[2],
 		// 			showAxis: false,
 		// 			free    : false
 		// 		});
-		// 		this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition')::takeUntil(removed));
+		// 		this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition').takeUntil(removed));
 		// 		this.layers.add(layerBox);
 		// 	});
 		//
 		// 	/* new layer artifact --> house svg element */
 		// 	this.layers.e('add').subscribe((layer) => {
 		// 		this.inside.jq.children('.layers').append(layer.element);
-		// 		const removed = layer.p('parent')::filter(parent=>parent!==this);
+		// 		const removed = layer.p('parent').filter(parent=>parent!==this);
 		//
 		// 		for (let [source, target,  border      ] of [
 		// 			     [this,   layer,  'leftBorder' ],
@@ -495,8 +495,8 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// 			     [layer,  this,   'rightBorder']
 		// 		]) {
 		// 			source.p(`${border}.model.nature`)
-		// 				::takeUntil(removed)
-		// 				::withLatestFrom(target.p(`${border}.model`))
+		// 				.takeUntil(removed)
+		// 				.withLatestFrom(target.p(`${border}.model`))
 		// 				.subscribe(([nature, borderModel]) => {
 		// 					borderModel.nature = nature;
 		// 				});
@@ -510,17 +510,17 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// 	});
 		//
 		// 	/* layer artifact set changed --> refresh layer order */
-		// 	combineLatest(this.layers.p('value'), this.p('hideOuterLayer'))
-		// 		::map(([layers, hideOuterLayer]) => [[...layers], hideOuterLayer])
-		// 		::map(([layers, hideOuterLayer]) => ({
+		// 	Observable.combineLatest(this.layers.p('value'), this.p('hideOuterLayer'))
+		// 		.map(([layers, hideOuterLayer]) => [[...layers], hideOuterLayer])
+		// 		.map(([layers, hideOuterLayer]) => ({
 		// 			dimensions:        this.pObj(['width', 'height']),
 		// 			layers:            layers,
 		// 			relativePositions: layers.map(::this[$$relativeLayerPosition].get),
 		// 			hideOuterLayer:    hideOuterLayer
 		// 		}))
-		// 		::switchMap(
+		// 		.switchMap(
 		// 			({dimensions, relativePositions}) =>
-		// 				combineLatest(dimensions, ...relativePositions),
+		// 				Observable.combineLatest(dimensions, ...relativePositions),
 		// 			({layers, hideOuterLayer}, [{width, height}, ...relativePositions]) => ({
 		// 				layers:         layers::sortBy(l => -relativePositions[layers.indexOf(l)]),
 		// 				width:          width,

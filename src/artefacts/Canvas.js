@@ -15,14 +15,14 @@ import _defer from 'lodash/defer';
 
 import uniqueId from 'lodash/uniqueId';
 
-import {map} from 'rxjs/operator/map';
-import {filter} from 'rxjs/operator/filter';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {delay} from 'rxjs/operator/delay';
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: no longer need to import: combineLatest;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: delay;
 
 import chroma from '../libs/chroma.js';
 

@@ -1,13 +1,13 @@
 import $ from 'jquery';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {of} from 'rxjs/observable/of';
-import {concat} from 'rxjs/operator/concat';
-import {map} from 'rxjs/operator/map';
+// TODO: no longer need to import: fromEvent;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: no longer need to import: of;
+// TODO: make sure we don't need to import: concat;
+// TODO: make sure we don't need to import: map;
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -25,7 +25,7 @@ import {tY} from "../util/svg";
 import {ID_MATRIX, M11, M12, M21, M22} from "../util/svg";
 import CornerHandle from "../artefacts/CornerHandle";
 import {tap} from "../util/rxjs";
-import {ignoreElements} from "rxjs/operator/ignoreElements";
+// TODO: make sure we don't need to import: ignoreElements;
 import {emitWhenComplete} from "../util/rxjs";
 
 
@@ -70,12 +70,12 @@ export default class ResizeTool extends Tool {
 		
 		context.stateMachine.extend(({ enterState, subscribe }) => ({
 			'IDLE': () => this.e('mousedown')
-				::filter(withoutMod('ctrl', 'shift', 'meta'))
+				.filter(withoutMod('ctrl', 'shift', 'meta'))
 				::tap(stopPropagation)
-				::withLatestFrom(context.p('selected'))
-				::filter(([,handleArtefact]) => handleArtefact instanceof BorderLine || handleArtefact instanceof CornerHandle)
-				::filter(([,handleArtefact]) => handleArtefact.parent.free)
-				::map(([downEvent, handleArtefact]) => ({
+				.withLatestFrom(context.p('selected'))
+				.filter(([,handleArtefact]) => handleArtefact instanceof BorderLine || handleArtefact instanceof CornerHandle)
+				.filter(([,handleArtefact]) => handleArtefact.parent.free)
+				.map(([downEvent, handleArtefact]) => ({
 					downEvent:        downEvent,
 					resizingArtefact: handleArtefact.parent,
 					directions:       handleArtefact.resizes
@@ -83,8 +83,8 @@ export default class ResizeTool extends Tool {
 		        ::enterState('INSIDE_RESIZE_THRESHOLD'),
 			'INSIDE_RESIZE_THRESHOLD': ({downEvent, resizingArtefact, directions}) => [
 				mousemove
-					::take(4)
-					::ignoreElements()
+					.take(4)
+					.ignoreElements()
 					::emitWhenComplete({ downEvent, resizingArtefact, directions })
 					::enterState('RESIZING_RECTANGLE'),
 			    mouseup
@@ -101,7 +101,7 @@ export default class ResizeTool extends Tool {
 				
 				/* resize while dragging */
 				mousemove
-					::map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
+					.map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
 					::subscribe(({x: xDiff, y: yDiff}) => {
 						let width          = mouseDownIsOrigin ? 0 : artefactStart.width;
 						let height         = mouseDownIsOrigin ? 0 : artefactStart.height;

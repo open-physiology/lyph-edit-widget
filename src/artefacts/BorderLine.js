@@ -13,12 +13,12 @@ import _defer from 'lodash/defer'
 
 import uniqueId from 'lodash/uniqueId';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {interval} from 'rxjs/observable/interval';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: interval;
 
-import {map} from 'rxjs/operator/map';
-import {take} from 'rxjs/operator/take';
-import {filter} from 'rxjs/operator/filter';
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: filter;
 
 import chroma from '../libs/chroma.js';
 
@@ -32,9 +32,9 @@ import LyphRectangle from "./LyphRectangle";
 import MeasurableGlyph from "./MeasurableGlyph";
 import {subscribe_, log} from "../util/rxjs";
 import {ID_MATRIX} from '../util/svg';
-import {withLatestFrom} from "rxjs/operator/withLatestFrom";
+// TODO: make sure we don't need to import: withLatestFrom;
 import Transformable from "./Transformable";
-import {takeUntil} from "rxjs/operator/takeUntil";
+// TODO: make sure we don't need to import: takeUntil;
 import {tap} from "../util/rxjs";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -70,8 +70,8 @@ export default class BorderLine extends Transformable {
 		/* sync x1,x2,y1,y2,x,y,width,height */
 		this.p(['x1', 'x2'], Math.min).subscribe( this.pSubject('x') );
 		this.p(['y1', 'y2'], Math.min).subscribe( this.pSubject('y') );
-		this.p('x')::filter(() => this.x1 === this.x2).subscribe((x) => { this.x1 = this.x2 = x });
-		this.p('y')::filter(() => this.y1 === this.y2).subscribe((y) => { this.y1 = this.y2 = y });
+		this.p('x').filter(() => this.x1 === this.x2).subscribe((x) => { this.x1 = this.x2 = x });
+		this.p('y').filter(() => this.y1 === this.y2).subscribe((y) => { this.y1 = this.y2 = y });
 		
 		this[$$toBeRecycled] = new WeakMap();
 	}
@@ -121,8 +121,8 @@ export default class BorderLine extends Transformable {
 			
 			/* manifest nature in the DOM */
 			this.model.p('nature')
-				::map(n => n::isArray() ? n : [n])
-				::map(n => ({ stroke: n.length === 1 && n[0] === 'open' ? '#aaaaa' : 'black' }))
+				.map(n => n::isArray() ? n : [n])
+				.map(n => ({ stroke: n.length === 1 && n[0] === 'open' ? '#aaaaa' : 'black' }))
 				.subscribe( ::line.attr );
 			
 			// this.findAncestor(a => a.free).inside.jq
@@ -149,8 +149,8 @@ export default class BorderLine extends Transformable {
 		// 		strokeDasharray: '8, 5', // 13
 		// 		strokeDashoffset: 0
 		// 	});
-		// 	interval(1000/60)
-		// 		::map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
+		// 	Observable.interval(1000/60)
+		// 		.map(n => ({ strokeDashoffset: -(n / 3 % 13) }))
 		// 		.subscribe( ::rects.attr );
 		//
 		// 	this.p(['selected', 'dragging'], (selected, dragging) => ({
@@ -240,10 +240,10 @@ export default class BorderLine extends Transformable {
 	syncModelWithArtefact(relationship, cls, parentElement, createNewArtefact) {
 		/* new free-floating thing in the model --> new artifact */
 		this.model[`-->${relationship}`].e('add')
-			::filter(c => c.class === relationship)
-			::map(c=>c[2])
-			::withLatestFrom(this.p('x1'), this.p('x2'), this.p('y1'), this.p('y2'))
-			::map(([model, x1, x2, y1, y2]) =>
+			.filter(c => c.class === relationship)
+			.map(c=>c[2])
+			.withLatestFrom(this.p('x1'), this.p('x2'), this.p('y1'), this.p('y2'))
+			.map(([model, x1, x2, y1, y2]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, x1, x2, y1, y2 }))
 			::tap((artefact) => { artefact.free = true })
@@ -252,7 +252,7 @@ export default class BorderLine extends Transformable {
 		this.freeFloatingStuff.e('add')
 		    .subscribe((artefact) => {
 			    /* event when removed */
-			    const removed = artefact.p('parent')::filter(p=>p!==this);
+			    const removed = artefact.p('parent').filter(p=>p!==this);
 		    	/* put into the dom */
 				parentElement.append(artefact.element);
 			    /* move when the border moves */
@@ -260,13 +260,13 @@ export default class BorderLine extends Transformable {
 			    let initial = this::pick('x1', 'x2', 'y1', 'y2');
 			    if (initial.x1 === initial.x2) {
 			    	this.p('x1')
-					    ::takeUntil(removed)
-					    ::map(x1 => ID_MATRIX.translate(x1 - initial.x1, 0).multiply(transformation))
+					    .takeUntil(removed)
+					    .map(x1 => ID_MATRIX.translate(x1 - initial.x1, 0).multiply(transformation))
 					    ::subscribe_( artefact.p('transformation') );
 			    } else if (initial.y1 === initial.y2) {
 				    this.p('y1')
-					    ::takeUntil(removed)
-					    ::map(y1 => ID_MATRIX.translate(0, y1 - initial.y1).multiply(transformation))
+					    .takeUntil(removed)
+					    .map(y1 => ID_MATRIX.translate(0, y1 - initial.y1).multiply(transformation))
 					    ::subscribe_( artefact.p('transformation') );
 			    }
 			    /* remove from dom when removed */

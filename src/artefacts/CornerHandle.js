@@ -12,12 +12,12 @@ import _defer from 'lodash/defer'
 
 import uniqueId from 'lodash/uniqueId';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {interval} from 'rxjs/observable/interval';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: interval;
 
-import {map} from 'rxjs/operator/map';
-import {take} from 'rxjs/operator/take';
-import {filter} from 'rxjs/operator/filter';
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: filter;
 
 import chroma from '../libs/chroma.js';
 

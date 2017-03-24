@@ -1,3 +1,4 @@
+import './loadRxjs.js';
 import LyphRectangle from './artefacts/LyphRectangle';
 import './model'; // sets a global (for now)
 import ValueTracker from './util/ValueTracker';
@@ -8,14 +9,14 @@ import sortBy from 'lodash-bound/sortBy';
 
 import _range from 'lodash/range';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {merge} from 'rxjs/observable/merge';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: merge;
 
-import {filter} from 'rxjs/operator/filter';
-import {take} from 'rxjs/operator/take';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {bufferCount} from 'rxjs/operator/bufferCount';
-import {map} from 'rxjs/operator/map';
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: bufferCount;
+// TODO: make sure we don't need to import: map;
 
 import DragDropTool from './tools/DragDropTool';
 import ResizeTool   from './tools/ResizeTool';
@@ -38,7 +39,7 @@ import CausalityArrow from "./artefacts/CausalityArrow";
 import searchArgs from "./util/searchArgs";
 import {createMatrix} from "./util/svg";
 import RotateTool from "./tools/RotateTool";
-import {toPromise} from "rxjs/operator/toPromise";
+// TODO: make sure we don't need to import: toPromise;
 import TooltipTool from "./tools/TooltipTool";
 
 let C = window.module.classes;
@@ -701,12 +702,12 @@ root.element.promise.then(() => {
 			}
 		});
 		drawingTool.p('modelFn')
-			::filter(mfn => !matchesModel(mfn))
+			.filter(mfn => !matchesModel(mfn))
 			.subscribe(() => { checkbox.prop('checked', false) });
 	}
 	
 	/* print zoom-level */
 	root.context.p('zoomFactor')
-		::map((zFact) => `Zoom: ${Math.round(zFact*100)}%`
+		.map((zFact) => `Zoom: ${Math.round(zFact*100)}%`
 	).subscribe(::($('#info > span').text));
 });

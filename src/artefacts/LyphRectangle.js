@@ -25,24 +25,26 @@ import _zip from 'lodash/zip';
 
 import uniqueId from 'lodash/uniqueId';
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {of} from 'rxjs/observable/of';
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: of;
 
-import {merge} from 'rxjs/observable/merge';
-import {range} from 'rxjs/observable/range';
-import {interval} from 'rxjs/observable/interval';
+// TODO: no longer need to import: merge;
+// TODO: no longer need to import: range;
+// TODO: no longer need to import: interval;
 
-import {sampleTime} from 'rxjs/operator/sampleTime';
-import {filter} from 'rxjs/operator/filter';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {mergeMap} from 'rxjs/operator/mergeMap';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {toPromise} from 'rxjs/operator/toPromise';
-import {concat} from 'rxjs/operator/concat';
-import {map} from 'rxjs/operator/map';
+// TODO: make sure we don't need to import: sampleTime;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: mergeMap;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: toPromise;
+// TODO: make sure we don't need to import: concat;
+// TODO: make sure we don't need to import: map;
+
+import {Observable} from '../libs/rxjs.js';
 
 import chroma from '../libs/chroma.js';
 
@@ -64,7 +66,7 @@ import MaterialGlyph from "./MaterialGlyph";
 import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
 import {setCTM} from "../util/svg";
 import {_isNonNegative} from "../util/misc";
-import {scan} from "rxjs/operator/scan";
+// TODO: make sure we don't need to import: scan;
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {tap} from "../util/rxjs";
@@ -130,14 +132,17 @@ export default class LyphRectangle extends Transformable {
 		
 		/* create the border artifacts */
 		for (let setKey of ['radialBorders', 'longitudinalBorders']) {
-			this.model[setKey].e('add')::map(border => {
+			this.model[setKey].e('add').subscribe((border) => {
+				
 				let recycled = this[$$recycle](border);
 				if (recycled) { return recycled }
-				return new BorderLine({
+				let borderLine = new BorderLine({
 					parent: this,
 					model:  border
 				});
-			}).subscribe( this[setKey].e('add') );
+				this[setKey].e('add').next(borderLine);
+				
+			});
 		}
 		
 		for (let setKey of [
@@ -152,12 +157,12 @@ export default class LyphRectangle extends Transformable {
 		
 		/* corner radii */
 		this.p('leftBorder.model.nature')
-			::map(n => n::isArray() ? n : [n])
-			::map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
+			.map(n => n::isArray() ? n : [n])
+			.map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
 			::subscribe_( this.p('leftCornerRadius'), v=>v() );
 		this.p('rightBorder.model.nature')
-			::map(n => n::isArray() ? n : [n])
-			::map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
+			.map(n => n::isArray() ? n : [n])
+			.map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
 			::subscribe_( this.p('rightCornerRadius'), v=>v() );
 		
 		/* length cut off of the top of a lyph (to hide the outer layer) */
@@ -261,7 +266,7 @@ export default class LyphRectangle extends Transformable {
 			{
 				let tooltipText = $.svg(`<title></title>`).appendTo(rectangleB.node);
 				this.p('model.name').subscribe( ::tooltipText.text );
-				// this.p(['transformation', 'width', 'height'])::map(([t, w, h])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f}), ${w}x${h}`).subscribe( ::tooltipText.text );
+				// this.p(['transformation', 'width', 'height']).map(([t, w, h])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f}), ${w}x${h}`).subscribe( ::tooltipText.text );
 			}
 			
 			this.p('width').subscribe((width)  => {
@@ -334,26 +339,26 @@ export default class LyphRectangle extends Transformable {
 		/* new layer in the model --> new layer artifact */
 		this[$$relativeLayerPosition] = new WeakMap();
 		this.model['-->HasLayer'].e('add').subscribe((rel) => {
-			const removed = this.model['-->HasLayer'].e('delete')::filter(r=>r===rel);
+			const removed = Observable.from(this.model['-->HasLayer'].e('delete')).filter(r=>r===rel); // TODO
 			let layerBox = this[$$recycle](rel[2]) || new LyphRectangle({
 				parent  : this,
 				model   : rel[2],
 				showAxis: false,
 				free    : false
 			});
-			this[$$relativeLayerPosition].set(layerBox, rel.p('relativePosition')::takeUntil(removed));
+			this[$$relativeLayerPosition].set(layerBox, Observable.from(rel.p('relativePosition')).takeUntil(removed));
 			this.layers.add(layerBox);
 		});
 		
 		/* new ProcessLine child --> house it */
-		this.children.e('add')::filter(c => c instanceof ProcessLine).subscribe((pl) => {
+		this.children.e('add').filter(c => c instanceof ProcessLine).subscribe((pl) => {
 			this.processLines.jq.append(pl.element);
 		});
 		
 		/* new layer artifact --> house svg element */
 		this.layers.e('add').subscribe((layer) => {
 			this.inside.jq.children('.layers').append(layer.element);
-			const removed = layer.p('parent')::filter(parent=>parent!==this);
+			const removed = layer.p('parent').filter(parent=>parent!==this);
 			
 			for (let [source, target,  border      ] of [
 				     [this,   layer,  'leftBorder' ],
@@ -362,8 +367,8 @@ export default class LyphRectangle extends Transformable {
 				     [layer,  this,   'rightBorder']
 			]) {
 				source.p(`${border}.model.nature`)
-					::takeUntil(removed)
-					::withLatestFrom(target.p(`${border}.model`))
+					.takeUntil(removed)
+					.withLatestFrom(target.p(`${border}.model`))
 					.subscribe(([nature, borderModel]) => {
 						borderModel.nature = nature;
 					});
@@ -377,17 +382,17 @@ export default class LyphRectangle extends Transformable {
 		});
 		
 		/* layer artifact set changed --> refresh layer order */
-		combineLatest(this.layers.p('value'), this.p('hideOuterLayer'))
-			::map(([layers, hideOuterLayer]) => [[...layers], hideOuterLayer])
-			::map(([layers, hideOuterLayer]) => ({
+		Observable.combineLatest(this.layers.p('value'), this.p('hideOuterLayer'))
+			.map(([layers, hideOuterLayer]) => [[...layers], hideOuterLayer])
+			.map(([layers, hideOuterLayer]) => ({
 				dimensions:        this.pObj(['width', 'height']),
 				layers:            layers,
 				relativePositions: layers.map(::this[$$relativeLayerPosition].get),
 				hideOuterLayer:    hideOuterLayer
 			}))
-			::switchMap(
+			.switchMap(
 				({dimensions, relativePositions}) =>
-					combineLatest(dimensions, ...relativePositions),
+					Observable.combineLatest(dimensions, ...relativePositions),
 				({layers, hideOuterLayer}, [{width, height}, ...relativePositions]) => ({
 					layers:         layers::sortBy(l => -relativePositions[layers.indexOf(l)]),
 					width:          width,
@@ -398,7 +403,7 @@ export default class LyphRectangle extends Transformable {
 				if (hideOuterLayer) { layers[0].hidden = true }
 				for (let i = hideOuterLayer ? 1 : 0; i < layers.length; ++i) {
 					let layer = layers[i];
-					const removed = layer.p('parent')::filter(parent=>parent!==this);
+					const removed = layer.p('parent').filter(parent=>parent!==this);
 					layer::assign({
 						parent: this
 					}, {
@@ -410,14 +415,14 @@ export default class LyphRectangle extends Transformable {
 						transformation: ID_MATRIX.translate(0, i * height)
 					});
 					let spillunder = (layers.length - i - 1) * height;
-					combineLatest(
+					Observable.combineLatest(
 						this.p('dragging'),
 						layer.p('dragging'),
 						(td, ld) => td || !ld
-					)::takeUntil(removed).subscribe((spill) => {
+					).takeUntil(removed).subscribe((spill) => {
 						layer::assign({ spillunder: spill ? spillunder : 0 });
 					});
-					removed::take(1).subscribe(() => {
+					removed.take(1).subscribe(() => {
 						layer::assign({ spillunder: 0 });
 					});
 					layer.element::moveToFront();
@@ -529,7 +534,7 @@ export default class LyphRectangle extends Transformable {
 			this.leftBorder  = null;
 			this.rightBorder = null;
 			this.radialBorders.e('add').subscribe((borderLine) => {
-				const removed = this.radialBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.radialBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				this.p(['height', 'spillunder'], _add)
@@ -555,7 +560,7 @@ export default class LyphRectangle extends Transformable {
 			this.topBorder    = null;
 			this.bottomBorder = null; // also axis
 			this.longitudinalBorders.e('add').subscribe((borderLine) => {
-				const removed = this.longitudinalBorders.e('delete')::filter(b=>b===borderLine);
+				const removed = this.longitudinalBorders.e('delete').filter(b=>b===borderLine);
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				
@@ -636,7 +641,7 @@ export default class LyphRectangle extends Transformable {
 				clipPath.attr({ y: height - at   });
 			});
 			
-			this.model.p('name')::map(n=>({ text: n })).subscribe( ::labelText.attr );
+			this.model.p('name').map(n=>({ text: n })).subscribe( ::labelText.attr );
 		}
 		
 	}
@@ -645,20 +650,20 @@ export default class LyphRectangle extends Transformable {
 	syncModelWithArtefact(relationship, artefactTest, parentElement, createNewArtefact) {
 		/* new free-floating thing in the model --> new artifact */
 		this.model[`-->${relationship}`].e('add')
-			::filter(c => c.class === relationship)
-			::map(c=>c[2])
-			::withLatestFrom(this.p('width'), this.p('height'))
-			::map(([model, width, height]) =>
+			.filter(c => c.class === relationship)
+			.map(c=>c[2])
+			.withLatestFrom(this.p('width'), this.p('height'))
+			.map(([model, width, height]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, width, height }))
 			::tap((artefact) => { artefact.free = true })
 			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')
-		    ::filter(artefactTest)
+		    .filter(artefactTest)
 		    .subscribe((artefact) => {
 			    /* event when removed */
-			    const removed = artefact.p('parent')::filter(parent => parent !== this);
+			    const removed = artefact.p('parent').filter(parent => parent !== this);
 		    	/* put into the dom */
 				$(parentElement).append(artefact.element);
 			    /* remove from dom when removed */

@@ -1,3 +1,5 @@
+import {Observable} from '../libs/rxjs.js';
+
 import defer from 'promise-defer';
 
 import pick from 'lodash-bound/pick';

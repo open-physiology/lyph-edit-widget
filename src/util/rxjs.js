@@ -1,25 +1,25 @@
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {combineLatest} from 'rxjs/observable/combineLatest';
+// TODO: no longer need to import: fromEvent;
+// TODO: no longer need to import: combineLatest;
 
-import {of} from 'rxjs/observable/of';
-import {never} from 'rxjs/observable/never';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {map} from 'rxjs/operator/map';
-import {ignoreElements} from 'rxjs/operator/ignoreElements';
-import {concat} from 'rxjs/operator/concat';
-import {delayWhen} from 'rxjs/operator/delayWhen';
+// TODO: no longer need to import: of;
+// TODO: no longer need to import: never;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: ignoreElements;
+// TODO: make sure we don't need to import: concat;
+// TODO: make sure we don't need to import: delayWhen;
 
 import isUndefined from 'lodash-bound/isUndefined';
 import isFunction from 'lodash-bound/isFunction';
 import {createSVGPoint} from "./svg";
 import {tY} from "./svg";
 import {tX} from "./svg";
-import {Observable} from "rxjs/Observable";
-import {AnimationFrame} from 'rxjs/util/AnimationFrame'
+import {Observable} from "../libs/rxjs.js";
+import {AnimationFrame} from '../libs/rxjs.js';
 
 export function subscribe_(subject, pipeFn = n=>n()) {
 	const handler = (key) => ((v) => pipeFn((toDebug) => {
@@ -41,13 +41,13 @@ export function log(...args) {
 }
 
 export function emitWhenComplete(value) {
-	return this::ignoreElements()::concat(of(value));
+	return this.ignoreElements().concat(Observable.of(value));
 }
 
-export function afterMatching(other, cancel = never()) {
-	return this::switchMap(orig => of(orig)
-		::delayWhen( other::ignoreElements )
-		::takeUntil( cancel                )
+export function afterMatching(other, cancel = Observable.never()) {
+	return this.switchMap(orig => Observable.of(orig)
+		.delayWhen( other::ignoreElements )
+		.takeUntil( cancel                )
 	);
 }
 

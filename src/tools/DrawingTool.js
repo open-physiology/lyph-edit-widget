@@ -1,15 +1,15 @@
 import $ from 'jquery';
 
 import {property} from '../util/ValueTracker';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {of} from 'rxjs/observable/of';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {map} from 'rxjs/operator/map';
-import {concat} from 'rxjs/operator/concat';
+// TODO: no longer need to import: fromEvent;
+// TODO: no longer need to import: of;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: concat;
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -24,8 +24,8 @@ import {afterMatching} from "../util/rxjs";
 import {shiftedMatrixMovementFor} from "../util/rxjs";
 import {ID_MATRIX} from "../util/svg";
 import {log} from "../util/rxjs";
-import {combineLatest} from "rxjs/observable/combineLatest";
-import {merge} from "rxjs/observable/merge";
+// TODO: no longer need to import: combineLatest;
+// TODO: no longer need to import: merge;
 import {tap} from "../util/rxjs";
 import Tool from './Tool';
 import LyphRectangle from "../artefacts/LyphRectangle";
@@ -46,9 +46,9 @@ import {which} from "../util/misc";
 //noinspection JSFileReferences
 import keyCodes from 'keycode.js';
 import MeasurableGlyph from "../artefacts/MeasurableGlyph";
-import {skip} from "rxjs/operator/skip";
-import {Observable} from "rxjs/Observable";
-import {mapTo} from "rxjs/operator/mapTo";
+// TODO: make sure we don't need to import: skip;
+import {Observable} from "../libs/rxjs.js";
+// TODO: make sure we don't need to import: mapTo;
 const {ESCAPE} = keyCodes;
 
 
@@ -67,15 +67,15 @@ export default class DrawingTool extends Tool {
 		const mouseup   = this.documentE('mouseup');
 		const keydown   = this.documentE('keydown');
 		
-		// this.p('model')::map(c=>!!c).subscribe( this.p('active') );
-		// this.p('active')::filter(a=>!a)::mapTo(null).subscribe( this.p('model') );
-		this.p('modelFn')::map(c=>!!c).subscribe( this.p('active') );
-		this.p('active')::filter(a=>!a)::mapTo(null).subscribe( this.p('modelFn') );
+		// this.p('model').map(c=>!!c).subscribe( this.p('active') );
+		// this.p('active').filter(a=>!a).mapTo(null).subscribe( this.p('model') );
+		this.p('modelFn').map(c=>!!c).subscribe( this.p('active') );
+		this.p('active').filter(a=>!a).mapTo(null).subscribe( this.p('modelFn') );
 		
-		this.p('active')::map(a=>!a).subscribe( context.PanTool         .p('active') );
-		this.p('active')::map(a=>!a).subscribe( context.DragDropTool    .p('active') );
-		this.p('active')::map(a=>!a).subscribe( context.ResizeTool      .p('active') );
-		this.p('active')::map(a=>!a).subscribe( context.BorderToggleTool.p('active') );
+		this.p('active').map(a=>!a).subscribe( context.PanTool         .p('active') );
+		this.p('active').map(a=>!a).subscribe( context.DragDropTool    .p('active') );
+		this.p('active').map(a=>!a).subscribe( context.ResizeTool      .p('active') );
+		this.p('active').map(a=>!a).subscribe( context.BorderToggleTool.p('active') );
 		// TODO: remove the 'active' property from tools, now that we have state machines
 		
 		/* tooltip management */
@@ -88,8 +88,8 @@ export default class DrawingTool extends Tool {
 				tooltip.hide();
 				this.modelFn = null;
 				this.p('modelFn')
-					::filter(m => !!m)
-					::map(modelFn => ({ modelFn }))
+					.filter(m => !!m)
+					.map(modelFn => ({ modelFn }))
 					::enterState('READY_TO_DRAW_MODEL');
 			},
 			'READY_TO_DRAW_MODEL'  : ({ modelFn }) => {
@@ -111,20 +111,20 @@ export default class DrawingTool extends Tool {
 					]);
 				}
 				this.e('mousedown')
-					::filter(withoutMod('ctrl', 'shift', 'meta'))
+					.filter(withoutMod('ctrl', 'shift', 'meta'))
 					::tap(stopPropagation)
-					::withLatestFrom(context.p('selected'))
-					::map(([downEvent, parentArtefact]) => ({
+					.withLatestFrom(context.p('selected'))
+					.map(([downEvent, parentArtefact]) => ({
 						downEvent     : downEvent,
 						parentArtefact: parentArtefact,
 						modelFn       : modelFn
 					})) ::enterState('STARTED_DRAWING_MODEL');
 				this.p('modelFn')
-					::filter(m => m && m !== modelFn)
-					::map(modelFn => ({ modelFn }))
+					.filter(m => m && m !== modelFn)
+					.map(modelFn => ({ modelFn }))
 					::enterState('READY_TO_DRAW_MODEL');
 				this.p('modelFn')
-					::filter(m => !m)
+					.filter(m => !m)
 					::enterState('IDLE');
 				keydown
 					::which(ESCAPE)
@@ -350,22 +350,22 @@ export default class DrawingTool extends Tool {
 					`<kb style="border: solid 1px white; border-radius: 2px; padding: 0 1px; font-family: monospace">esc</kb> = close the current tool`
 				]);
 				this.e('mousedown')
-					::filter(withoutMod('shift', 'meta')) // allowing ctrl to align with previous node
+					.filter(withoutMod('shift', 'meta')) // allowing ctrl to align with previous node
 					::tap(stopPropagation)
-					::withLatestFrom(context.p('selected'))
-					::map(([downEvent, parentArtefact]) => ({
+					.withLatestFrom(context.p('selected'))
+					.map(([downEvent, parentArtefact]) => ({
 						downEvent         : downEvent,
 						parentArtefact    : parentArtefact,
 						modelFn             : modelFn,
 						sourceNodeArtefact: sourceNodeArtefact
 					}))
 					::enterState('DRAWING_PROCESS_LINE_NODE');
-				this.p('modelFn')::skip(1)
-					::filter(m => m && m !== modelFn)
-					::map(modelFn => ({ modelFn }))
+				this.p('modelFn').skip(1)
+					.filter(m => m && m !== modelFn)
+					.map(modelFn => ({ modelFn }))
 					::enterState('READY_TO_DRAW_MODEL');
-				this.p('modelFn')::skip(1)
-					::filter(m => !m)
+				this.p('modelFn').skip(1)
+					.filter(m => !m)
 					::enterState('IDLE');
 				keydown
 					::which(ESCAPE)
@@ -389,7 +389,7 @@ export default class DrawingTool extends Tool {
 					color:  processColor || 'red',
 					dragging: true // only while drawing
 				});
-				newNodeArtefact.p('dragging')::filter(d=>!d)
+				newNodeArtefact.p('dragging').filter(d=>!d)
 					.subscribe( newProcessLine.p('dragging') );
 				/* possibly create the conveying lyph rectangle */
 				if ([...model.conveyingLyph].length > 0) {
@@ -402,18 +402,18 @@ export default class DrawingTool extends Tool {
 						draggable: false,
 						dragging : true // only while drawing
 					});
-					newNodeArtefact.p('dragging')::filter(d=>!d)
+					newNodeArtefact.p('dragging').filter(d=>!d)
 						.subscribe( newConveyingLyph.p('dragging') );
 					/* perpetually control lyph positioning by node positioning */
-					newProcessLine.p('parent')::filter(p=>!!p)
+					newProcessLine.p('parent').filter(p=>!!p)
 						.subscribe((parent) => {
 							console.log('(!!!-conveying lyph parent-!!!)', parent);
 							parent.drop(newConveyingLyph);
 						});
-					combineLatest(
-						sourceNodeArtefact.p('canvasTransformation')::map( m => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
-						newNodeArtefact   .p('canvasTransformation')::map( m => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
-						newConveyingLyph  .p('parent')::filter(p=>!!p),
+					Observable.combineLatest(
+						sourceNodeArtefact.p('canvasTransformation').map( m => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
+						newNodeArtefact   .p('canvasTransformation').map( m => Vector2D.fromMatrixTranslation(m, context.root.inside) ),
+						newConveyingLyph  .p('parent').filter(p=>!!p),
 						newConveyingLyph  .p('width' ),
 						newConveyingLyph  .p('height'),
 						newConveyingLyph.layers.p('value')

@@ -1,7 +1,7 @@
-import {filter} from 'rxjs/operator/filter';
-import {pairwise} from 'rxjs/operator/pairwise';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {map} from 'rxjs/operator/map';
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: pairwise;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: map;
 
 import isNaN from 'lodash-bound/isNaN';
 
@@ -12,12 +12,13 @@ import {property, event, flag} from '../util/ValueTracker';
 import {subscribe_} from "../util/rxjs";
 
 import {ID_MATRIX, matrixEquals, setCTM} from "../util/svg";
-import {merge} from "rxjs/observable/merge";
-import {of} from "rxjs/observable/of";
-import {mapTo} from "rxjs/operator/mapTo";
-import {combineLatest} from "rxjs/observable/combineLatest";
-import {sample} from "rxjs/operator/sample";
-import {sampleTime} from "rxjs/operator/sampleTime";
+// TODO: no longer need to import: merge;
+// TODO: no longer need to import: of;
+// TODO: make sure we don't need to import: mapTo;
+// TODO: no longer need to import: combineLatest;
+// TODO: make sure we don't need to import: sample;
+// TODO: make sure we don't need to import: sampleTime;
+import {Observable} from '../libs/rxjs.js';
 
 
 const $$backgroundColor       = Symbol('$$backgroundColor');
@@ -60,14 +61,14 @@ export default class Transformable extends SvgEntity {
 		/* convert local transformation the moment it gets a new parent, */
 		/* so that it will not moved w.r.t. the global coordinate system */
 		this.p('parent')
-			::filter(p=>p)
-			::pairwise()
-			::withLatestFrom(this.p('transformation'), ([prev, curr], loc) =>
+			.filter(p=>p)
+			.pairwise()
+			.withLatestFrom(this.p('transformation'), ([prev, curr], loc) =>
 							prev.inside.getTransformToElement(curr.inside).multiply(loc))
 			::subscribe_( this.p('transformation'), v=>v() );
 		
 		// /* maintain sampledTransformation */
-		// this.p('transformation')::sampleTime(1000/60).subscribe( this.pSubject('sampledTransformation'));
+		// this.p('transformation').sampleTime(1000/60).subscribe( this.pSubject('sampledTransformation'));
 		
 	}
 	
@@ -86,9 +87,9 @@ export default class Transformable extends SvgEntity {
 		//       so that subscribers can count on things like 'getTransformToElement'
 		let posChangeSignals = [];
 		for (let art = this; !art.isRoot(); art = art.parent) {
-			posChangeSignals.push(art.p('transformation')::mapTo(null));
+			posChangeSignals.push(art.p('transformation').mapTo(null));
 		}
-		merge(...posChangeSignals).subscribe( this.p('positionChange') );
+		Observable.merge(...posChangeSignals).subscribe( this.p('positionChange') );
 	}
 	
 }

@@ -1,10 +1,10 @@
 import ValueTracker, {event} from '../util/ValueTracker';
 import $ from 'jquery';
-import {fromEventPattern} from 'rxjs/observable/fromEventPattern';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {filter} from 'rxjs/operator/filter';
-import {map} from 'rxjs/operator/map';
-import {scan} from 'rxjs/operator/scan';
+// TODO: no longer need to import: fromEventPattern;
+// TODO: no longer need to import: fromEvent;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: scan;
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -14,7 +14,7 @@ import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
 import {subscribe_, log} from "../util/rxjs";
-import {withLatestFrom} from "rxjs/operator/withLatestFrom";
+// TODO: make sure we don't need to import: withLatestFrom;
 import {scaleFromPoint} from "../util/svg";
 import {tap} from "../util/rxjs";
 
@@ -38,19 +38,19 @@ export default class ZoomTool extends Tool {
 		const mousewheel = this.rootE('mousewheel');
 		
 		const zooming = mousewheel
-			::filter(withoutMod('alt', 'ctrl', 'meta'))
+			.filter(withoutMod('alt', 'ctrl', 'meta'))
 			::tap(stopPropagation);
 		
 		/* maintain the current zoom-factor on the side (it doesn't actually influence zoom) */
 		zooming
-			::withLatestFrom(context.p('zoomSensitivity'),
+			.withLatestFrom(context.p('zoomSensitivity'),
 				({deltaY: d}, s) => Math.pow(1+s, d))
-			::scan(_multiply, 1)
+			.scan(_multiply, 1)
 			::subscribe_( context.pSubject('zoomFactor') , n=>n() );
 		
 		/* maintain zoom-exponent by mouse-wheel */
 		zooming
-			::withLatestFrom(context.p('canvasCTM'), context.p('zoomSensitivity'),
+			.withLatestFrom(context.p('canvasCTM'), context.p('zoomSensitivity'),
 				({deltaY: d, point}, m, s) => m::scaleFromPoint(Math.pow(1+s, d), point))
 			::subscribe_( context.p('canvasCTM') , n=>n() );
 		

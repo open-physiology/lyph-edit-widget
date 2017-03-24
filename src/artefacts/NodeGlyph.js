@@ -12,14 +12,14 @@ import _defer from 'lodash/defer'
 
 import uniqueId from 'lodash/uniqueId';
 
-import {interval} from 'rxjs/observable/interval';
-import {of} from 'rxjs/observable/of';
+// TODO: no longer need to import: interval;
+// TODO: no longer need to import: of;
 
-import {combineLatest} from 'rxjs/observable/combineLatest';
-import {map} from 'rxjs/operator/map';
-import {take} from 'rxjs/operator/take';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {sampleTime} from 'rxjs/operator/sampleTime';
+// TODO: no longer need to import: combineLatest;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: sampleTime;
 
 import {ID_MATRIX, refSnap} from "../util/svg";
 
@@ -80,12 +80,12 @@ export default class NodeGlyph extends Transformable {
 			// { // TODO: remove
 			// 	let tooltipText = $.svg(`<title></title>`).appendTo(circle.node);
 			// 	// this.p('model.name').subscribe( ::tooltipText.text );
-			// 	this.p(['transformation'])::map(([t])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f})`).subscribe( ::tooltipText.text );
+			// 	this.p(['transformation']).map(([t])=>`(${t.a},${t.b},${t.c},${t.d},${t.e},${t.f})`).subscribe( ::tooltipText.text );
 			// }
 			
 			this.p('parent')
-				::map(p => p instanceof BorderLine ? 6 : 8)
-				::map(r => ({ r }))
+				.map(p => p instanceof BorderLine ? 6 : 8)
+				.map(r => ({ r }))
 				.subscribe( ::circle.attr )
 		}
 	}

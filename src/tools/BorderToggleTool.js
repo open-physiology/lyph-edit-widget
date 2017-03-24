@@ -1,13 +1,13 @@
 import $ from 'jquery';
-import {fromEvent} from 'rxjs/observable/fromEvent';
-import {of} from 'rxjs/observable/of';
-import {switchMap} from 'rxjs/operator/switchMap';
-import {filter} from 'rxjs/operator/filter';
-import {takeUntil} from 'rxjs/operator/takeUntil';
-import {withLatestFrom} from 'rxjs/operator/withLatestFrom';
-import {take} from 'rxjs/operator/take';
-import {map} from 'rxjs/operator/map';
-import {concat} from 'rxjs/operator/concat';
+// TODO: no longer need to import: fromEvent;
+// TODO: no longer need to import: of;
+// TODO: make sure we don't need to import: switchMap;
+// TODO: make sure we don't need to import: filter;
+// TODO: make sure we don't need to import: takeUntil;
+// TODO: make sure we don't need to import: withLatestFrom;
+// TODO: make sure we don't need to import: take;
+// TODO: make sure we don't need to import: map;
+// TODO: make sure we don't need to import: concat;
 
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
@@ -31,12 +31,12 @@ export default class BorderToggleTool extends Tool {
 		const {root} = context;
 		
 		this.rootE('click')
-			::filter(withoutMod('ctrl', 'shift', 'meta'))
-			::withLatestFrom(context.p('selected'), (event, artefact) => {
+			.filter(withoutMod('ctrl', 'shift', 'meta'))
+			.withLatestFrom(context.p('selected'), (event, artefact) => {
 				event.artefact = artefact;
 				return event;
 			})
-			::filter(({artefact}) => artefact instanceof BorderLine)
+			.filter(({artefact}) => artefact instanceof BorderLine)
 			::tap(stopPropagation)
 			.subscribe(({artefact: borderLine}) => {
 				if (!borderLine.model.nature::isArray()) {

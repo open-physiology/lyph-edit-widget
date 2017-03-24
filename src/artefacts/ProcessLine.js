@@ -3,10 +3,11 @@ import {property} from '../util/ValueTracker.js';
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {log} from "../util/rxjs";
-import {map} from "rxjs/operator/map";
-import {merge} from "rxjs/observable/merge";
+// TODO: make sure we don't need to import: map;
+// TODO: no longer need to import: merge;
 import {closestCommonAncestor} from "./SvgEntity";
-import {filter} from "rxjs/operator/filter";
+// TODO: make sure we don't need to import: filter;
+import {Observable} from '../libs/rxjs.js';
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -41,24 +42,24 @@ export default class ProcessLine extends SvgEntity {
 			strokeLinecap: 'round'
 		});
 		
-		this.p('color')::map(c => ({ stroke: c })).subscribe( ::line.attr );
+		this.p('color').map(c => ({ stroke: c })).subscribe( ::line.attr );
 		
 		this.p(['source.parent', 'target.parent'])
-			::log('(sp, tp)')
-			::filter(([sp, tp]) => !!sp && !!tp)
-			::log('(sp, tp)')
-			::map(([sp, tp]) => closestCommonAncestor(sp, tp))
-			::log('(cca)')
+			// ::log('(sp, tp)')
+			.filter(([sp, tp]) => !!sp && !!tp)
+			// ::log('(sp, tp)')
+			.map(([sp, tp]) => closestCommonAncestor(sp, tp))
+			// ::log('(cca)')
 			.subscribe(this.p('parent'));
 			// .subscribe((cca) => { this.parent = cca });
 		
-		merge(
+		Observable.merge(
 			this.p(['source.canvasTransformation', 'parent'])
-				::map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
-				::map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
+				.map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
+				.map(ctm => ({ x1: ctm[tX], y1: ctm[tY] })),
 			this.p(['target.canvasTransformation', 'parent'])
-				::map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
-				::map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
+				.map(([ctm, parent]) => this.root.inside.getTransformToElement(parent.inside).multiply(ctm))
+				.map(ctm => ({ x2: ctm[tX], y2: ctm[tY] }))
 		).subscribe( ::line.attr );
 	}
 	

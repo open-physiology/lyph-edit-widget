@@ -1,7 +1,7 @@
-import {Subject}         from 'rxjs/Subject';
-import {BehaviorSubject} from "rxjs/BehaviorSubject";
-import {merge}           from "rxjs/operator/merge";
-import {map}             from "rxjs/operator/map";
+import {Subject}         from '../libs/rxjs.js';
+import {BehaviorSubject} from "../libs/rxjs.js";
+// TODO: make sure we don't need to import: merge;
+// TODO: make sure we don't need to import: map;
 import assert    from 'power-assert';
 import {humanMsg} from "./misc";
 
@@ -29,6 +29,9 @@ class AddReplaySubject extends Subject {
 		}
 		this[$$disableNextReplay] = false;
 		return subscription;
+	}
+	map(...args) {
+		return super.map(...args);
 	}
 }
 
