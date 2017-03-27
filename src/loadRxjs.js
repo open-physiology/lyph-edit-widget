@@ -1,3 +1,3 @@
 import Rx from 'rxjs';
-console.log('loadRxjs, Rx:', Rx);
+//noinspection JSAnnotator
 window.Rx = Rx;
