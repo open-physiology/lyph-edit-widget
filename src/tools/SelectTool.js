@@ -1,60 +1,24 @@
-import ValueTracker, {event} from '../util/ValueTracker';
-import $ from 'jquery';
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: fromEvent;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: startWith;
-// TODO: no longer need to import: merge;
-// TODO: no longer need to import: never;
-// TODO: make sure we don't need to import: scan;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: make sure we don't need to import: distinctUntilChanged
-import {Subject} from '../libs/rxjs.js';
-// TODO: no longer need to import: interval;
-
 //noinspection JSFileReferences
 import {ALT} from 'keycode.js';
 
-
-import assign from 'lodash-bound/assign';
-import pick from 'lodash-bound/pick';
-import head from 'lodash-bound/head';
-import tail from 'lodash-bound/tail';
-import clamp from 'lodash-bound/clamp';
-import defaults from 'lodash-bound/defaults';
-import sum from 'lodash-bound/sum';
-import isArray from 'lodash-bound/isArray';
-import isString from 'lodash-bound/isString';
-
-import _head from 'lodash/head';
-import _add from 'lodash/add';
-import _parseInt from 'lodash/parseInt';
+import {sum, isString} from 'lodash-bound';
 
 import Tool from './Tool';
-import {withMod} from "../util/misc";
-import {stopPropagation} from "../util/misc";
-import {withoutMod} from "../util/misc";
-import {which} from "../util/misc";
-import {log} from '../util/rxjs';
+import {withMod, stopPropagation} from "../util/misc";
 
 import {ID_MATRIX} from "../util/svg";
 
-import indent from 'indent-string';
 import LyphRectangle from "../artefacts/LyphRectangle";
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: takeUntil;
+
 import CoalescenceScenarioRectangle from "../artefacts/CoalescenceScenarioRectangle";
 import CornerHandle from "../artefacts/CornerHandle";
 import NodeGlyph from "../artefacts/NodeGlyph";
 import BorderLine from "../artefacts/BorderLine";
 import MeasurableGlyph from "../artefacts/MeasurableGlyph";
 import {setCTM} from "../util/svg";
-// TODO: no longer need to import: of;
-// TODO: no longer need to import: from;
+
 import {Observable} from "../libs/rxjs.js";
-// TODO: make sure we don't need to import: exhaustMap;
+
 import MaterialGlyph from "../artefacts/MaterialGlyph";
 import {tap} from "../util/rxjs";
 import ProcessLine from "../artefacts/ProcessLine";
@@ -136,7 +100,7 @@ export default class SelectTool extends Tool {
 			// ::log('(selected)')
 			.switchMap((top) => mousewheel
 				.filter(withMod('alt'))
-				::tap(stopPropagation)
+				.do(stopPropagation)
 				.map(e=>e.deltaY)
 				.scan((s, d) => {
 					let next = s[d>0 ? 'parent' : $$child];

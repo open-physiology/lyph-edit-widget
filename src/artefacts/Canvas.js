@@ -1,36 +1,11 @@
-import $          from '../libs/jquery.js';
+import $    from '../libs/jquery.js';
 import Snap from '../libs/snap.svg';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-import assign from 'lodash-bound/assign';
-
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _add from 'lodash/add';
-import _defer from 'lodash/defer';
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: delay;
-
-import chroma from '../libs/chroma.js';
+import {assign} from 'lodash-bound';
 
 import SvgEntity from './SvgEntity.js';
 
-import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
-import BorderLine from './BorderLine';
 
 import LyphRectangle from "./LyphRectangle";
 import ProcessLine from "./ProcessLine";
@@ -40,7 +15,6 @@ import NodeGlyph from "./NodeGlyph";
 import MeasurableGlyph from "./MeasurableGlyph";
 import MaterialGlyph from "./MaterialGlyph";
 import CausalityArrow from "./CausalityArrow";
-import {setCTM, ID_MATRIX} from "../util/svg";
 
 const $$context = Symbol('$$context');
 const $$existingSVG = Symbol('$$existingSVG');

@@ -1,14 +1,6 @@
-import includes from 'lodash-bound/includes';
-import isArray  from 'lodash-bound/isArray';
-import isString from 'lodash-bound/isString';
-import set      from 'lodash-bound/set';
-import entries  from 'lodash-bound/entries';
-import keys  from 'lodash-bound/keys';
-import isPlainObject from 'lodash-bound/isPlainObject';
-import isFunction from 'lodash-bound/isFunction';
+import {includes, isArray, set, entries, isFunction} from 'lodash-bound';
 
-import _isEqual from 'lodash/isEqual';
-import _isBoolean from 'lodash/isBoolean';
+import {isBoolean as _isBoolean} from 'lodash';
 
 import assert from 'power-assert';
 
@@ -16,19 +8,7 @@ import {defineProperty} from 'bound-native-methods';
 
 import {args, humanMsg} from './misc';
 
-import { $$rxSubscriber } from 'rxjs/symbol/rxSubscriber';
-
 import {Subject, BehaviorSubject, Observable} from '../libs/rxjs.js';
-// TODO: no longer need to import: of;
-// TODO: no longer need to import: never;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: distinctUntilChanged;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: skip;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: switchMap;
 import 'rxjs/add/operator/do';
 
 const $$events             = Symbol('$$events');

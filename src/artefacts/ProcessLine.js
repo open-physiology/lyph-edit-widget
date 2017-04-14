@@ -3,10 +3,8 @@ import {property} from '../util/ValueTracker.js';
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
 import {log} from "../util/rxjs";
-// TODO: make sure we don't need to import: map;
-// TODO: no longer need to import: merge;
+
 import {closestCommonAncestor} from "./SvgEntity";
-// TODO: make sure we don't need to import: filter;
 import {Observable} from '../libs/rxjs.js';
 
 

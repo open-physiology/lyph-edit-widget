@@ -1,31 +1,10 @@
-import $          from '../libs/jquery.js';
+import $ from '../libs/jquery.js';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _defer from 'lodash/defer'
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: interval;
-
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: filter;
-
-import chroma from '../libs/chroma.js';
+import {isNumber as _isNumber} from 'lodash';
 
 import SvgEntity from './SvgEntity.js';
 
 import {property} from '../util/ValueTracker.js';
-import ObservableSet, {copySetContent} from "../util/ObservableSet";
-import {flag} from "../util/ValueTracker";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
 

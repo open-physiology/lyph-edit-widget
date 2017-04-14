@@ -1,33 +1,14 @@
-import $ from 'jquery';
-// TODO: no longer need to import: fromEvent;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: no longer need to import: of;
-// TODO: make sure we don't need to import: concat;
-// TODO: make sure we don't need to import: map;
-
 import assign from 'lodash-bound/assign';
 import pick from 'lodash-bound/pick';
-import isNull from 'lodash-bound/isNull';
 
 import Tool from './Tool';
-import {asw, withoutMod} from "../util/misc";
-import {stopPropagation} from "../util/misc";
+import {asw, withoutMod, stopPropagation} from "../util/misc";
 import BorderLine from "../artefacts/BorderLine";
-import {log} from '../util/rxjs';
-import {afterMatching} from "../util/rxjs";
-import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {tX} from "../util/svg";
-import {tY} from "../util/svg";
 import {ID_MATRIX, M11, M12, M21, M22} from "../util/svg";
 import CornerHandle from "../artefacts/CornerHandle";
 import {tap} from "../util/rxjs";
-// TODO: make sure we don't need to import: ignoreElements;
-import {emitWhenComplete} from "../util/rxjs";
 
+import {emitWhenComplete} from "../util/rxjs";
 
 const $$xy_controller = Symbol('$$xy_controller');
 const $$xy_mousedown  = Symbol('$$xy_mousedown');
@@ -50,8 +31,8 @@ export default class ResizeTool extends Tool {
 			if (!handleArtifact.parent.free)                                      { return false }
 			let s = handleArtifact.resizes;
 			let angle = 0;
-			// if (s.top)             { angle = 0   }
-			// if (s.bottom)          { angle = 0   }
+			// if (s.top)             { angle =   0 }
+			// if (s.bottom)          { angle =   0 }
 			if (s.right)              { angle =  90 }
 			if (s.left)               { angle =  90 }
 			if (s.top    && s.left )  { angle = 135 }
@@ -68,10 +49,10 @@ export default class ResizeTool extends Tool {
 			][Math.floor((angle + 180/8) % 180 / (180/4)) % 4];
 		});
 		
-		context.stateMachine.extend(({ enterState, subscribe }) => ({
+		context.stateMachine.extend(({ enterState, subscribeDuringState }) => ({
 			'IDLE': () => this.e('mousedown')
 				.filter(withoutMod('ctrl', 'shift', 'meta'))
-				::tap(stopPropagation)
+				.do(stopPropagation)
 				.withLatestFrom(context.p('selected'))
 				.filter(([,handleArtefact]) => handleArtefact instanceof BorderLine || handleArtefact instanceof CornerHandle)
 				.filter(([,handleArtefact]) => handleArtefact.parent.free)
@@ -102,7 +83,7 @@ export default class ResizeTool extends Tool {
 				/* resize while dragging */
 				mousemove
 					.map(event => event.point.in(resizingArtefact.element).minus(mouseStart.in(resizingArtefact.element)))
-					::subscribe(({x: xDiff, y: yDiff}) => {
+					::subscribeDuringState(({x: xDiff, y: yDiff}) => {
 						let width          = mouseDownIsOrigin ? 0 : artefactStart.width;
 						let height         = mouseDownIsOrigin ? 0 : artefactStart.height;
 						let transformation = artefactStart.transformation;
@@ -125,7 +106,10 @@ export default class ResizeTool extends Tool {
 			
 				/* stop resizing */
 				mouseup
-					::tap(() => { resizingArtefact.dragging = false })
+					.do(() => {
+						console.log('mouseup');
+						resizingArtefact.dragging = false;
+					})
 					::enterState('IDLE');
 			}
 		}));

@@ -1,47 +1,13 @@
-import $ from 'jquery';
-// TODO: no longer need to import: fromEvent;
-// TODO: no longer need to import: of;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: concat;
-
-import assign from 'lodash-bound/assign';
-import pick from 'lodash-bound/pick';
-import isFunction from 'lodash-bound/isFunction';
-import defaults from 'lodash-bound/defaults';
+import {assign, isFunction} from 'lodash-bound';
 
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
-import {shiftedMovementFor, log} from "../util/rxjs";
-import {afterMatching} from "../util/rxjs";
-import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {POINT, ID_MATRIX} from "../util/svg";
-// TODO: no longer need to import: never;
-// TODO: make sure we don't need to import: ignoreElements;
-// TODO: make sure we don't need to import: skipUntil;
-// TODO: make sure we don't need to import: delay;
-// TODO: make sure we don't need to import: skip;
-import {subscribe_} from "../util/rxjs";
-import {shiftedMMovementFor} from "../util/rxjs";
-import {tap} from "../util/rxjs";
-// TODO: make sure we don't need to import: mapTo;
-import Machine from "../util/Machine";
-import {emitWhenComplete} from "../util/rxjs";
-import {tX} from "../util/svg";
-import {tY} from "../util/svg";
-import {Vector2D} from "../util/svg";
-import {rotateAround} from "../util/svg";
-import minBy from "lodash-bound/minBy";
-import {newSVGPoint} from "../util/svg";
-import {snap45} from "../util/svg";
 
-const {abs, sqrt} = Math;
+import {tap} from "../util/rxjs";
+
+import {emitWhenComplete} from "../util/rxjs";
+import {snap45} from "../util/svg";
 
 
 function reassessHoveredArtefact(a) {
@@ -82,10 +48,10 @@ export default class DragDropTool extends Tool {
 		
 		
 		
-		context.stateMachine.extend(({ enterState, subscribe }) => ({
+		context.stateMachine.extend(({ enterState, subscribeDuringState }) => ({
 			'IDLE': () => this.e('mousedown')
 				.filter(withoutMod('ctrl', 'shift', 'meta'))
-				::tap(stopPropagation)
+				.do(stopPropagation)
 				.withLatestFrom(context.p('selected'))
 				.filter(([,handleArtifact]) => handleArtifact.draggable)
 				.map(([downEvent, movingArtefact]) => ({mousedownVector: downEvent.point, movingArtefact}))
@@ -116,23 +82,22 @@ export default class DragDropTool extends Tool {
 				const transformationStart = movingArtefact.transformation;
 				
 				/* move while dragging */
-				mousemove
-					::subscribe((moveEvent) => {
-						let mouseVector = moveEvent.point.in(movingArtefact.element);
-						if (referencePoint && moveEvent.ctrlKey) {
-							mouseVector = snap45(mouseVector, movingArtefact, referencePoint);
-						}
-						let translationDiff = mouseVector.minus(mousedownVector.in(movingArtefact.element));
-						movingArtefact.transformation = transformationStart
-							.translate(...translationDiff.xy);
-					});
+				mousemove::subscribeDuringState((moveEvent) => {
+					let mouseVector = moveEvent.point.in(movingArtefact.element);
+					if (referencePoint && moveEvent.ctrlKey) {
+						mouseVector = snap45(mouseVector, movingArtefact, referencePoint);
+					}
+					let translationDiff = mouseVector.minus(mousedownVector.in(movingArtefact.element));
+					movingArtefact.transformation = transformationStart
+						.translate(...translationDiff.xy);
+				});
 				
 				/* stop dragging and drop */
 				let initial_dragged_transformation = movingArtefact.transformation;
 				let initial_dragged_parent         = movingArtefact.parent;
 				mouseup
 					.withLatestFrom(context.p('selected'))
-					::tap(([,recipient]) => {
+					.do(([,recipient]) => {
 						/* either drop it on the recipient */
 						let success = false;
 						if (recipient.drop::isFunction()) {

@@ -1,38 +1,10 @@
-import $ from 'jquery';
-// TODO: no longer need to import: fromEvent;
-// TODO: no longer need to import: of;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: concat;
 import {Observable} from '../libs/rxjs.js';
-
-import assign from 'lodash-bound/assign';
-import pick from 'lodash-bound/pick';
-import isFunction from 'lodash-bound/isFunction';
-import defaults from 'lodash-bound/defaults';
 
 import Tool from './Tool';
 import {withoutMod} from "../util/misc";
 import {stopPropagation} from "../util/misc";
-import {shiftedMovementFor, log} from "../util/rxjs";
-import {afterMatching} from "../util/rxjs";
-import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {POINT} from "../util/svg";
-// TODO: no longer need to import: never;
-// TODO: make sure we don't need to import: ignoreElements;
-// TODO: make sure we don't need to import: skipUntil;
-// TODO: make sure we don't need to import: delay;
-// TODO: make sure we don't need to import: skip;
-import {setCTM} from "../util/svg";
-import {subscribe_} from "../util/rxjs";
 import {tap} from "../util/rxjs";
 import Canvas from "../artefacts/Canvas";
-import {Vector2D} from "../util/svg";
 import {pagePoint} from "../util/svg";
 
 
@@ -60,10 +32,10 @@ export default class PanTool extends Tool {
 		// 	);
 		// });
 		
-		context.stateMachine.extend(({ enterState, subscribe }) => ({
+		context.stateMachine.extend(({ enterState, subscribeDuringState }) => ({
 			'IDLE': () => this.e('mousedown')
 				.filter(withoutMod('ctrl', 'shift', 'meta'))
-				::tap(stopPropagation)
+				.do(stopPropagation)
 				.withLatestFrom(context.p('selected'))
 				.filter(([,handleArtifact]) => handleArtifact instanceof Canvas)
 				.map(([downEvent]) => ({downEvent}))
@@ -76,7 +48,7 @@ export default class PanTool extends Tool {
 				/* move while dragging */
 				Observable.of(downEvent).concat(mousemove)
 					.map(event => event::pagePoint().minus(downEvent::pagePoint()))
-					::subscribe((diff) => {
+					::subscribeDuringState((diff) => {
 						context.canvasCTM = transformationStart
 							.translate(...diff.xy);
 					});

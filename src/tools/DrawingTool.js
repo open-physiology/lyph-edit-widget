@@ -1,31 +1,10 @@
-import $ from 'jquery';
-
 import {property} from '../util/ValueTracker';
-// TODO: no longer need to import: fromEvent;
-// TODO: no longer need to import: of;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: concat;
 
-import assign from 'lodash-bound/assign';
-import pick from 'lodash-bound/pick';
-import isFunction from 'lodash-bound/isFunction';
-import defaults from 'lodash-bound/defaults';
-import find from 'lodash-bound/find';
+import {isFunction, find} from 'lodash-bound';
 
-import {withoutMod} from "../util/misc";
-import {stopPropagation} from "../util/misc";
-import {shiftedMovementFor} from "../util/rxjs";
-import {afterMatching} from "../util/rxjs";
-import {shiftedMatrixMovementFor} from "../util/rxjs";
+import {stopPropagation, withoutMod} from "../util/misc";
 import {ID_MATRIX} from "../util/svg";
-import {log} from "../util/rxjs";
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: merge;
+
 import {tap} from "../util/rxjs";
 import Tool from './Tool';
 import LyphRectangle from "../artefacts/LyphRectangle";
@@ -34,10 +13,6 @@ import NodeGlyph from "../artefacts/NodeGlyph";
 import BorderLine from "../artefacts/BorderLine";
 import ProcessLine from "../artefacts/ProcessLine";
 import CoalescenceScenarioRectangle from "../artefacts/CoalescenceScenarioRectangle";
-import {tX} from "../util/svg";
-import {tY} from "../util/svg";
-import {enrichDOM} from "../util/misc";
-import {setCTM} from "../util/svg";
 import {rotateFromVector} from "../util/svg";
 import {closestCommonAncestor} from "../artefacts/SvgEntity";
 import {Vector2D} from "../util/svg";
@@ -46,9 +21,9 @@ import {which} from "../util/misc";
 //noinspection JSFileReferences
 import keyCodes from 'keycode.js';
 import MeasurableGlyph from "../artefacts/MeasurableGlyph";
-// TODO: make sure we don't need to import: skip;
+
 import {Observable} from "../libs/rxjs.js";
-// TODO: make sure we don't need to import: mapTo;
+
 const {ESCAPE} = keyCodes;
 
 
@@ -112,7 +87,7 @@ export default class DrawingTool extends Tool {
 				}
 				this.e('mousedown')
 					.filter(withoutMod('ctrl', 'shift', 'meta'))
-					::tap(stopPropagation)
+					.do(stopPropagation)
 					.withLatestFrom(context.p('selected'))
 					.map(([downEvent, parentArtefact]) => ({
 						downEvent     : downEvent,
@@ -324,7 +299,7 @@ export default class DrawingTool extends Tool {
 			}
 			return newNodeArtefact;
 		}
-		context.stateMachine.extend(({enterState, subscribe, intercept}) => ({
+		context.stateMachine.extend(({enterState, subscribeDuringState, intercept}) => ({
 			'DRAWING_FIRST_PROCESS_LINE_NODE': ({downEvent, parentArtefact, modelFn, tooltipText, processColor}) => {
 				tooltip.show(tooltipText || `process (initial node)`, [
 					`release the mouse-button when finished`
@@ -351,7 +326,7 @@ export default class DrawingTool extends Tool {
 				]);
 				this.e('mousedown')
 					.filter(withoutMod('shift', 'meta')) // allowing ctrl to align with previous node
-					::tap(stopPropagation)
+					.do(stopPropagation)
 					.withLatestFrom(context.p('selected'))
 					.map(([downEvent, parentArtefact]) => ({
 						downEvent         : downEvent,

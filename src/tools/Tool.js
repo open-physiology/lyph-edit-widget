@@ -1,31 +1,17 @@
 import ValueTracker, {property} from '../util/ValueTracker';
 import $ from 'jquery';
-// TODO: no longer need to import: fromEventPattern;
-// TODO: no longer need to import: fromEvent;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: map;
-// TODO: no longer need to import: never;
+
 import {Observable} from '../libs/rxjs.js';
 
-import {afterMatching, log} from "../util/rxjs";
-import {stopPropagation} from "../util/misc";
-import {withoutMod} from "../util/misc";
 import {createSVGPoint, ID_MATRIX} from "../util/svg";
-// TODO: make sure we don't need to import: switchMap;
-// TODO: no longer need to import: of;
+
 import {setCTM} from "../util/svg";
-// TODO: make sure we don't need to import: withLatestFrom;
+
 import {subscribe_} from "../util/rxjs";
 import {SVGPoint, Vector2D} from "../util/svg";
-import {tap} from "../util/rxjs";
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: concat;
 
 import {assign} from 'bound-native-methods';
 
-// TODO: no longer need to import: merge;
-// TODO: make sure we don't need to import: sample;
 import {animationFrames} from "../util/rxjs";
 import Machine from "../util/Machine";
 
@@ -75,7 +61,7 @@ export default class Tool extends ValueTracker {
 			context.newProperty('canvasScreenCTM', { readonly: true, initial: context.root.inside.getScreenCTM() });
 			context.p('canvasCTM')
 				.map(() => context.root.inside.getScreenCTM())
-				::subscribe_( context.pSubject('canvasScreenCTM'), v=>v() );
+				.subscribe( context.pSubject('canvasScreenCTM') );
 			context.stateMachine = new Machine('IDLE');
 		}
 		if (!context[$$domEvents]) {

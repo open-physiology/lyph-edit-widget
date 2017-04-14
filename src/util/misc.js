@@ -2,17 +2,19 @@
 // Schema Data Types                                                          //
 ////////////////////////////////////////////////////////////////////////////////
 
-import isUndefined from 'lodash-bound/isUndefined';
-import trim        from 'lodash-bound/trim';
-import isString    from 'lodash-bound/isString';
-import isArray     from 'lodash-bound/isArray';
-import isNumber    from 'lodash-bound/isNumber';
-import isObject    from 'lodash-bound/isObject';
-import isFunction  from 'lodash-bound/isFunction';
-import isSet       from 'lodash-bound/isSet';
-import isWeakSet   from 'lodash-bound/isWeakSet';
-import entries     from 'lodash-bound/entries';
-import defaults    from 'lodash-bound/defaults';
+import {
+	isUndefined,
+	trim,
+	isString,
+	isArray,
+	isNumber,
+	isObject,
+	isFunction,
+	isSet,
+	isWeakSet,
+	entries,
+	defaults
+} from 'lodash-bound';
 
 import $    from '../libs/jquery';
 import Snap from '../libs/snap.svg';
@@ -21,10 +23,7 @@ import rearg from 'rearg';
 
 import {defineProperty} from 'bound-native-methods';
 
-// TODO: make sure we don't need to import: filter;
-
-import _zip from 'lodash/zip';
-import _isFinite from 'lodash/isFinite';
+import {zip as _zip, isFinite as _isFinite} from 'lodash';
 
 import assert from 'power-assert';
 

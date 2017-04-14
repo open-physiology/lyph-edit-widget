@@ -1,7 +1,6 @@
 import {Subject}         from '../libs/rxjs.js';
 import {BehaviorSubject} from "../libs/rxjs.js";
-// TODO: make sure we don't need to import: merge;
-// TODO: make sure we don't need to import: map;
+
 import assert    from 'power-assert';
 import {humanMsg} from "./misc";
 

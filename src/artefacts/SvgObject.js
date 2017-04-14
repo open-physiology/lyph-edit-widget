@@ -1,18 +1,8 @@
-import {Observable} from '../libs/rxjs.js';
-
 import defer from 'promise-defer';
 
-import pick from 'lodash-bound/pick';
-import keys from 'lodash-bound/keys';
-import defaults from 'lodash-bound/defaults';
-import isFunction from 'lodash-bound/isFunction';
-import isUndefined from 'lodash-bound/isUndefined';
+import {pick, keys, defaults, isFunction} from 'lodash-bound';
 
 import {values, defineProperty} from 'bound-native-methods';
-
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _defer from 'lodash/defer';
 
 import $ from '../libs/jquery';
 

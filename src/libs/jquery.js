@@ -17,7 +17,7 @@ Object.assign($, {
 });
 
 /* convenience instance methods */
-import isUndefined from 'lodash-bound/isUndefined';
+import {isUndefined} from 'lodash-bound';
 const associations = new WeakMap; // element -> key -> value
 Object.assign($.fn, {
 	getBoundingClientRect() {

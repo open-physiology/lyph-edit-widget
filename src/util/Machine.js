@@ -1,9 +1,4 @@
-import isArray     from 'lodash-bound/isArray';
-import isUndefined from 'lodash-bound/isUndefined';
-import isFunction  from 'lodash-bound/isFunction';
-import isString    from 'lodash-bound/isString';
-import constant    from 'lodash-bound/constant';
-import toPairs     from 'lodash-bound/toPairs';
+import {isArray, isUndefined, isFunction, isString, constant, toPairs} from 'lodash-bound';
 import {entries}   from 'bound-native-methods';
 
 export default class Machine {
@@ -46,12 +41,12 @@ export default class Machine {
 				if (this::isUndefined()) {
 					return thisMachine.enterState(nextState, data, newInterceptors);
 				} else {
-					return this::(boundFunctions.subscribe)((data) => {
+					return this::(boundFunctions.subscribeDuringState)((data) => {
 						thisMachine.enterState(nextState, data, newInterceptors);
 					});
 				}
 			},
-			subscribe: function (...args) {
+			subscribeDuringState: function (...args) {
 				const sub = this.subscribe(...args);
 				thisMachine.subscriptions.push(sub);
 				return sub;

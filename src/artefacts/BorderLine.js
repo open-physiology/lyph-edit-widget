@@ -1,28 +1,8 @@
-import $          from '../libs/jquery.js';
+import $ from '../libs/jquery.js';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-import isArray from 'lodash-bound/isArray';
+import {isNumber as _isNumber} from 'lodash';
 
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _defer from 'lodash/defer'
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: interval;
-
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: filter;
-
-import chroma from '../libs/chroma.js';
-
-import SvgEntity from './SvgEntity.js';
+import {pick, isArray} from 'lodash-bound';
 
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
@@ -30,11 +10,8 @@ import {flag} from "../util/ValueTracker";
 import NodeGlyph from "./NodeGlyph";
 import LyphRectangle from "./LyphRectangle";
 import MeasurableGlyph from "./MeasurableGlyph";
-import {subscribe_, log} from "../util/rxjs";
 import {ID_MATRIX} from '../util/svg';
-// TODO: make sure we don't need to import: withLatestFrom;
 import Transformable from "./Transformable";
-// TODO: make sure we don't need to import: takeUntil;
 import {tap} from "../util/rxjs";
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -207,8 +184,8 @@ export default class BorderLine extends Transformable {
 			    .append(this.handle);
 		}
 		{
-			this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
-			this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
+			this.freeFloatingStuff.e('add').subscribe( this.children.e('add') );
+			this.children.e('delete').subscribe( this.freeFloatingStuff.e('delete') );
 			this.syncModelWithArtefact(
 				'ContainsNode',
 				NodeGlyph,
@@ -221,8 +198,8 @@ export default class BorderLine extends Transformable {
 			);
 		}
 		{
-			this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
-			this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
+			this.freeFloatingStuff.e('add').subscribe( this.children.e('add') );
+			this.children.e('delete').subscribe( this.freeFloatingStuff.e('delete') );
 			this.syncModelWithArtefact(
 				'HasMeasurable',
 				MeasurableGlyph,
@@ -246,8 +223,8 @@ export default class BorderLine extends Transformable {
 			.map(([model, x1, x2, y1, y2]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, x1, x2, y1, y2 }))
-			::tap((artefact) => { artefact.free = true })
-			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
+			.do((artefact) => { artefact.free = true })
+			.subscribe( this.freeFloatingStuff.e('add') );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')
 		    .subscribe((artefact) => {
@@ -262,12 +239,12 @@ export default class BorderLine extends Transformable {
 			    	this.p('x1')
 					    .takeUntil(removed)
 					    .map(x1 => ID_MATRIX.translate(x1 - initial.x1, 0).multiply(transformation))
-					    ::subscribe_( artefact.p('transformation') );
+					    .subscribe( artefact.p('transformation') );
 			    } else if (initial.y1 === initial.y2) {
 				    this.p('y1')
 					    .takeUntil(removed)
 					    .map(y1 => ID_MATRIX.translate(0, y1 - initial.y1).multiply(transformation))
-					    ::subscribe_( artefact.p('transformation') );
+					    .subscribe( artefact.p('transformation') );
 			    }
 			    /* remove from dom when removed */
 				removed.subscribe(() => {

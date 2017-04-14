@@ -1,20 +1,14 @@
 import $ from '../libs/jquery';
-import Snap from '../libs/snap.svg';
-import {args} from './misc';
 import {assign} from 'bound-native-methods';
-import pick from 'lodash-bound/pick';
+import {pick, minBy} from 'lodash-bound';
 import ValueTracker from './ValueTracker';
-// TODO: no longer need to import: merge;
-import {log} from './rxjs';
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: map;
+
 
 import assert from 'power-assert';
 
 import {humanMsg} from './misc';
-import minBy from 'lodash-bound/minBy';
 
-const {abs, atan2, sqrt} = Math;
+const {abs, sqrt} = Math;
 
 export const M11 = 'a';
 export const M12 = 'c';
@@ -24,7 +18,6 @@ export const tX  = 'e';
 export const tY  = 'f';
 
 export const refSVG    = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-export const refSnap   = Snap(refSVG);
 export const ID_MATRIX = refSVG.createSVGMatrix();
 export const POINT     = refSVG.createSVGPoint();
 

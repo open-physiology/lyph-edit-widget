@@ -1,61 +1,19 @@
-import $          from '../libs/jquery.js';
+import $    from '../libs/jquery.js';
 import Snap from '../libs/snap.svg';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-import assign from 'lodash-bound/assign';
-import sortBy from 'lodash-bound/sortBy';
-import maxBy from 'lodash-bound/maxBy';
-import max from 'lodash-bound/max';
-import min from 'lodash-bound/min';
-import ldMap from 'lodash-bound/map';
-import find from 'lodash-bound/find';
-import entries from 'lodash-bound/entries';
-import isArray from 'lodash-bound/isArray';
+import {assign, sortBy, max, min, map, find, isArray} from 'lodash-bound';
 
-import _isNumber from 'lodash/isNumber';
-import _isFinite from 'lodash/isFinite';
-import _isBoolean from 'lodash/isBoolean';
-import _add from 'lodash/add';
-import _defer from 'lodash/defer';
-import _zip from 'lodash/zip';
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: of;
-
-// TODO: no longer need to import: merge;
-// TODO: no longer need to import: range;
-// TODO: no longer need to import: interval;
-
-// TODO: make sure we don't need to import: sampleTime;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: mergeMap;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: toPromise;
-// TODO: make sure we don't need to import: concat;
-// TODO: make sure we don't need to import: map;
+import {add as _add} from 'lodash';
 
 import {Observable} from '../libs/rxjs.js';
 
 import chroma from '../libs/chroma.js';
-
-import SvgEntity from './SvgEntity.js';
 
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import BorderLine from './BorderLine';
 
 import {subscribe_} from "../util/rxjs";
-import {shiftedMovementFor, log} from "../util/rxjs";
 import {flag} from "../util/ValueTracker";
 import NodeGlyph from "./NodeGlyph";
 import Transformable from "./Transformable";
@@ -63,14 +21,10 @@ import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
 import MeasurableGlyph from "./MeasurableGlyph";
 import MaterialGlyph from "./MaterialGlyph";
-import CoalescenceScenarioRectangle from "./CoalescenceScenarioRectangle";
 import {setCTM} from "../util/svg";
 import {_isNonNegative} from "../util/misc";
-// TODO: make sure we don't need to import: scan;
-import {tX} from "../util/svg";
-import {tY} from "../util/svg";
+
 import {tap} from "../util/rxjs";
-import {setVirtualParent} from "../util/svg";
 import ProcessLine from "./ProcessLine";
 import {moveToFront} from "../util/svg";
 
@@ -151,24 +105,24 @@ export default class LyphRectangle extends Transformable {
 			'radialBorders',
 			'longitudinalBorders'
 		]) {
-			this[setKey] .e('add')   ::subscribe_( this.children.e('add')   , n=>n() );
-			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
+			this[setKey] .e('add')   .subscribe( this.children.e('add') );
+			this.children.e('delete').subscribe( this[setKey].e('delete') );
 		}
 		
 		/* corner radii */
 		this.p('leftBorder.model.nature')
 			.map(n => n::isArray() ? n : [n])
 			.map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
-			::subscribe_( this.p('leftCornerRadius'), v=>v() );
+			.subscribe( this.p('leftCornerRadius') );
 		this.p('rightBorder.model.nature')
 			.map(n => n::isArray() ? n : [n])
 			.map(n => n.length === 1 && n[0] === 'open' ? 0 : CLOSED_CORNER_RADIUS)
-			::subscribe_( this.p('rightCornerRadius'), v=>v() );
+			.subscribe( this.p('rightCornerRadius') );
 		
 		/* length cut off of the top of a lyph (to hide the outer layer) */
 		this.p(['height', 'hideOuterLayer', 'layers'], (height, hideOuterLayer, layers) =>
 			(hideOuterLayer ? (height - this.axisThickness) / layers.size : 0))
-			::subscribe_( this.pSubject('hiddenOuterLayerLength'), v=>v() );
+			.subscribe( this.pSubject('hiddenOuterLayerLength') );
 		
 		/* maintain inner-border-ness of our bottom border */
 		// TODO: check (also?) whether there is an axis in the model (currently not working?)
@@ -435,8 +389,8 @@ export default class LyphRectangle extends Transformable {
 		
 		
 		
-		this.freeFloatingStuff.e('add')::subscribe_( this.children.e('add') , n=>n() );
-		this.children.e('delete')::subscribe_( this.freeFloatingStuff.e('delete') , n=>n() );
+		this.freeFloatingStuff.e('add').subscribe( this.children.e('add') );
+		this.children.e('delete').subscribe( this.freeFloatingStuff.e('delete') );
 		this.syncModelWithArtefact(
 			'HasPart',
 			a => a instanceof LyphRectangle,
@@ -538,20 +492,20 @@ export default class LyphRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				this.p(['height', 'spillunder'], _add)
-					::subscribe_( borderLine.p('y2') , n=>n() );
+					.subscribe( borderLine.p('y2') );
 				if (!this.leftBorder) {
 					this.leftBorder = borderLine;
 					borderLine.resizes = { left: true };
 					borderLine.x = 0;
 					this.p(['leftCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
-						::subscribe_( borderLine.p('y1'), v=>v() );
+						.subscribe( borderLine.p('y1') );
 					removed.subscribe(() => { this.leftBorder = null });
 				} else if (!this.rightBorder) {
 					this.rightBorder = borderLine;
 					borderLine.resizes = { right: true };
-					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
+					this.p('width').subscribe( borderLine.p('x') );
 					this.p(['rightCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
-						::subscribe_( borderLine.p('y1'), v=>v() );
+						.subscribe( borderLine.p('y1') );
 					removed.subscribe(() => { this.rightBorder = null });
 				} else {
 					throw new Error('Trying to add a third radial border.');
@@ -567,20 +521,20 @@ export default class LyphRectangle extends Transformable {
 				if (!this.topBorder) {
 					this.topBorder = borderLine;
 					this.p(['leftCornerRadius'], (lcr) => lcr)
-						::subscribe_( borderLine.p('x1') , v=>v() );
+						.subscribe( borderLine.p('x1') );
 					this.p(['rightCornerRadius', 'width'], (rcr, w) => w-rcr)
-						::subscribe_( borderLine.p('x2') , v=>v() );
+						.subscribe( borderLine.p('x2') );
 					borderLine.resizes = { top: true };
-					this.p('hiddenOuterLayerLength')::subscribe_( borderLine.p('y') , n=>n() );
+					this.p('hiddenOuterLayerLength').subscribe( borderLine.p('y') );
 					removed.subscribe(() => { this.topBorder = null });
 				} else if (!this.bottomBorder) {
 					this.bottomBorder = borderLine;
 					this.p(['leftCornerRadius', 'free'], (lcr, free) => (free ? 0 : lcr))
-						::subscribe_( borderLine.p('x1') , v=>v() );
+						.subscribe( borderLine.p('x1') );
 					this.p(['rightCornerRadius', 'width', 'free'], (rcr, w, free) => (free ? w : w-rcr))
-						::subscribe_( borderLine.p('x2') , v=>v() );
+						.subscribe( borderLine.p('x2') );
 					borderLine.resizes = { bottom: true };
-					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
+					this.p('height').subscribe( borderLine.p('y') );
 					removed.subscribe(() => { this.bottomBorder = null });
 				}
 			});
@@ -656,8 +610,8 @@ export default class LyphRectangle extends Transformable {
 			.map(([model, width, height]) =>
 				this[$$recycle](model) ||
 				createNewArtefact({ model, width, height }))
-			::tap((artefact) => { artefact.free = true })
-			::subscribe_( this.freeFloatingStuff.e('add') , n=>n() );
+			.do((artefact) => { artefact.free = true })
+			.subscribe( this.freeFloatingStuff.e('add') );
 		/* new part artifact --> house svg element */
 		this.freeFloatingStuff.e('add')
 		    .filter(artefactTest)
@@ -692,7 +646,7 @@ export default class LyphRectangle extends Transformable {
 			// dropped onto longitudinal border (to become layer)
 			if ([LyphRectangle].includes(droppedEntity.constructor)) {
 				const rels      = [...this.model['-->HasLayer']];
-				const positions = rels::ldMap('relativePosition');
+				const positions = rels::map('relativePosition');
 				let newPosition;
 				if (rels.length === 0) {
 					newPosition = 0;

@@ -1,28 +1,12 @@
-import pick from 'lodash-bound/pick';
-
-import assert from 'power-assert';
-
 import {property} from '../util/ValueTracker.js';
 
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: partition;
-// TODO: no longer need to import: merge;
-// TODO: make sure we don't need to import: map;
-// TODO: no longer need to import: of;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: startWith;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: make sure we don't need to import: takeUntil;
 import {Observable} from '../libs/rxjs.js';
 
-import isFunction from 'lodash-bound/isFunction';
+import {isFunction} from 'lodash-bound';
 
 import SvgObject from './SvgObject.js';
 import ObservableSet from "../util/ObservableSet";
 import {subscribe_} from "../util/rxjs";
-
-import {log} from '../util/rxjs';
-// TODO: make sure we don't need to import: skip;
 
 
 export default class SvgEntity extends SvgObject {
@@ -45,7 +29,7 @@ export default class SvgEntity extends SvgObject {
 		/* maintain the root of this entity */
 		this.p('parent')
 			.switchMap(e => e ? e.p('root') : Observable.of(this))
-			::subscribe_( this.p('root') , n=>n() );
+			.subscribe( this.p('root') );
 		
 		/* maintain this entity as a child of its parent */
 		this.p('parent').startWith(null).pairwise()
@@ -60,7 +44,7 @@ export default class SvgEntity extends SvgObject {
 		
 		/* when a parent is dragging, its children are ancestorDragging */
 		this.p(['parent.dragging', 'parent.ancestorDragging'], (d, ad) => d || ad)
-			::subscribe_( this.p('ancestorDragging') , n=>n() );
+			.subscribe( this.p('ancestorDragging') );
 		
 	}
 	

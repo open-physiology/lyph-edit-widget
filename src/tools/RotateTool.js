@@ -1,44 +1,15 @@
-import $ from 'jquery';
-// TODO: no longer need to import: fromEvent;
-// TODO: no longer need to import: of;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: concat;
-
-import assign from 'lodash-bound/assign';
-import pick from 'lodash-bound/pick';
-import isFunction from 'lodash-bound/isFunction';
-import defaults from 'lodash-bound/defaults';
+import {pick} from 'lodash-bound';
 
 import Tool from './Tool';
-import {withoutMod, withMod} from "../util/misc";
-import {stopPropagation} from "../util/misc";
-import {shiftedMovementFor, log} from "../util/rxjs";
-import {afterMatching} from "../util/rxjs";
-import {shiftedMatrixMovementFor} from "../util/rxjs";
-import {POINT} from "../util/svg";
-// TODO: no longer need to import: never;
-// TODO: make sure we don't need to import: ignoreElements;
-// TODO: make sure we don't need to import: skipUntil;
-// TODO: make sure we don't need to import: delay;
-// TODO: make sure we don't need to import: skip;
-import {subscribe_} from "../util/rxjs";
-import {shiftedMMovementFor} from "../util/rxjs";
+import {withMod, stopPropagation} from "../util/misc";
+
 import {emitWhenComplete, tap} from "../util/rxjs";
-// TODO: make sure we don't need to import: mapTo;
-import Machine from "../util/Machine";
+
 import {rotateFromVector, tX, tY} from "../util/svg";
 import {Vector2D} from "../util/svg";
 import {M21} from "../util/svg";
 import {M22} from "../util/svg";
 import {rotateAround} from "../util/svg";
-import {snap45} from "../util/svg";
-
 
 const {atan2, floor} = Math;
 
@@ -71,10 +42,10 @@ export default class RotateTool extends Tool {
 		// });
 		
 		
-		context.stateMachine.extend(({ enterState, subscribe }) => ({
+		context.stateMachine.extend(({ enterState, subscribeDuringState }) => ({
 			'IDLE': () => this.e('mousedown')
 				.filter(withMod('shift'))
-				::tap(stopPropagation)
+				.do(stopPropagation)
 				.withLatestFrom(context.p('selected'))
 				.filter(([,handleArtifact]) => handleArtifact.draggable && handleArtifact.free)
 				.map(([downEvent, rotatingArtefact]) => ({mousedownVector: downEvent.point, rotatingArtefact}))
@@ -110,7 +81,7 @@ export default class RotateTool extends Tool {
 				const initialMouseAngle = atan2(startDiff.y, startDiff.x) * 180 / Math.PI;
 				
 				/* rotate while dragging */
-				mousemove::subscribe((moveEvent) => {
+				mousemove::subscribeDuringState((moveEvent) => {
 					let mouseVector = moveEvent.point;//.in(rotatingArtefact.element);
 					let currentDiff = mouseVector.minus(center);
 					let angle = atan2(currentDiff.y, currentDiff.x) / Math.PI * 180;
@@ -124,7 +95,7 @@ export default class RotateTool extends Tool {
 				
 				/* stop rotating on mouseup */
 				mouseup
-					::tap(() => { rotatingArtefact.dragging = false })
+					.do(() => { rotatingArtefact.dragging = false })
 					::enterState('IDLE');
 			}
 		}));

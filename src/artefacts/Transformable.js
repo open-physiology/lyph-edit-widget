@@ -1,23 +1,11 @@
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: map;
-
-import isNaN from 'lodash-bound/isNaN';
-
 import SvgEntity from './SvgEntity.js';
 
-import {property, event, flag} from '../util/ValueTracker';
+import {property} from '../util/ValueTracker';
 
 import {subscribe_} from "../util/rxjs";
 
 import {ID_MATRIX, matrixEquals, setCTM} from "../util/svg";
-// TODO: no longer need to import: merge;
-// TODO: no longer need to import: of;
-// TODO: make sure we don't need to import: mapTo;
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: sample;
-// TODO: make sure we don't need to import: sampleTime;
+
 import {Observable} from '../libs/rxjs.js';
 
 
@@ -65,7 +53,7 @@ export default class Transformable extends SvgEntity {
 			.pairwise()
 			.withLatestFrom(this.p('transformation'), ([prev, curr], loc) =>
 							prev.inside.getTransformToElement(curr.inside).multiply(loc))
-			::subscribe_( this.p('transformation'), v=>v() );
+			.subscribe( this.p('transformation') );
 		
 		// /* maintain sampledTransformation */
 		// this.p('transformation').sampleTime(1000/60).subscribe( this.pSubject('sampledTransformation'));

@@ -1,22 +1,8 @@
 import './loadRxjs.js';
 import LyphRectangle from './artefacts/LyphRectangle';
 import './model'; // sets a global (for now)
-import ValueTracker from './util/ValueTracker';
-import {ID_MATRIX} from './util/svg';
 
-import assign from 'lodash-bound/assign';
-import sortBy from 'lodash-bound/sortBy';
-
-import _range from 'lodash/range';
-
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: merge;
-
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: bufferCount;
-// TODO: make sure we don't need to import: map;
+import {range as _range} from 'lodash';
 
 import DragDropTool from './tools/DragDropTool';
 import ResizeTool   from './tools/ResizeTool';
@@ -25,21 +11,17 @@ import PanTool      from './tools/PanTool';
 import SelectTool   from './tools/SelectTool';
 
 import $    from './libs/jquery.js';
-import Snap from './libs/snap.svg';
 import Canvas from "./artefacts/Canvas";
 import NodeGlyph from "./artefacts/NodeGlyph";
 import ProcessLine from "./artefacts/ProcessLine";
 import BorderToggleTool from "./tools/BorderToggleTool";
 import CoalescenceScenarioRectangle from "./artefacts/CoalescenceScenarioRectangle";
-import {log} from "./util/rxjs";
 import DrawingTool from "./tools/DrawingTool";
-import MaterialGlyph from "./artefacts/MaterialGlyph";
 import MeasurableGlyph from "./artefacts/MeasurableGlyph";
-import CausalityArrow from "./artefacts/CausalityArrow";
 import searchArgs from "./util/searchArgs";
 import {createMatrix} from "./util/svg";
 import RotateTool from "./tools/RotateTool";
-// TODO: make sure we don't need to import: toPromise;
+
 import TooltipTool from "./tools/TooltipTool";
 
 let C = window.module.classes;

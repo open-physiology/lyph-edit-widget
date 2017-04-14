@@ -1,67 +1,22 @@
-import $          from '../libs/jquery.js';
 import Snap from '../libs/snap.svg';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-import assign from 'lodash-bound/assign';
-import sortBy from 'lodash-bound/sortBy';
-import maxBy from 'lodash-bound/maxBy';
-import max from 'lodash-bound/max';
-import min from 'lodash-bound/min';
-import ldMap from 'lodash-bound/map';
-import find from 'lodash-bound/find';
-import entries from 'lodash-bound/entries';
+import {assign, maxBy} from 'lodash-bound';
 
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _add from 'lodash/add';
-import _defer from 'lodash/defer';
-import _zip from 'lodash/zip';
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: no longer need to import: combineLatest;
-// TODO: no longer need to import: of;
-
-// import {map} from '../util/bound-hybrid-functions';
-
-// TODO: no longer need to import: merge;
-// TODO: no longer need to import: range;
-// TODO: no longer need to import: interval;
-
-// TODO: make sure we don't need to import: sampleTime;
-// TODO: make sure we don't need to import: filter;
-// TODO: make sure we don't need to import: pairwise;
-// TODO: make sure we don't need to import: withLatestFrom;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: takeUntil;
-// TODO: make sure we don't need to import: mergeMap;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: toPromise;
-// TODO: make sure we don't need to import: concat;
-// TODO: make sure we don't need to import: map;
+import {
+	isNumber as _isNumber,
+	add      as _add
+} from 'lodash';
 
 import chroma from '../libs/chroma.js';
-
-import SvgEntity from './SvgEntity.js';
 
 import {property} from '../util/ValueTracker.js';
 import ObservableSet, {copySetContent} from "../util/ObservableSet";
 import BorderLine from './BorderLine';
 
-import {subscribe_} from "../util/rxjs";
-import {shiftedMovementFor, log} from "../util/rxjs";
-import {flag} from "../util/ValueTracker";
-import NodeGlyph from "./NodeGlyph";
 import Transformable from "./Transformable";
 import {ID_MATRIX} from "../util/svg";
 import CornerHandle from "./CornerHandle";
 import LyphRectangle from "./LyphRectangle";
-// TODO: make sure we don't need to import: startWith;
-import {setCTM} from "../util/svg";
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
@@ -130,7 +85,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 		// 	this.model[setKey].e('add').map(border => this[$$recycle](border) || new BorderLine({
 		// 		parent : this,
 		// 		model  : border
-		// 	}))::subscribe_( this[setKey].e('add') , n=>n() );
+		// 	})).subscribe( this[setKey].e('add') );
 		// }
 		// TODO: coalescence-scenario does not (yet) have borders of its own
 		
@@ -140,7 +95,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			model    : lyph,
 			draggable: false,
 			free     : false
-		}))::subscribe_( this.lyphs.e('add') , n=>n() );
+		})).subscribe( this.lyphs.e('add') );
 		
 		/* create the shared layer artifacts */
 		this.p('normalLyph.model.-->HasLayer')
@@ -153,7 +108,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				draggable: false,
 				free     : false
 			}))
-			::subscribe_( this.p('sharedLayer'), v=>v() );
+			.subscribe( this.p('sharedLayer') );
 		
 		/* synchronize specific children with the 'children' set */
 		for (let setKey of [
@@ -161,8 +116,8 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 			'longitudinalBorders',
 		    'lyphs'
 		]) {
-			this[setKey].e('add')::subscribe_( this.children.e('add') , n=>n() );
-			this.children.e('delete')::subscribe_( this[setKey].e('delete') , n=>n() );
+			this[setKey].e('add').subscribe( this.children.e('add') );
+			this.children.e('delete').subscribe( this[setKey].e('delete') );
 		}
 		this.p('sharedLayer').startWith(null).pairwise().subscribe(([prev, curr]) => {
 			if (prev) { this.children.delete(prev) }
@@ -262,7 +217,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				borderLine.y1 = 0;
-				this.p('height')::subscribe_( borderLine.p('y2') , n=>n() );
+				this.p('height').subscribe( borderLine.p('y2') );
 				if (!this.leftBorder) {
 					this.leftBorder = borderLine;
 					borderLine.resizes = { left: true };
@@ -271,7 +226,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				} else if (!this.rightBorder) {
 					this.rightBorder = borderLine;
 					borderLine.resizes = { right: true };
-					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
+					this.p('width').subscribe( borderLine.p('x') );
 					removed.subscribe(() => { this.rightBorder = null });
 				} else {
 					throw new Error('Trying to add a third radial border.');
@@ -284,7 +239,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				borderLine.x1 = 0;
-				this.p('width')::subscribe_( borderLine.p('x2') , n=>n() );
+				this.p('width').subscribe( borderLine.p('x2') );
 				if (!this.topBorder) {
 					this.topBorder = borderLine;
 					borderLine.resizes = { top: true };
@@ -293,7 +248,7 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				} else if (!this.bottomBorder) {
 					this.bottomBorder = borderLine;
 					borderLine.resizes = { bottom: true };
-					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
+					this.p('height').subscribe( borderLine.p('y') );
 					removed.subscribe(() => { this.bottomBorder = this.axis = null });
 				}
 			});
@@ -389,20 +344,20 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				this.p(['height', 'spillunder'], _add)
-					::subscribe_( borderLine.p('y2') , n=>n() );
+				    .subscribe( borderLine.p('y2') );
 				if (!this.leftBorder) {
 					this.leftBorder = borderLine;
 					borderLine.resizes = { left: true };
 					borderLine.x = 0;
 					this.p(['leftCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
-						::subscribe_( borderLine.p('y1'), v=>v() );
+						.subscribe( borderLine.p('y1') );
 					removed.subscribe(() => { this.leftBorder = null });
 				} else if (!this.rightBorder) {
 					this.rightBorder = borderLine;
 					borderLine.resizes = { right: true };
-					this.p('width')::subscribe_( borderLine.p('x') , n=>n() );
+					this.p('width').subscribe( borderLine.p('x') );
 					this.p(['rightCornerRadius', 'hiddenOuterLayerLength', 'spillover'], (cr, hol, so) => (cr + hol - so))
-						::subscribe_( borderLine.p('y1'), v=>v() );
+						.subscribe( borderLine.p('y1') );
 					removed.subscribe(() => { this.rightBorder = null });
 				} else {
 					throw new Error('Trying to add a third radial border.');
@@ -415,19 +370,19 @@ export default class CoalescenceScenarioRectangle extends Transformable {
 				borderGroup.append(borderLine.element);
 				removed.subscribe(() => { borderLine.element.remove() });
 				
-				this.p('leftCornerRadius')::subscribe_( borderLine.p('x1'), v=>v() );
+				this.p('leftCornerRadius').subscribe( borderLine.p('x1') );
 				
 				this.p(['rightCornerRadius', 'width'], (rcr, w) => w-rcr)
-					::subscribe_( borderLine.p('x2') , v=>v() );
+					.subscribe( borderLine.p('x2') );
 				if (!this.topBorder) {
 					this.topBorder = borderLine;
 					borderLine.resizes = { top: true };
-					this.p('hiddenOuterLayerLength')::subscribe_( borderLine.p('y') , n=>n() );
+					this.p('hiddenOuterLayerLength').subscribe( borderLine.p('y') );
 					removed.subscribe(() => { this.topBorder = null });
 				} else if (!this.bottomBorder) {
 					this.bottomBorder = borderLine;
 					borderLine.resizes = { bottom: true };
-					this.p('height')::subscribe_( borderLine.p('y') , n=>n() );
+					this.p('height').subscribe( borderLine.p('y') );
 					removed.subscribe(() => { this.bottomBorder = null });
 				}
 			});

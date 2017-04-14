@@ -1,36 +1,7 @@
 import $          from '../libs/jquery.js';
 
-import pick     from 'lodash-bound/pick';
-import defaults from 'lodash-bound/defaults';
-import isNumber from 'lodash-bound/isNumber';
-import size from 'lodash-bound/size';
-import at from 'lodash-bound/at';
-
-import _isNumber from 'lodash/isNumber';
-import _isBoolean from 'lodash/isBoolean';
-import _defer from 'lodash/defer'
-
-import uniqueId from 'lodash/uniqueId';
-
-// TODO: no longer need to import: interval;
-// TODO: no longer need to import: of;
-
-// TODO: no longer need to import: combineLatest;
-// TODO: make sure we don't need to import: map;
-// TODO: make sure we don't need to import: take;
-// TODO: make sure we don't need to import: switchMap;
-// TODO: make sure we don't need to import: sampleTime;
-
 import {ID_MATRIX} from "../util/svg";
 
-import chroma from '../libs/chroma.js';
-
-import SvgEntity from './SvgEntity.js';
-
-import {property} from '../util/ValueTracker.js';
-import ObservableSet, {copySetContent} from "../util/ObservableSet";
-import {flag} from "../util/ValueTracker";
-import {subscribe_} from "../util/rxjs";
 import Transformable from "./Transformable";
 import ProcessLine from "./ProcessLine";
 import {setCTM} from "../util/svg";

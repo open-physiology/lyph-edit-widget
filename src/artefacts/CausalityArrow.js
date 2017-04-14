@@ -3,8 +3,6 @@ import SvgEntity from './SvgEntity.js';
 import {property} from '../util/ValueTracker.js';
 import {tX} from "../util/svg";
 import {tY} from "../util/svg";
-// TODO: make sure we don't need to import: map;
-// TODO: no longer need to import: merge;
 
 
 const $$backgroundColor = Symbol('$$backgroundColor');
