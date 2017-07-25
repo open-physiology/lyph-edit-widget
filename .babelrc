@@ -3,11 +3,12 @@
     "es2015"
   ],
   "plugins": [
-    ["babel-plugin-transform-builtin-extend", { "globals": ["Set"] }],
-    "transform-object-rest-spread",
+    ["transform-builtin-extend", { "globals": ["Set"] }],
     "angular2-annotations",
     "transform-decorators-legacy",
     "transform-class-properties",
+    "transform-strict-mode",
+    "transform-object-rest-spread",
     "transform-es2015-instanceof",
     "transform-async-to-generator",
     "transform-function-bind",
@@ -27,5 +28,6 @@
       ]
     }
   },
-  "sourceMaps": true
+  "sourceMaps": true,
+  "ignore": ["*.png"]
 }
