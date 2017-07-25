@@ -1,6 +1,6 @@
 {
   "name": "lyph-edit-widget",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "lyph editor for ApiNATOMY",
   "main": "dist/index.html",
   "scripts": {
