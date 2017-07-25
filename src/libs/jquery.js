@@ -2,36 +2,13 @@ import $ from 'jquery';
 export default $;
 
 import 'jquery-mousewheel';
-// jqMousewheel($);
 
-/* powertip plugin */
-import '../../node_modules/jquery-powertip/dist/jquery.powertip.js';
-import '../../node_modules/jquery-powertip/dist/css/jquery.powertip.min.css';
-import '../../node_modules/jquery-powertip/dist/css/jquery.powertip-dark.min.css';
+import {entries} from 'lodash-bound';
 
 /* convenience static methods */
 Object.assign($, {
 	svg(creationString) {
 		return this(`<svg>${creationString}</svg>`).children().detach();
-	}
-});
-
-/* convenience instance methods */
-import {isUndefined} from 'lodash-bound';
-const associations = new WeakMap; // element -> key -> value
-Object.assign($.fn, {
-	getBoundingClientRect() {
-		return this[0].getBoundingClientRect();
-	},
-	association(key, value) {
-		const element = this[0];
-		if (value::isUndefined()) {
-			return associations.get(element) && associations.get(element)[key];
-		} else {
-			if (!associations.has(element)) { associations.set(element, {}) }
-			associations.get(element)[key] = value;
-			return this;
-		}
 	}
 });
 
@@ -42,3 +19,28 @@ $.attrHooks['viewbox'] = {
 		return value;
 	}
 };
+
+/* a way to ensure you have the plain DOM element */
+export function plainDOM() {
+	return $(this)[0];
+}
+
+/**
+ * Apply a set of json-encoded css rules to a jquery instance.
+ * @private
+ * @this {$} a jquery instance to which to apply given rules
+ * @param rules
+ */
+export function applyCSS(rules) {
+	for (let [selector, css] of rules::entries()) {
+		let context;
+		if (selector.trim() === '&') {
+			context = this;
+		} else if (selector.trim().charAt(0) === '&') {
+			context = this.find(selector.trim().substr(1).trim());
+		} else {
+			context = this.find(selector);
+		}
+		context.css(css);
+	}
+}

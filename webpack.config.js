@@ -1,44 +1,41 @@
-var webpack = require('webpack');
+const webpack           = require('webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const loaders           = require('./webpack.loaders.js');
+const path              = require('path');
+
 module.exports = {
 	devtool: 'source-map',
+	context: __dirname + '/src',
 	entry: {
-		'test': [ 'babel-polyfill', './src/test.js' ],
-		'LyphRectangle': [ './src/artefacts/LyphRectangle.js' ],
-		'index': [ './src/index.js' ]
+		'demo-app/index': [ 'babel-polyfill', 'zone.js/dist/zone.js', './demo-app/index.js' ]
 	},
 	output: {
-		path: './dist',
+		path: __dirname + '/dist',
 		filename: '[name].js',
-		library: 'LyphEditWidget',
-		libraryTarget: 'umd',
-		sourceMapFilename: '[file].map'
+		// library: 'ProjectName',
+		// libraryTarget: 'umd',
+		sourceMapFilename: '[file].map',
+		/* source-map support for IntelliJ/WebStorm */
+		devtoolModuleFilenameTemplate:         '[absolute-resource-path]',
+		devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]'
 	},
 	module: {
-		loaders: [
-			{
-				test: /\.js$/,
-				exclude: /node\_modules/,
-				loader: 'babel'
-			},
-			{
-				test: /node\_modules\/open-physiology-model\/.+\.js$/,
-				loader: 'babel'
-			},
-			{
-				test: /\.json$/,
-				loader: 'json'
-			},
-			{
-				test: require.resolve("snapsvg"),
-				loader: "imports?this=>window"
-			},
-			{
-				test: /\.css$/,
-				loader: 'style!css!autoprefixer'
-			},
-		]
+		loaders: loaders
 	},
 	plugins: [
-		new webpack.optimize.OccurenceOrderPlugin()
+		new webpack.optimize.OccurrenceOrderPlugin(),
+		new CopyWebpackPlugin([
+			{ from: 'demo-app/index.html', to: 'demo-app/index.html' }
+		]),
+		new webpack.ContextReplacementPlugin(
+			/angular[\\\/]core[\\\/](esm[\\\/]src|src)[\\\/]linker/,
+			path.resolve('./src'),
+			{}
+		),
+		new webpack.ContextReplacementPlugin(
+			/power-assert-formatter[\\\/]lib/,
+			path.resolve('./src'),
+			{}
+		)
 	]
 };
